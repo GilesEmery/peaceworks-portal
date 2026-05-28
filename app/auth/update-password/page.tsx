@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
+import SiteHeader from "../../../components/layout/SiteHeader";
+import SiteFooter from "../../../components/layout/SiteFooter";
+
 export default function UpdatePasswordPage() {
   const router = useRouter();
 
@@ -36,31 +39,19 @@ export default function UpdatePasswordPage() {
 
   return (
     <main className="portal-page">
-      <header className="site-header">
-        <div className="container header-inner">
-          <a className="brand" href="https://www.peaceworks.network/">
-            <img
-              src="https://gilesemery.github.io/peaceworks-main/PeaceworksLogo.svg"
-              alt="PeaceWorks"
-            />
-          </a>
-
-          <nav className="site-nav">
-            <a href="https://www.peaceworks.network/">Main Site</a>
-            <a href="https://www.peaceworks.network/join">Join</a>
-            <a href="https://www.peaceworks.network/contact">Contact</a>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader showSignOut={false} />
 
       <section className="portal-hero">
         <div className="container">
-          <div className="login-card" style={{ maxWidth: "520px", margin: "0 auto" }}>
+          <div
+            className="login-card"
+            style={{ maxWidth: "520px", margin: "0 auto" }}
+          >
             <span className="card-label">Peace Index</span>
 
             <h2>Create a New Password</h2>
 
-            <p>Enter your new password below.</p>
+            <p>Enter your new password below, then return to your PeaceWorks Dashboard.</p>
 
             <form onSubmit={handleUpdatePassword}>
               <input
@@ -82,6 +73,8 @@ export default function UpdatePasswordPage() {
           </div>
         </div>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }

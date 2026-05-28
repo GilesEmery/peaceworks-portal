@@ -1,23 +1,10 @@
+import SiteHeader from "../../components/layout/SiteHeader";
+import SiteFooter from "../../components/layout/SiteFooter";
+
 export default function CoachPage() {
   return (
     <main className="portal-page">
-      <header className="site-header">
-        <div className="container header-inner">
-          <a className="brand" href="/dashboard">
-            <img
-              src="https://gilesemery.github.io/peaceworks-main/PeaceworksLogo.svg"
-              alt="PeaceWorks"
-            />
-          </a>
-
-          <nav className="site-nav">
-            <a href="/dashboard">Dashboard</a>
-            <a href="/peace-assessment">Assessment</a>
-            <a href="/circle">Your Circle</a>
-            <a href="/coach">Coaches</a>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <section className="dashboard-shell">
         <div className="container">
@@ -26,8 +13,9 @@ export default function CoachPage() {
               <div className="eyebrow">PeaceWorks Coaches</div>
               <h1 className="dashboard-title">Coach Portal</h1>
               <p className="dashboard-sub">
-                A future home for coaches to support Circles, view participant
-                insights, track growth, and access coaching resources.
+                The Coach Portal supports Circle leaders, facilitators, and
+                coaches through participant insights, coaching tools, notes,
+                and PeaceWorks resources.
               </p>
             </div>
           </div>
@@ -39,7 +27,7 @@ export default function CoachPage() {
                 <h3>Assigned Circles</h3>
                 <p>
                   View the Circles you are supporting, upcoming sessions,
-                  participant engagement, and group rhythms.
+                  participant engagement, and ongoing group rhythms.
                 </p>
               </div>
             </article>
@@ -49,8 +37,8 @@ export default function CoachPage() {
                 <span className="card-label">Insights</span>
                 <h3>Participant Results</h3>
                 <p>
-                  Review Peace Index results, growth patterns, and assessment
-                  trends for approved participants.
+                  Review Peace Index results, growth patterns, assessment
+                  trends, and future analytics for approved participants.
                 </p>
               </div>
             </article>
@@ -60,8 +48,8 @@ export default function CoachPage() {
                 <span className="card-label">Coaching</span>
                 <h3>Notes & Next Steps</h3>
                 <p>
-                  Track coaching notes, relational observations, assigned
-                  practices, and follow-up steps.
+                  Track coaching notes, relational observations, practices,
+                  follow-up steps, and development pathways.
                 </p>
               </div>
             </article>
@@ -71,14 +59,16 @@ export default function CoachPage() {
                 <span className="card-label">Resources</span>
                 <h3>Coach Toolkit</h3>
                 <p>
-                  Access coaching guides, facilitation tools, group prompts,
-                  and PeaceWorks training resources.
+                  Access facilitation guides, group prompts, worksheets,
+                  teaching tools, and PeaceWorks coaching resources.
                 </p>
               </div>
             </article>
           </div>
         </div>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }

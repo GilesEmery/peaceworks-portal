@@ -1,22 +1,10 @@
+import SiteHeader from "../components/layout/SiteHeader";
+import SiteFooter from "../components/layout/SiteFooter";
+
 export default function Home() {
   return (
     <main className="portal-page">
-      <header className="site-header">
-        <div className="container header-inner">
-          <a className="brand" href="https://www.peaceworks.network/">
-            <img
-              src="https://gilesemery.github.io/peaceworks-main/PeaceworksLogo.svg"
-              alt="PeaceWorks"
-            />
-          </a>
-
-          <nav className="site-nav">
-            <a href="https://www.peaceworks.network/">Main Site</a>
-            <a href="/auth">Sign In</a>
-            <a href="/dashboard">Dashboard</a>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader showSignOut={false} />
 
       <section className="portal-hero">
         <div className="container portal-grid">
@@ -27,8 +15,8 @@ export default function Home() {
 
             <p>
               The Peace Index helps leaders understand what tends to steal their
-              peace, how they respond under pressure, and what practices can help
-              them grow into steadier, healthier leadership.
+              peace, how they respond under pressure, and what practices can
+              help them grow into steadier, healthier leadership.
             </p>
 
             <div className="btn-row">
@@ -49,8 +37,8 @@ export default function Home() {
 
             <p>
               Sign in to take the PeaceWorks Assessment, view your latest
-              results, access future Circle resources, and eventually connect
-              with coaching pathways.
+              results, access Circle resources, and connect with future coaching
+              pathways.
             </p>
 
             <div className="resource-list">
@@ -62,6 +50,8 @@ export default function Home() {
           </aside>
         </div>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }

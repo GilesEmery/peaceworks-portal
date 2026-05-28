@@ -1,23 +1,10 @@
+import SiteHeader from "../../components/layout/SiteHeader";
+import SiteFooter from "../../components/layout/SiteFooter";
+
 export default function CirclePage() {
   return (
     <main className="portal-page">
-      <header className="site-header">
-        <div className="container header-inner">
-          <a className="brand" href="/dashboard">
-            <img
-              src="https://gilesemery.github.io/peaceworks-main/PeaceworksLogo.svg"
-              alt="PeaceWorks"
-            />
-          </a>
-
-          <nav className="site-nav">
-            <a href="/dashboard">Dashboard</a>
-            <a href="/peace-assessment">Assessment</a>
-            <a href="/circle">Your Circle</a>
-            <a href="/coach">Coaches</a>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <section className="dashboard-shell">
         <div className="container">
@@ -26,8 +13,9 @@ export default function CirclePage() {
               <div className="eyebrow">PeaceWorks Circle</div>
               <h1 className="dashboard-title">Your Circle Journey</h1>
               <p className="dashboard-sub">
-                A future home for your Circle pathway, courses, notes,
-                assessment history, practices, and shared resources.
+                Your Circle is the home for courses, practices, notes,
+                assessments, resources, and next steps as you continue growing
+                as a person of peace.
               </p>
             </div>
           </div>
@@ -38,9 +26,8 @@ export default function CirclePage() {
                 <span className="card-label">Course</span>
                 <h3>Circle Journey</h3>
                 <p>
-                  Your core PeaceWorks Circle course pathway with monthly
-                  rhythms, reflection prompts, practices, and implementation
-                  steps.
+                  Your core PeaceWorks pathway with monthly rhythms, teaching,
+                  reflection prompts, practices, and implementation steps.
                 </p>
               </div>
             </article>
@@ -50,8 +37,8 @@ export default function CirclePage() {
                 <span className="card-label">Growth</span>
                 <h3>Assessments & Graphs</h3>
                 <p>
-                  View your Peace Index patterns, future assessment history,
-                  progress over time, and visual maps of your growth.
+                  View your Peace Index patterns, assessment history, progress
+                  over time, and visual maps of your growth.
                 </p>
               </div>
             </article>
@@ -61,8 +48,8 @@ export default function CirclePage() {
                 <span className="card-label">Reflection</span>
                 <h3>Notes & Practices</h3>
                 <p>
-                  Keep track of personal reflections, practices, commitments,
-                  and next steps from your Circle conversations.
+                  Track reflections, practices, commitments, and next steps from
+                  your Circle conversations.
                 </p>
               </div>
             </article>
@@ -72,14 +59,16 @@ export default function CirclePage() {
                 <span className="card-label">Resources</span>
                 <h3>Circle Resources</h3>
                 <p>
-                  Access guides, tools, worksheets, conversation prompts, and
-                  practical resources for making peace under pressure.
+                  Access tools, worksheets, conversation prompts, and practical
+                  resources for making peace under pressure.
                 </p>
               </div>
             </article>
           </div>
         </div>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }

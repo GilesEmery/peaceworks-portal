@@ -10,6 +10,9 @@ import {
 } from "../../data/peaceAssessmentQuestions";
 import { calculatePeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
 
+import SiteHeader from "../../components/layout/SiteHeader";
+import SiteFooter from "../../components/layout/SiteFooter";
+
 import QuestionCard from "../../components/assessment/QuestionCard";
 import ProgressBar from "../../components/assessment/ProgressBar";
 import ResultModal from "../../components/assessment/ResultModal";
@@ -174,30 +177,20 @@ export default function PeaceAssessmentPage() {
   if (loading) {
     return (
       <main className="portal-page">
+        <SiteHeader />
+
         <section className="portal-hero">
-          <div className="container">Loading...</div>
+          <div className="container">Loading assessment...</div>
         </section>
+
+        <SiteFooter />
       </main>
     );
   }
 
   return (
     <main className="portal-page">
-      <header className="site-header">
-        <div className="container header-inner">
-          <a className="brand" href="/dashboard">
-            <img
-              src="https://gilesemery.github.io/peaceworks-main/PeaceworksLogo.svg"
-              alt="PeaceWorks"
-            />
-          </a>
-
-          <nav className="site-nav">
-            <a href="/dashboard">Dashboard</a>
-            <a href="/peace-assessment">Peace Assessment</a>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <section className="assessment-shell active">
         <div className="container">
@@ -264,6 +257,8 @@ export default function PeaceAssessmentPage() {
           </div>
         </div>
       </section>
+
+      <SiteFooter />
 
       {resultData && (
         <ResultModal

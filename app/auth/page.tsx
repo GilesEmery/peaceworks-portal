@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
+import SiteHeader from "../../components/layout/SiteHeader";
+import SiteFooter from "../../components/layout/SiteFooter";
+
 export default function AuthPage() {
   const router = useRouter();
 
@@ -16,6 +19,7 @@ export default function AuthPage() {
 
   async function handleAuth(e: React.FormEvent) {
     e.preventDefault();
+
     setLoading(true);
     setMessage("");
 
@@ -62,26 +66,14 @@ export default function AuthPage() {
 
   return (
     <main className="portal-page">
-      <header className="site-header">
-        <div className="container header-inner">
-          <a className="brand" href="https://www.peaceworks.network/">
-            <img
-              src="https://gilesemery.github.io/peaceworks-main/PeaceworksLogo.svg"
-              alt="PeaceWorks"
-            />
-          </a>
-
-          <nav className="site-nav">
-            <a href="https://www.peaceworks.network/">Main Site</a>
-            <a href="https://www.peaceworks.network/join">Join</a>
-            <a href="https://www.peaceworks.network/contact">Contact</a>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader showSignOut={false} />
 
       <section className="portal-hero">
         <div className="container">
-          <div className="login-card" style={{ maxWidth: "520px", margin: "0 auto" }}>
+          <div
+            className="login-card"
+            style={{ maxWidth: "520px", margin: "0 auto" }}
+          >
             <span className="card-label">Peace Index</span>
 
             <h2>
@@ -93,7 +85,7 @@ export default function AuthPage() {
             <p>
               {mode === "reset"
                 ? "Enter your email and we will send you a password reset link."
-                : "Access your Peace Index dashboard, assessment results, and future resources."}
+                : "Access your Peace Index dashboard, assessment results, Circle resources, and future coaching pathways."}
             </p>
 
             <form onSubmit={handleAuth}>
@@ -132,19 +124,31 @@ export default function AuthPage() {
 
             <div style={{ marginTop: "22px", display: "grid", gap: "10px" }}>
               {mode !== "login" && (
-                <button className="link-button" onClick={() => setMode("login")}>
+                <button
+                  className="link-button"
+                  type="button"
+                  onClick={() => setMode("login")}
+                >
                   Back to sign in
                 </button>
               )}
 
               {mode !== "signup" && (
-                <button className="link-button" onClick={() => setMode("signup")}>
+                <button
+                  className="link-button"
+                  type="button"
+                  onClick={() => setMode("signup")}
+                >
                   Need an account? Create one
                 </button>
               )}
 
               {mode !== "reset" && (
-                <button className="link-button" onClick={() => setMode("reset")}>
+                <button
+                  className="link-button"
+                  type="button"
+                  onClick={() => setMode("reset")}
+                >
                   Forgot your password?
                 </button>
               )}
@@ -152,6 +156,8 @@ export default function AuthPage() {
           </div>
         </div>
       </section>
+
+      <SiteFooter />
     </main>
   );
 }

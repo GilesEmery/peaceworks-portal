@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+
+import SiteHeader from "../../components/layout/SiteHeader";
+import SiteFooter from "../../components/layout/SiteFooter";
 import ResultModal from "../../components/assessment/ResultModal";
+
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
 import { peaceAssessmentProfiles } from "../../data/peaceAssessmentProfiles";
 
@@ -44,62 +48,39 @@ export default function DashboardPage() {
     loadDashboard();
   }, [router]);
 
-function openResultModal() {
-  if (!latestResult) return;
+  function openResultModal() {
+    if (!latestResult) return;
 
-  const profileKey = `${latestResult.identity_type}|${latestResult.response_type}|${latestResult.processing_style}`;
+    const profileKey = `${latestResult.identity_type}|${latestResult.response_type}|${latestResult.processing_style}`;
+    const profileContent = peaceAssessmentProfiles[profileKey];
 
-  const profileContent = peaceAssessmentProfiles[profileKey];
-
-  setModalResult({
-    scores: latestResult.scores,
-    identityType: latestResult.identity_type,
-    responseType: latestResult.response_type,
-    processingStyle: latestResult.processing_style,
-    capacityStage: latestResult.capacity_stage,
-    peaceProfile: latestResult.peace_profile,
-    basePattern: latestResult.base_pattern,
-    profileContent,
-  });
-}
-
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push("/auth");
+    setModalResult({
+      scores: latestResult.scores,
+      identityType: latestResult.identity_type,
+      responseType: latestResult.response_type,
+      processingStyle: latestResult.processing_style,
+      capacityStage: latestResult.capacity_stage,
+      peaceProfile: latestResult.peace_profile,
+      basePattern: latestResult.base_pattern,
+      profileContent,
+    });
   }
 
   if (loading) {
     return (
       <main className="portal-page">
+        <SiteHeader />
         <section className="portal-hero">
           <div className="container">Loading dashboard...</div>
         </section>
+        <SiteFooter />
       </main>
     );
   }
 
   return (
     <main className="portal-page">
-      <header className="site-header">
-        <div className="container header-inner">
-          <a className="brand" href="/dashboard">
-            <img
-              src="https://gilesemery.github.io/peaceworks-main/PeaceworksLogo.svg"
-              alt="PeaceWorks"
-            />
-          </a>
-
-          <nav className="site-nav">
-            <a href="/dashboard">Dashboard</a>
-            <a href="/peace-assessment">Assessment</a>
-            <a href="/circle">Your Circle</a>
-            <a href="/coach">Coaches</a>
-            <button className="nav-button" type="button" onClick={handleLogout}>
-              Sign Out
-            </button>
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <section className="dashboard-shell">
         <div className="container">
@@ -225,6 +206,8 @@ function openResultModal() {
           </div>
         </div>
       </section>
+
+      <SiteFooter />
 
       {modalResult && (
         <ResultModal
