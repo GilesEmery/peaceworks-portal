@@ -1,7 +1,47 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+import { supabase } from "../lib/supabase";
 import SiteHeader from "../components/layout/SiteHeader";
 import SiteFooter from "../components/layout/SiteFooter";
 
 export default function Home() {
+  const router = useRouter();
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    async function checkSession() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        router.replace("/dashboard");
+        return;
+      }
+
+      setCheckingSession(false);
+    }
+
+    checkSession();
+  }, [router]);
+
+  if (checkingSession) {
+    return (
+      <main className="portal-page">
+        <SiteHeader showSignOut={false} />
+
+        <section className="portal-hero">
+          <div className="container">Opening your Peace Index...</div>
+        </section>
+
+        <SiteFooter />
+      </main>
+    );
+  }
+
   return (
     <main className="portal-page">
       <SiteHeader showSignOut={false} />
@@ -24,8 +64,8 @@ export default function Home() {
                 Start the Peace Assessment
               </a>
 
-              <a className="btn btn-secondary" href="/dashboard">
-                Go to Dashboard
+              <a className="btn btn-secondary" href="/auth">
+                Sign In
               </a>
             </div>
           </div>
