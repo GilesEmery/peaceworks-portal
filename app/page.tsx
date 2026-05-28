@@ -12,8 +12,8 @@ export default function Home() {
 
           <nav className="site-nav">
             <a href="https://www.peaceworks.network/">Main Site</a>
-            <a href="https://www.peaceworks.network/join">Join</a>
-            <a href="https://www.peaceworks.network/contact">Contact</a>
+            <a href="/auth">Sign In</a>
+            <a href="/dashboard">Dashboard</a>
           </nav>
         </div>
       </header>
@@ -21,124 +21,45 @@ export default function Home() {
       <section className="portal-hero">
         <div className="container portal-grid">
           <div className="portal-copy">
-            <div className="eyebrow">PeaceWorks Portal</div>
+            <div className="eyebrow">The Peace Index</div>
 
-            <h1>Welcome to your journey toward peace.</h1>
+            <h1>Discover how peace moves under pressure.</h1>
 
             <p>
-              This portal will become your home for assessments, courses,
-              Peace Circles, progress tracking, and personalized next steps.
+              The Peace Index helps leaders understand what tends to steal their
+              peace, how they respond under pressure, and what practices can help
+              them grow into steadier, healthier leadership.
             </p>
 
             <div className="btn-row">
-              <a className="btn btn-primary" href="#dashboard">
-                Enter Test Portal
+              <a className="btn btn-primary" href="/auth">
+                Start the Peace Assessment
               </a>
 
-              <a
-                className="btn btn-secondary"
-                href="https://www.peaceworks.network/"
-              >
-                Return to PeaceWorks
+              <a className="btn btn-secondary" href="/dashboard">
+                Go to Dashboard
               </a>
             </div>
           </div>
 
           <aside className="login-card">
-            <span className="card-label">Coming Soon</span>
+            <span className="card-label">PeaceWorks</span>
 
-            <h2>Member Login</h2>
+            <h2>Your Peace Index home</h2>
 
             <p>
-              Soon leaders will sign in here to access their Peace Index
-              results, courses, resources, and Peace Circle pathway.
+              Sign in to take the PeaceWorks Assessment, view your latest
+              results, access future Circle resources, and eventually connect
+              with coaching pathways.
             </p>
 
-            <div className="mock-input">Email address</div>
-            <div className="mock-input">Password</div>
-
-            <button className="mock-button">
-              Login Preview
-            </button>
-          </aside>
-        </div>
-      </section>
-
-      <section id="dashboard" className="section">
-        <div className="container">
-          <div className="section-head">
-            <div>
-              <div className="eyebrow">Dashboard Preview</div>
-              <h2>Your PeaceWorks Pathway</h2>
+            <div className="resource-list">
+              <span>Peace Assessment</span>
+              <span>Assessment Results</span>
+              <span>Circle Journey</span>
+              <span>Coach Portal</span>
             </div>
-
-            <p>
-              This first test page shows the kind of experience the portal
-              will eventually provide after login.
-            </p>
-          </div>
-
-          <div className="dashboard-grid">
-            <article className="portal-card">
-              <h3>Peace Index</h3>
-
-              <p>
-                View assessment results, relational health indicators,
-                and future 12-filter summaries.
-              </p>
-
-              <div className="progress-line">
-                <span style={{ width: "72%" }} />
-              </div>
-
-              <small>Sample progress: 72%</small>
-            </article>
-
-            <article className="portal-card">
-              <h3>Courses</h3>
-
-              <p>
-                Access lessons, videos, reflection guides, and practical
-                tools for peace-making leadership.
-              </p>
-
-              <div className="progress-line">
-                <span style={{ width: "38%" }} />
-              </div>
-
-              <small>Sample progress: 38%</small>
-            </article>
-
-            <article className="portal-card">
-              <h3>Peace Circles</h3>
-
-              <p>
-                Track cohort participation, monthly rhythms,
-                discussion prompts, and next steps.
-              </p>
-
-              <div className="progress-line">
-                <span style={{ width: "55%" }} />
-              </div>
-
-              <small>Sample progress: 55%</small>
-            </article>
-
-            <article className="portal-card">
-              <h3>Resources</h3>
-
-              <p>
-                Find listening tools, conflict repair frameworks,
-                meeting guides, and implementation exercises.
-              </p>
-
-              <div className="resource-list">
-                <span>Listening Lab Guide</span>
-                <span>Conflict Repair Tool</span>
-                <span>Leadership Reflection</span>
-              </div>
-            </article>
-          </div>
+          </aside>
         </div>
       </section>
     </main>
