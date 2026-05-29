@@ -442,180 +442,90 @@ export const peaceAssessmentQuestions: PeaceAssessmentQuestion[] = [
     id: 31,
     type: "slider",
     capacity: true,
-    max: 10,
+    max: 5,
     section: "Peace Capacity",
-    scenario:
-      "Think about your current emotional, relational, and mental capacity.",
-    prompt: "Right now, how emotionally present do you feel in daily life?",
-    left: {
-      title: "Low Presence",
-      text: "Disconnected, numb, or overwhelmed",
-    },
-    right: {
-      title: "High Presence",
-      text: "Grounded, attentive, and emotionally available",
-    },
+    scenario: "Think about your current emotional, relational, and mental capacity.",
+    prompt: "Right now, I feel emotionally present in daily life.",
   },
   {
     id: 32,
     type: "slider",
     capacity: true,
-    max: 10,
+    max: 5,
     section: "Peace Capacity",
-    scenario:
-      "Think about your current internal stability.",
-    prompt: "How much peace and steadiness do you currently feel inside?",
-    left: {
-      title: "Low Peace",
-      text: "Anxious, reactive, or exhausted",
-    },
-    right: {
-      title: "High Peace",
-      text: "Calm, centered, and resilient",
-    },
+    scenario: "Think about your current internal stability.",
+    prompt: "Right now, I feel steady and peaceful inside.",
   },
   {
     id: 33,
     type: "slider",
     capacity: true,
-    max: 10,
+    max: 5,
     section: "Peace Capacity",
-    scenario:
-      "Think about how you respond to stress right now.",
-    prompt: "How able are you to stay grounded under pressure?",
-    left: {
-      title: "Low Capacity",
-      text: "Quickly overwhelmed or reactive",
-    },
-    right: {
-      title: "High Capacity",
-      text: "Able to remain steady and thoughtful",
-    },
+    scenario: "Think about how you respond to stress right now.",
+    prompt: "I am able to stay grounded under pressure.",
   },
   {
     id: 34,
     type: "slider",
     capacity: true,
-    max: 10,
+    max: 5,
     section: "Peace Capacity",
-    scenario:
-      "Think about your relationships recently.",
-    prompt: "How emotionally connected do you feel to others right now?",
-    left: {
-      title: "Disconnected",
-      text: "Withdrawn, guarded, or isolated",
-    },
-    right: {
-      title: "Connected",
-      text: "Open, relational, and engaged",
-    },
+    scenario: "Think about your relationships recently.",
+    prompt: "I feel emotionally connected to others.",
   },
   {
     id: 35,
     type: "slider",
     capacity: true,
-    max: 10,
+    max: 5,
     section: "Peace Capacity",
-    scenario:
-      "Think about your overall energy and margin.",
-    prompt: "How much emotional and mental margin do you currently have?",
-    left: {
-      title: "Drained",
-      text: "Little room for stress or relationships",
-    },
-    right: {
-      title: "Healthy Margin",
-      text: "Enough capacity to engage well",
-    },
+    scenario: "Think about your overall energy and margin.",
+    prompt: "I have enough emotional and mental margin to engage well.",
   },
   {
     id: 36,
     type: "slider",
     capacity: true,
-    max: 10,
+    max: 5,
     section: "Peace Capacity",
-    scenario:
-      "Think about your awareness of yourself and others.",
-    prompt: "How aware are you of your own emotions and reactions?",
-    left: {
-      title: "Low Awareness",
-      text: "Often reactive without noticing why",
-    },
-    right: {
-      title: "High Awareness",
-      text: "Able to recognize and reflect on reactions",
-    },
+    scenario: "Think about your awareness of yourself and others.",
+    prompt: "I am aware of my emotions and reactions as they happen.",
   },
   {
     id: 37,
     type: "slider",
     capacity: true,
-    max: 10,
+    max: 5,
     section: "Peace Capacity",
-    scenario:
-      "Think about your ability to repair relationships.",
-    prompt: "How able are you to move toward repair after conflict?",
-    left: {
-      title: "Avoiding Repair",
-      text: "Difficult to engage or reconnect",
-    },
-    right: {
-      title: "Repair Oriented",
-      text: "Able to pursue understanding and reconciliation",
-    },
+    scenario: "Think about your ability to repair relationships.",
+    prompt: "I am able to move toward repair after conflict.",
   },
   {
     id: 38,
     type: "slider",
     capacity: true,
-    max: 10,
+    max: 5,
     section: "Peace Capacity",
-    scenario:
-      "Think about your current rhythms of rest and reflection.",
-    prompt: "How intentional are you about caring for your emotional health?",
-    left: {
-      title: "Neglected",
-      text: "Running on fumes or surviving",
-    },
-    right: {
-      title: "Intentional",
-      text: "Practicing rhythms that restore peace",
-    },
+    scenario: "Think about your current rhythms of rest and reflection.",
+    prompt: "I am intentional about caring for my emotional health.",
   },
   {
     id: 39,
     type: "slider",
     capacity: true,
-    max: 10,
+    max: 5,
     section: "Peace Capacity",
-    scenario:
-      "Think about your ability to stay emotionally open.",
-    prompt: "How safe do you feel being honest and vulnerable with others?",
-    left: {
-      title: "Guarded",
-      text: "Protective or emotionally closed",
-    },
-    right: {
-      title: "Open",
-      text: "Able to share honestly and appropriately",
-    },
+    scenario: "Think about your ability to stay emotionally open.",
+    prompt: "I feel safe being honest and appropriately vulnerable with others.",
   },
   {
     id: 40,
     type: "slider",
     capacity: true,
-    max: 10,
+    max: 5,
     section: "Peace Capacity",
-    scenario:
-      "Think about your overall relational and emotional health.",
-    prompt: "How would you describe your current peace capacity overall?",
-    left: {
-      title: "Low Capacity",
-      text: "Running depleted and reactive",
-    },
-    right: {
-      title: "High Capacity",
-      text: "Living with healthy peace and resilience",
-    },
+    scenario: "Think about your overall relational and emotional health.",
+    prompt: "Overall, I am living with healthy peace and resilience.",
   },
-];
+  ];

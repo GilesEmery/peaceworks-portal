@@ -64,7 +64,7 @@ export default function ResultModal({
 
                 <div className="pi-insight-card">
                   <small>Your pressure response</small>
-                  <strong>{result.responseType}</strong>
+                  <strong>{formatResponseType(result.responseType)}</strong>
                 </div>
 
                 <div className="pi-insight-card">
@@ -201,4 +201,11 @@ export default function ResultModal({
       </div>
     </>
   );
+}
+function formatResponseType(value: string) {
+
+  if (value === "PullAway") return "Pull Away";
+
+  return value;
+
 }

@@ -9,48 +9,51 @@ type QuestionCardProps = {
   onAnswer: (answer: any) => void;
 };
 
+const likertOptions = [
+  { label: "Very Unlike Me", value: 0 },
+  { label: "Unlike Me", value: 25 },
+  { label: "Neutral", value: 50 },
+  { label: "Like Me", value: 75 },
+  { label: "Very Like Me", value: 100 },
+];
+
 export default function QuestionCard({
   question,
   answer,
   onAnswer,
 }: QuestionCardProps) {
   if (question.type === "slider") {
-    const value = answer?.value ?? 50;
+    const value = answer?.value;
 
     return (
       <div className="question-card">
         <p className="scenario">{question.scenario}</p>
         <h2 className="question-title">{question.prompt}</h2>
 
-        <div className="slider-shell">
-          <div className="slider-labels">
-            <div className="slider-label">
-              <strong>{question.left?.title}</strong>
-              <span>{question.left?.text}</span>
-            </div>
+        <p className="choose-note">Choose the response that best describes you right now.</p>
 
-            <div className="slider-label">
-              <strong>{question.right?.title}</strong>
-              <span>{question.right?.text}</span>
-            </div>
-          </div>
+        <div className="likert-grid">
+          {likertOptions.map((option, index) => {
+            const isSelected = value === option.value;
 
-          <input
-            className="peace-slider"
-            type="range"
-            min="0"
-            max="100"
-            value={value}
-            onChange={(e) =>
-              onAnswer({
-                value: Number(e.target.value),
-                touched: true,
-                capacity: question.capacity,
-              })
-            }
-          />
-
-          <div className="slider-value">{sliderText(value)}</div>
+            return (
+              <button
+                key={option.label}
+                type="button"
+                className={`likert-card ${isSelected ? "selected" : ""}`}
+                onClick={() =>
+                  onAnswer({
+                    value: option.value,
+                    touched: true,
+                    capacity: question.capacity,
+                  })
+                }
+              >
+                <span className="likert-number">{index + 1}</span>
+                <span className="likert-label">{option.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     );
@@ -82,8 +85,7 @@ export default function QuestionCard({
         <h2 className="question-title">{question.prompt}</h2>
 
         <p className="choose-note">
-          Choose {question.max}. Selected choices turn dark. You can change them
-          before clicking Next.
+          Choose {question.max}. Selected choices turn dark. You can change them before clicking Next.
         </p>
 
         <div className="answers-grid choose-grid">
@@ -94,9 +96,7 @@ export default function QuestionCard({
               <button
                 key={option.id}
                 type="button"
-                className={`answer-card choose-card ${
-                  isSelected ? "selected" : ""
-                }`}
+                className={`answer-card choose-card ${isSelected ? "selected" : ""}`}
                 onClick={() => toggleOption(option)}
               >
                 <span className="answer-letter">✓</span>
@@ -114,6 +114,10 @@ export default function QuestionCard({
       <p className="scenario">{question.scenario}</p>
       <h2 className="question-title">{question.prompt}</h2>
 
+      <p className="choose-note">
+        {question.type === "truefalse" ? "Choose the response that best describes you." : "Select one response."}
+      </p>
+
       <div className={question.type === "truefalse" ? "tf-grid" : "answers-grid"}>
         {question.options?.map((option, index) => {
           const isSelected = answer?.id === option.id;
@@ -122,15 +126,13 @@ export default function QuestionCard({
             <button
               key={option.id}
               type="button"
-              className={`answer-card ${
-                question.type === "truefalse" ? "tf-card" : ""
-              } ${isSelected ? "selected" : ""}`}
+              className={`answer-card ${question.type === "truefalse" ? "tf-card" : ""} ${
+                isSelected ? "selected" : ""
+              }`}
               onClick={() => onAnswer(option)}
             >
               <span className="answer-letter">
-                {question.type === "truefalse"
-                  ? "✓"
-                  : String.fromCharCode(65 + index)}
+                {question.type === "truefalse" ? "✓" : String.fromCharCode(65 + index)}
               </span>
 
               <span className="answer-text">{option.text}</span>
@@ -140,12 +142,4 @@ export default function QuestionCard({
       </div>
     </div>
   );
-}
-
-function sliderText(value: number) {
-  if (value < 25) return "Strongly toward the left";
-  if (value < 45) return "Somewhat toward the left";
-  if (value <= 55) return "A mix of both";
-  if (value < 75) return "Somewhat toward the right";
-  return "Strongly toward the right";
 }

@@ -177,7 +177,9 @@ export default function PeaceAssessmentPage() {
   if (loading) {
     return (
       <main className="portal-page">
-        <SiteHeader />
+        <div className="assessment-static-header">
+  <SiteHeader />
+</div>
 
         <section className="portal-hero">
           <div className="container">Loading assessment...</div>
@@ -190,7 +192,9 @@ export default function PeaceAssessmentPage() {
 
   return (
     <main className="portal-page">
-      <SiteHeader />
+      <div className="assessment-static-header">
+  <SiteHeader />
+</div>
 
       <section className="assessment-shell active">
         <div className="container">
