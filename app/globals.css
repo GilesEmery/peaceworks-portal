@@ -1444,9 +1444,9 @@ a {
 }
 
 .graph-fill {
-  fill: rgba(143, 171, 142, 0.36);
-  stroke: rgba(90, 122, 92, 0.85);
-  stroke-width: 2;
+  fill: rgba(143, 171, 142, 0.28);
+  stroke: rgba(90, 122, 92, 0.25);
+  stroke-width: 1;
 }
 
 .graph-dot {
@@ -1813,4 +1813,21 @@ a {
 .assessment-static-header .site-header {
   position: relative !important;
   top: auto !important;
+}
+
+.graph-divider {
+  stroke: rgba(255, 255, 255, 0.9);
+  stroke-width: 5;
+}
+
+.graph-explainer {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.35;
+}
+
+.graph-explainer strong {
+  color: var(--text);
+  font-weight: 700;
 }
