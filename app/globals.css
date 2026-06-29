@@ -858,6 +858,24 @@ a {
   margin: 0 0 12px;
 }
 
+.pi-result-main-type {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(3rem, 6vw, 5rem);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 0.94;
+}
+
+.pi-result-subtype {
+  margin-top: 6px;
+  color: var(--sage-dark);
+  font-size: clamp(1.35rem, 2.7vw, 2rem);
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.12;
+}
+
 .pi-result-pill {
   display: inline-flex;
   padding: 8px 12px;
@@ -1237,36 +1255,47 @@ a {
 }
 
 .pdf-report {
-  position: fixed;
-  left: -99999px;
-  top: 0;
+  position: absolute;
+  left: 0;
+  top: 100vh;
   width: 8.5in;
-  background: #ffffff;
-  color: #141414;
+  background: #ffffff !important;
+  color: #141414 !important;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.pdf-report * {
+  box-sizing: border-box;
+  color: inherit;
+  text-shadow: none !important;
+  box-shadow: none !important;
 }
 
 .pdf-page {
   width: 8.5in;
   height: 11in;
-  padding: 0.7in;
-  background: #ffffff;
+  padding: 0.55in 0.65in;
+  background: #ffffff !important;
+  color: #141414 !important;
   page-break-after: always;
   position: relative;
   overflow: hidden;
 }
 
 .pdf-kicker {
-  color: #5a7a5c;
+  color: #5a7a5c !important;
   text-transform: uppercase;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.15em;
   font-weight: 700;
-  font-size: 13px;
-  margin-bottom: 18px;
+  font-size: 11px;
+  margin-bottom: 12px;
 }
 
 .pdf-page h1 {
-  font-size: 46px;
-  line-height: 0.95;
+  color: #141414 !important;
+  font-size: 38px;
+  line-height: 0.98;
   font-weight: 500;
   margin: 0 0 10px;
 }
@@ -1275,111 +1304,202 @@ a {
   display: inline-flex;
   padding: 5px 10px;
   border-radius: 999px;
-  background: #e7efe5;
-  color: #5a7a5c;
+  background: #e7efe5 !important;
+  color: #5a7a5c !important;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 700;
-  font-size: 12px;
-  margin-bottom: 24px;
+  font-size: 10px;
+  margin-bottom: 16px;
 }
 
 .pdf-description {
-  font-size: 18px;
-  line-height: 1.35;
-  color: #5f625f;
-  margin: 0 0 18px;
+  font-size: 13.5px;
+  line-height: 1.38;
+  color: #5f625f !important;
+  margin: 0 0 14px;
+}
+
+.pdf-graphs {
+  margin-top: 10px;
+}
+
+.pdf-graphs .result-graphs {
+  gap: 10px;
+}
+
+.pdf-graphs .graph-card {
+  background: #fbfaf8 !important;
+  color: #141414 !important;
+  border: 1px solid rgba(20, 20, 20, 0.08);
+  box-shadow: none !important;
+}
+
+.pdf-graphs .graph-card h4,
+.pdf-graphs .graph-label,
+.pdf-graphs text {
+  color: #5f625f !important;
+  fill: #5f625f !important;
+}
+
+.pdf-graphs .graph-explainer {
+  color: #5f625f !important;
+  font-size: 11px;
+  line-height: 1.25;
 }
 
 .pdf-two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .pdf-card {
   border: 1px solid rgba(20, 20, 20, 0.08);
   border-radius: 14px;
-  background: #fbfaf8;
-  padding: 15px;
+  background: #fbfaf8 !important;
+  color: #141414 !important;
+  padding: 13px;
 }
 
 .pdf-card h2,
 .pdf-way h2,
 .pdf-join h2 {
-  font-size: 20px;
-  line-height: 1.05;
-  margin: 0 0 8px;
+  color: #141414 !important;
+  font-size: 16px;
+  line-height: 1.1;
+  margin: 0 0 7px;
   font-weight: 700;
+}
+
+.pdf-card h3 {
+  color: #141414 !important;
+  font-size: 13px;
+  line-height: 1.1;
+  margin: 0 0 5px;
 }
 
 .pdf-card p,
 .pdf-way p,
 .pdf-join p {
-  font-size: 15.5px;
-  line-height: 1.35;
-  color: #5f625f;
-  margin: 0;
+  font-size: 12.25px;
+  line-height: 1.34;
+  color: #5f625f !important;
+  margin: 0 0 7px;
 }
 
 .pdf-card ul {
   margin: 0;
-  padding-left: 16px;
-  color: #5f625f;
+  padding-left: 15px;
+  color: #5f625f !important;
 }
 
 .pdf-card li {
-  font-size: 15px;
-  line-height: 1.3;
-  margin-bottom: 5px;
+  font-size: 12px;
+  line-height: 1.25;
+  margin-bottom: 4px;
+  color: #5f625f !important;
 }
 
 .pdf-wide {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .pdf-way {
   border-radius: 14px;
-  background: #e7efe5;
+  background: #e7efe5 !important;
   border: 1px solid rgba(90, 122, 92, 0.18);
-  padding: 16px;
-  margin-bottom: 14px;
+  color: #141414 !important;
+  padding: 14px;
+  margin-top: 10px;
+  margin-bottom: 12px;
 }
 
 .pdf-join {
-  margin-top: 14px;
-  padding: 18px;
+  margin-top: 12px;
+  padding: 16px;
   border-radius: 16px;
-  background: #101110;
-  color: #ffffff;
+  background: #101110 !important;
+  color: #ffffff !important;
+}
+
+.pdf-join h2,
+.pdf-join strong {
+  color: #ffffff !important;
 }
 
 .pdf-join p {
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.78) !important;
 }
 
 .pdf-join strong {
   display: block;
   margin-top: 10px;
-  font-size: 13px;
+  font-size: 11px;
   letter-spacing: 0.1em;
-  color: #ffffff;
+}
+.pdf-page {
+  overflow: hidden;
+}
+
+.pdf-page-inner {
+  padding-bottom: 38px;
+}
+
+.pdf-community-card {
+  padding: 18px 22px;
+}
+
+.pdf-community-item {
+  margin-bottom: 8px;
+}
+
+.pdf-community-item p {
+  margin-bottom: 0;
+}
+
+.pdf-leadership-card {
+  padding: 16px 20px;
+  font-size: 0.92em;
+}
+
+.pdf-leadership-card p {
+  margin-bottom: 8px;
+}
+
+.pdf-cycle-card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+.pdf-cycle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.pdf-cycle-box {
+  border: 1px solid #e4e0d8;
+  border-radius: 18px;
+  background: #fbfaf7;
+  padding: 14px 16px;
 }
 
 .pdf-footer {
   position: absolute;
-  left: 0.7in;
-  right: 0.7in;
-  bottom: 0.42in;
+  left: 0.65in;
+  right: 0.65in;
+  bottom: 0.35in;
   border-top: 1px solid rgba(20, 20, 20, 0.12);
-  padding-top: 10px;
+  padding-top: 8px;
   display: flex;
   justify-content: space-between;
-  color: #777777;
-  font-size: 12px;
+  color: #777777 !important;
+  font-size: 10px;
 }
-
 .auth-input {
   width: 100%;
   padding: 16px;
@@ -1533,6 +1653,26 @@ a {
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 18px;
+}
+
+.dashboard-profile-identity {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.dashboard-profile-identity strong {
+  color: var(--ink);
+  font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 700;
+  line-height: 0.98;
+}
+
+.dashboard-profile-identity span {
+  color: var(--sage-dark);
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  font-weight: 650;
+  line-height: 1.12;
 }
 
 .dashboard-result-tags span {
@@ -1830,4 +1970,1172 @@ a {
 .graph-explainer strong {
   color: var(--text);
   font-weight: 700;
+}
+
+.pdf-report h1,
+.pdf-report h2,
+.pdf-report h3,
+.pdf-report h4,
+.pdf-report p,
+.pdf-report li,
+.pdf-report span,
+.pdf-report small,
+.pdf-report strong,
+.pdf-report div,
+.pdf-report text {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  mix-blend-mode: normal !important;
+}
+
+.pdf-report .pdf-card,
+.pdf-report .graph-card {
+  background: #fbfaf8 !important;
+}
+
+.pdf-report .pdf-way {
+  background: #e7efe5 !important;
+}
+
+.pdf-report .pdf-page,
+.pdf-report .pdf-report {
+  background: #ffffff !important;
+}
+
+.pdf-report .pdf-join {
+  background: #101110 !important;
+}
+
+.pdf-report .pdf-join h2,
+.pdf-report .pdf-join p,
+.pdf-report .pdf-join strong {
+  background: transparent !important;
+}
+
+.pdf-report ul,
+.pdf-report ol,
+.pdf-report li {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #5f625f !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.pdf-report ul *,
+.pdf-report ol *,
+.pdf-report li * {
+  background: transparent !important;
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+.pdf-report .pdf-card ul,
+.pdf-report .pdf-card ol {
+  display: block !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.pdf-report .processing-line {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.pdf-report .line-track {
+  position: relative !important;
+  height: 8px !important;
+  background: #d8ddd5 !important;
+  border-radius: 999px !important;
+  overflow: visible !important;
+}
+
+.pdf-report .line-dot {
+  position: absolute !important;
+  top: -2px !important;
+  transform: translateX(-50%) !important;
+
+  width: 14px !important;
+  height: 14px !important;
+  border-radius: 999px !important;
+
+  background-color: #000000 !important;
+  background: #000000 !important;
+
+  border: 3px solid #ffffff !important;
+
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.pdf-report .processing-line span {
+  color: #5f625f !important;
+  background: transparent !important;
+}
+
+.pdf-report .processing-line .line-track .line-dot {
+  position: absolute !important;
+  top: -2px !important;
+  transform: translateX(-50%) !important;
+
+  display: block !important;
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  min-height: 14px !important;
+
+  border-radius: 999px !important;
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 3px solid #ffffff !important;
+
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
+}
+.pi-feature-section {
+  padding: 24px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top left, rgba(143, 171, 142, 0.18), transparent 36%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(246, 243, 238, 0.8));
+  border: 1px solid rgba(20, 20, 20, 0.08);
+}
+
+.pi-cycle-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.pi-cycle-card {
+  border-radius: 20px;
+  padding: 18px;
+  background: #fbfaf8;
+  border: 1px solid rgba(90, 122, 92, 0.18);
+}
+
+.pi-cycle-card small,
+.pi-community-card small {
+  display: block;
+  margin-bottom: 8px;
+  color: #5a7a5c;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.pi-cycle-card h4,
+.pi-community-block h4,
+.pi-community-card h4 {
+  margin: 0 0 10px;
+}
+
+.pi-cycle-card ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.pi-cycle-card li {
+  margin-bottom: 6px;
+}
+
+.pi-emphasis-card {
+  background:
+    linear-gradient(135deg, rgba(231, 239, 229, 0.82), rgba(255, 255, 255, 0.92));
+  border: 1px solid rgba(90, 122, 92, 0.2);
+}
+
+.pi-community-block {
+  margin-top: 18px;
+  padding: 22px;
+  border-radius: 24px;
+  background: #f6f3ee;
+  border: 1px solid rgba(20, 20, 20, 0.08);
+}
+
+.pi-community-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.pi-community-card {
+  padding: 18px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(20, 20, 20, 0.08);
+}
+
+.pi-community-card p {
+  margin: 0;
+}
+
+.pi-way-card {
+  background:
+    radial-gradient(circle at top left, rgba(143, 171, 142, 0.22), transparent 40%),
+    linear-gradient(135deg, #e7efe5, #fbfaf8);
+  border: 1px solid rgba(90, 122, 92, 0.22);
+}
+
+@media (max-width: 900px) {
+  .pi-cycle-grid,
+  .pi-community-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.pdf-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.pdf-section-space {
+  margin-top: 14px;
+}
+
+.pdf-card small {
+  display: block;
+  margin-bottom: 8px;
+  color: #5a7a5c;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pdf-card-feature {
+  background: #fbfaf8 !important;
+  border: 1px solid rgba(90, 122, 92, 0.18) !important;
+}
+
+.pdf-pressure-card {
+  background: #fbfaf8 !important;
+}
+
+.pdf-reflection-card {
+  background: #e7efe5 !important;
+  border-color: rgba(90, 122, 92, 0.22) !important;
+}
+
+.pdf-cycle-card {
+  background: #fbfaf8 !important;
+}
+
+.pdf-cycle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 28px;
+}
+
+.pdf-cycle-grid h3 {
+  margin: 0 0 5px;
+  font-size: 13px;
+}
+
+.pdf-cycle-grid ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.pdf-community-card p {
+  margin: 0 0 7px;
+}
+
+.pdf-soft-note {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #5f625f;
+}
+
+.pdf-page-inner {
+  position: relative;
+  z-index: 1;
+}
+
+/* -------------------------------------------------------
+   Peace Index Modal Polish — spacing + heading consistency
+------------------------------------------------------- */
+
+.pi-result-section > .pi-wide-card + .pi-two-column,
+.pi-result-section > .pi-emphasis-card + .pi-two-column {
+  margin-top: 22px;
+}
+
+.pi-result-section > .pi-two-column + .pi-community-block {
+  margin-top: 22px;
+}
+
+.pi-result-section > .pi-wide-card + .pi-community-block {
+  margin-top: 22px;
+}
+
+.pi-result-section .pi-wide-card {
+  margin-bottom: 0;
+}
+
+.pi-result-section .pi-two-column {
+  gap: 18px;
+}
+
+.pi-wide-card h4,
+.pi-emphasis-card h4,
+.pi-community-block h4,
+.pi-list-card h4,
+.pi-way-card h4 {
+  font-size: 1.35rem;
+  line-height: 1.18;
+  margin: 0 0 14px;
+  color: #141414;
+}
+
+.pi-wide-card small,
+.pi-list-card small,
+.pi-community-card small,
+.pi-practice-card small,
+.pi-readiness-card small {
+  display: block;
+  margin-bottom: 8px;
+  color: #5a7a5c;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pi-wide-card p,
+.pi-list-card p,
+.pi-community-card p,
+.pi-way-card p,
+.pi-readiness-card p {
+  margin-top: 0;
+}
+
+.pi-wide-card p + p,
+.pi-way-card p + p,
+.pi-readiness-card p + p {
+  margin-top: 14px;
+}
+
+.pi-list-card ul {
+  margin-top: 14px;
+}
+
+.pi-list-card li + li {
+  margin-top: 10px;
+}
+
+.pi-community-block {
+  margin-top: 22px;
+}
+
+.pi-community-grid {
+  margin-top: 16px;
+}
+
+.pi-community-card p {
+  line-height: 1.65;
+}
+
+/* Fix spacing between practice cards and Practice Readiness card */
+.pi-result-section > .pi-two-column + .pi-wide-card,
+.pi-result-section > .pi-two-column + .pi-readiness-card,
+.pi-result-section > .pi-practice-grid + .pi-wide-card,
+.pi-result-section > .pi-practice-grid + .pi-readiness-card {
+  margin-top: 24px;
+}
+
+/* Extra safety for the readiness card itself */
+.pi-readiness-card {
+  margin-top: 24px;
+}
+
+.pi-modal-space {
+  margin-top: 24px;
+}
+/* -------------------------------------------------------
+   PeaceWorks PDF Polish — uniform typography + spacing
+------------------------------------------------------- */
+
+.pdf-report .pdf-eyebrow {
+  margin: 0 0 10px;
+  color: #5a7a5c !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+}
+
+.pdf-report .pdf-title {
+  margin: 0 0 10px;
+  font-size: 34px !important;
+  line-height: 1.05 !important;
+  font-weight: 700 !important;
+  color: #141414 !important;
+}
+
+.pdf-report .pdf-subtype {
+  margin: -4px 0 16px;
+  color: #355c38 !important;
+  font-size: 17px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.12 !important;
+}
+
+.pdf-report .pdf-subtitle {
+  margin-bottom: 18px;
+  color: #5a7a5c !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.pdf-report .pdf-card h2,
+.pdf-report .pdf-way h2,
+.pdf-report .pdf-join h2 {
+  margin: 0 0 9px !important;
+  color: #141414 !important;
+  font-size: 18px !important;
+  line-height: 1.15 !important;
+  font-weight: 700 !important;
+}
+
+.pdf-report .pdf-card h3,
+.pdf-report .pdf-community-item h3,
+.pdf-report .pdf-cycle-grid h3 {
+  margin: 0 0 5px !important;
+  color: #252525 !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  font-weight: 700 !important;
+}
+
+.pdf-report .pdf-card small {
+  display: block !important;
+  margin-bottom: 7px !important;
+  color: #5a7a5c !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.13em !important;
+  text-transform: uppercase !important;
+}
+
+.pdf-report .pdf-card p,
+.pdf-report .pdf-way p,
+.pdf-report .pdf-join p,
+.pdf-report .pdf-summary p {
+  margin: 0 0 8px !important;
+  color: #3f423f !important;
+  font-size: 11.2px !important;
+  line-height: 1.48 !important;
+}
+
+.pdf-report .pdf-summary p {
+  font-size: 12px !important;
+  line-height: 1.52 !important;
+}
+
+.pdf-report .pdf-card ul {
+  margin: 0 !important;
+  padding-left: 16px !important;
+}
+
+.pdf-report .pdf-card li,
+.pdf-report .pdf-cycle-grid li {
+  margin: 0 0 4px !important;
+  color: #4a4d4a !important;
+  font-size: 10.8px !important;
+  line-height: 1.42 !important;
+}
+
+.pdf-report .pdf-card {
+  padding: 15px 16px !important;
+}
+
+.pdf-report .pdf-card-wide {
+  padding: 16px 18px !important;
+}
+
+.pdf-report .pdf-section-space {
+  margin-top: 15px !important;
+}
+
+.pdf-report .pdf-two-column {
+  gap: 15px !important;
+}
+
+.pdf-report .pdf-card-wide + .pdf-two-column,
+.pdf-report .pdf-two-column + .pdf-card-wide,
+.pdf-report .pdf-card-wide + .pdf-card-wide {
+  margin-top: 15px !important;
+}
+
+.pdf-report .pdf-community-item {
+  margin-bottom: 8px !important;
+}
+
+.pdf-report .pdf-community-item:last-child {
+  margin-bottom: 0 !important;
+}
+
+.pdf-report .pdf-community-item p {
+  margin: 0 !important;
+}
+
+.pdf-report .pdf-soft-note {
+  margin-top: 8px !important;
+  font-size: 10.8px !important;
+  line-height: 1.45 !important;
+  color: #4a4d4a !important;
+}
+
+.pdf-report .pdf-way {
+  padding: 17px 18px !important;
+}
+
+.pdf-report .pdf-join {
+  margin-top: 14px !important;
+  padding: 18px 20px !important;
+}
+/* PDF join box fix */
+.pdf-report .pdf-join {
+  margin-top: 14px !important;
+  padding: 18px 20px !important;
+  border-radius: 18px !important;
+  background: #0f100f !important;
+  color: #ffffff !important;
+}
+
+.pdf-report .pdf-join h2 {
+  color: #ffffff !important;
+  margin: 0 0 10px !important;
+}
+
+.pdf-report .pdf-join p {
+  color: rgba(255, 255, 255, 0.88) !important;
+  margin: 0 !important;
+}
+
+.pdf-report .pdf-join strong {
+  display: block !important;
+  margin-top: 12px !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+}
+/* PDF reflection question callout */
+.pdf-report .pdf-reflection-callout {
+  margin-top: 14px !important;
+  padding: 16px 18px !important;
+  border-radius: 16px !important;
+  background: #f4f7f2 !important;
+  border: 1px solid rgba(90, 122, 92, 0.18) !important;
+}
+
+.pdf-report .pdf-reflection-callout h3 {
+  margin: 0 0 8px !important;
+  color: #5a7a5c !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.pdf-report .pdf-reflection-callout p {
+  margin: 0 !important;
+  color: #252525 !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+/* PDF reflection question callout */
+.pdf-report .pdf-reflection-callout {
+  margin-top: 15px !important;
+  padding: 15px 18px !important;
+  border-radius: 16px !important;
+  background: #f4f7f2 !important;
+  border: 1px solid rgba(90, 122, 92, 0.2) !important;
+}
+
+.pdf-report .pdf-reflection-callout small {
+  display: block !important;
+  margin-bottom: 7px !important;
+  color: #5a7a5c !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.13em !important;
+  text-transform: uppercase !important;
+}
+
+.pdf-report .pdf-reflection-callout p {
+  margin: 0 !important;
+  color: #252525 !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+/* PDF join box text visibility fix */
+.pdf-report .pdf-join,
+.pdf-report .pdf-join * {
+  color: #ffffff !important;
+}
+
+.pdf-report .pdf-join p {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.pdf-report .pdf-join strong {
+  color: #ffffff !important;
+}
+
+.profile-menu {
+  position: relative;
+}
+
+.profile-menu-button {
+  min-height: 44px;
+  padding: 4px 10px 4px 5px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(143, 171, 142, 0.14);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: inherit;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.profile-menu-button:hover {
+  background: rgba(143, 171, 142, 0.22);
+  color: var(--sage-dark);
+  transform: translateY(-1px);
+}
+
+.profile-initials {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #101110;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.profile-name {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-caret {
+  color: var(--sage-dark);
+  font-size: 0.86rem;
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 1000;
+  width: 220px;
+  padding: 10px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(20, 20, 20, 0.08);
+  box-shadow: 0 24px 70px rgba(17, 17, 17, 0.16);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.profile-dropdown button {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 13px;
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-family: inherit;
+  font-size: 1rem;
+  text-align: left;
+}
+
+.profile-dropdown button:hover {
+  background: rgba(143, 171, 142, 0.14);
+  color: var(--sage-dark);
+}
+
+.profile-dropdown-divider {
+  height: 1px;
+  margin: 8px 4px;
+  background: rgba(20, 20, 20, 0.09);
+}
+
+@media (max-width: 860px) {
+  .profile-menu {
+    width: 100%;
+  }
+
+  .profile-menu-button {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .profile-dropdown {
+    left: 0;
+    right: auto;
+    width: min(260px, 100%);
+  }
+}
+
+.account-page {
+  min-height: calc(100vh - 120px);
+  padding: 72px 24px 96px;
+}
+
+.account-card {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(20, 20, 20, 0.08);
+  border-radius: 34px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(16px);
+}
+
+.account-heading {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  padding: 48px 52px 42px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.account-avatar {
+  width: 88px;
+  height: 88px;
+  flex: 0 0 88px;
+  border-radius: 999px;
+  background: #101110;
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.account-eyebrow {
+  margin: 0 0 8px;
+  color: var(--sage-dark);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.account-heading h1 {
+  margin: 0;
+  font-size: clamp(3.2rem, 7vw, 5.4rem);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-weight: 500;
+}
+
+.account-introduction {
+  max-width: 680px;
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 1.25rem;
+  line-height: 1.55;
+}
+
+.account-form {
+  padding: 44px 52px 52px;
+}
+
+.form-section-heading {
+  margin-bottom: 24px;
+}
+
+.form-section-heading h2 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+  font-weight: 500;
+}
+
+.form-section-heading p {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 1.15rem;
+  line-height: 1.45;
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.form-field-wide {
+  grid-column: 1 / -1;
+}
+
+.form-field span {
+  color: var(--sage-dark);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.form-field input {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 18px;
+  border: 1px solid rgba(20, 20, 20, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1.18rem;
+  outline: none;
+}
+
+.form-field input:focus {
+  border-color: var(--sage-dark);
+  box-shadow: 0 0 0 4px rgba(143, 171, 142, 0.16);
+}
+
+.read-only-input {
+  background: rgba(246, 243, 238, 0.8) !important;
+  color: var(--muted) !important;
+}
+
+.form-field small {
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.form-divider {
+  height: 1px;
+  margin: 42px 0;
+  background: var(--line);
+}
+
+.account-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 42px;
+}
+
+.form-message {
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.message-success {
+  color: var(--sage-dark);
+}
+
+.message-error {
+  color: #9b3f36;
+}
+
+.save-button {
+  min-height: 56px;
+  padding: 0 28px;
+  border: none;
+  border-radius: 999px;
+  background: #101110;
+  color: white;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.save-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #1a1f1a;
+}
+
+.save-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.account-loading {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+@media (max-width: 760px) {
+  .account-page {
+    padding: 36px 14px 64px;
+  }
+
+  .account-heading {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 34px 26px 30px;
+  }
+
+  .account-avatar {
+    width: 68px;
+    height: 68px;
+    flex-basis: 68px;
+    font-size: 1.3rem;
+  }
+
+  .account-form {
+    padding: 32px 26px 38px;
+  }
+
+  .account-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-field-wide {
+    grid-column: auto;
+  }
+
+  .account-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .save-button {
+    width: 100%;
+  }
+}
+
+.account-card-preview {
+  padding: 24px;
+  border: 1px solid rgba(20, 20, 20, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.account-card-preview h3 {
+  margin: 0 0 10px;
+  font-size: 1.3rem;
+  font-weight: 500;
+}
+
+.account-card-preview p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.settings-card-button {
+  min-height: 46px;
+  margin-top: 22px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 999px;
+  background: #101110;
+  color: white;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-card-button:hover {
+  transform: translateY(-1px);
+  background: #1a1f1a;
+}
+
+.settings-coming-soon {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 22px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(143, 171, 142, 0.14);
+  color: var(--sage-dark);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.pi-profile-code {
+  margin-top: 20px;
+  color: #5f7f62;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+.pdf-profile-code {
+  margin-top: 10px;
+  color: #5f7f62;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.pdf-capacity-pill {
+  display: inline-block;
+  margin-top: 10px;
+}
+
+/* PDF report final layout fixes */
+
+.pdf-page {
+  overflow: hidden !important;
+}
+
+.pdf-page-inner {
+  padding-bottom: 52px !important;
+}
+
+/* Page 1 graph sizing */
+.pdf-graph-wrap {
+  transform: scale(0.87);
+  transform-origin: top center;
+  margin-top: -6px;
+}
+
+.pdf-graph-wrap .result-graphs,
+.pdf-graph-wrap .results-graphs,
+.pdf-graph-wrap .pi-graphs,
+.pdf-graph-wrap .pi-map-grid {
+  font-size: 0.72em !important;
+}
+
+.pdf-graph-wrap h3,
+.pdf-graph-wrap h4 {
+  font-size: 18px !important;
+}
+
+.pdf-graph-wrap p,
+.pdf-graph-wrap span {
+  font-size: 13px !important;
+  line-height: 1.25 !important;
+}
+
+/* Peace Cycle four-card layout */
+.pdf-cycle-grid-boxes {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 12px !important;
+}
+
+.pdf-cycle-box {
+  border: 1px solid rgba(20, 20, 20, 0.08) !important;
+  border-radius: 16px !important;
+  background: #fbfaf7 !important;
+  padding: 18px 20px !important;
+  box-shadow: none !important;
+}
+
+.pdf-cycle-box h3 {
+  margin-bottom: 10px !important;
+}
+
+.pdf-cycle-box ul {
+  margin-top: 4px !important;
+}
+
+/* Page 5 compression */
+.pdf-community-peace-card {
+  padding: 15px 18px !important;
+}
+
+.pdf-community-peace-card p {
+  font-size: 10.6px !important;
+  line-height: 1.42 !important;
+  margin-bottom: 6px !important;
+}
+
+.pdf-community-card {
+  padding: 14px 18px !important;
+}
+
+.pdf-community-card h2 {
+  margin-bottom: 6px !important;
+}
+
+.pdf-community-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px 18px !important;
+}
+
+.pdf-community-item {
+  margin-bottom: 0 !important;
+}
+
+.pdf-community-item h3 {
+  margin-bottom: 2px !important;
+  font-size: 10.5px !important;
+}
+
+.pdf-community-item p {
+  margin-bottom: 0 !important;
+  font-size: 10.2px !important;
+  line-height: 1.35 !important;
+}
+
+.pdf-leadership-card {
+  padding: 16px 22px !important;
+  margin-top: 8px !important;
+}
+
+.pdf-leadership-card h2 {
+  margin-bottom: 5px !important;
+}
+
+.pdf-leadership-card p {
+  font-size: 10.2px !important;
+  line-height: 1.35 !important;
+  margin-bottom: 5px !important;
 }

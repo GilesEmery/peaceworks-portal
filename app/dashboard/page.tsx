@@ -10,14 +10,44 @@ import ResultModal from "../../components/assessment/ResultModal";
 
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
 import { peaceAssessmentProfiles } from "../../data/peaceAssessmentProfiles";
+import {
+  buildPeaceReportProfile,
+  getPeaceMainType,
+} from "../../data/peaceReport";
+
+type DashboardAssessmentResult = {
+  scores: PeaceAssessmentResult["scores"];
+  identity_type: PeaceAssessmentResult["identityType"];
+  secondary_identity_type?: PeaceAssessmentResult["identityType"] | null;
+  response_type: PeaceAssessmentResult["responseType"];
+  processing_style: PeaceAssessmentResult["processingStyle"];
+  capacity_stage: PeaceAssessmentResult["capacityStage"];
+  peace_profile: string;
+  base_pattern: string;
+};
 
 export default function DashboardPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState("");
-  const [latestResult, setLatestResult] = useState<any>(null);
+  const [latestResult, setLatestResult] =
+    useState<DashboardAssessmentResult | null>(null);
   const [modalResult, setModalResult] = useState<PeaceAssessmentResult | null>(null);
+
+  const latestExpandedProfile = latestResult
+    ? buildPeaceReportProfile({
+        identityAnchor: latestResult.identity_type,
+        secondaryPeaceStrategy:
+          latestResult.secondary_identity_type ||
+          getSecondaryIdentityType(latestResult.scores, latestResult.identity_type),
+        pressureResponse: latestResult.response_type,
+        processingStyle: latestResult.processing_style,
+      })
+    : null;
+  const latestMainType = latestResult
+    ? getPeaceMainType(latestResult.identity_type, latestResult.response_type)
+    : "";
 
   useEffect(() => {
     async function loadDashboard() {
@@ -40,7 +70,7 @@ export default function DashboardPage() {
         .limit(1)
         .single();
 
-      if (data) setLatestResult(data);
+      if (data) setLatestResult(data as DashboardAssessmentResult);
 
       setLoading(false);
     }
@@ -51,16 +81,21 @@ export default function DashboardPage() {
   function openResultModal() {
     if (!latestResult) return;
 
+    const secondaryIdentityType =
+      latestResult.secondary_identity_type ||
+      getSecondaryIdentityType(latestResult.scores, latestResult.identity_type);
+
     const profileKey = `${latestResult.identity_type}|${latestResult.response_type}|${latestResult.processing_style}`;
     const profileContent = peaceAssessmentProfiles[profileKey];
 
     setModalResult({
       scores: latestResult.scores,
       identityType: latestResult.identity_type,
+      secondaryIdentityType,
       responseType: latestResult.response_type,
       processingStyle: latestResult.processing_style,
       capacityStage: latestResult.capacity_stage,
-      peaceProfile: latestResult.peace_profile,
+      peaceProfile: latestExpandedProfile?.title || latestResult.peace_profile,
       basePattern: latestResult.base_pattern,
       profileContent,
     });
@@ -123,14 +158,19 @@ export default function DashboardPage() {
 
                 {latestResult ? (
                   <>
-                    <p>
-                      Your latest PeaceWorks Assessment result is{" "}
-                      <strong>{latestResult.peace_profile}</strong>.
-                    </p>
+                    <div className="dashboard-profile-identity">
+                      <strong>{latestMainType}</strong>
+                      <span>
+                        {latestExpandedProfile?.title ||
+                          latestResult.peace_profile}
+                      </span>
+                    </div>
 
                     <div className="dashboard-result-tags">
-                      <span>{latestResult.base_pattern}</span>
-                      <span>{latestResult.processing_style} Processing</span>
+                      <span>
+                        {latestExpandedProfile?.profileCode ||
+                          latestResult.base_pattern}
+                      </span>
                       <span>{latestResult.capacity_stage} Capacity</span>
                     </div>
                   </>
@@ -218,4 +258,23 @@ export default function DashboardPage() {
       )}
     </main>
   );
+}
+
+function getSecondaryIdentityType(
+  scores: PeaceAssessmentResult["scores"] | null | undefined,
+  primary: string
+): PeaceAssessmentResult["identityType"] {
+  const identityKeys: PeaceAssessmentResult["identityType"][] = [
+    "Performance",
+    "Prestige",
+    "Prosperity",
+  ];
+
+  return identityKeys
+    .filter((key) => key !== primary)
+    .map((key) => ({
+      key,
+      value: Number(scores?.[key] ?? 0),
+    }))
+    .sort((a, b) => b.value - a.value)[0].key;
 }

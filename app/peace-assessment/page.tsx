@@ -140,6 +140,7 @@ export default function PeaceAssessmentPage() {
           peace_profile: result.peaceProfile,
           base_pattern: result.basePattern,
           identity_type: result.identityType,
+          secondary_identity_type: result.secondaryIdentityType,
           response_type: result.responseType,
           processing_style: result.processingStyle,
           capacity_stage: result.capacityStage,

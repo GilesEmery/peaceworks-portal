@@ -15,11 +15,16 @@ export type PeaceAssessmentScores = Record<ScoreKey, number>;
 export type IdentityType = "Performance" | "Prestige" | "Prosperity";
 export type ResponseType = "Push" | "Prove" | "Please" | "PullAway";
 export type ProcessingStyle = "Internal" | "External";
-export type CapacityStage = "Emerging" | "Developing" | "Strengthening";
+export type CapacityStage =
+  | "Emerging"
+  | "Developing"
+  | "Established"
+  | "Transforming";
 
 export type PeaceAssessmentResult = {
   scores: PeaceAssessmentScores;
   identityType: IdentityType;
+  secondaryIdentityType: IdentityType;
   responseType: ResponseType;
   processingStyle: ProcessingStyle;
   capacityStage: CapacityStage;
@@ -80,6 +85,12 @@ export function calculatePeaceAssessmentResult(
     answers[12]
   ) as IdentityType;
 
+  const secondaryIdentityType = pickSecond(
+    scores,
+    ["Performance", "Prestige", "Prosperity"],
+    identityType
+  ) as IdentityType;
+
   const responseType = pickTop(
     scores,
     ["Push", "Prove", "Please", "PullAway"],
@@ -101,6 +112,7 @@ export function calculatePeaceAssessmentResult(
   return {
     scores,
     identityType,
+    secondaryIdentityType,
     responseType,
     processingStyle,
     capacityStage,
@@ -148,8 +160,25 @@ function pickTop<T extends ScoreKey>(
   return tied[0];
 }
 
+function pickSecond<T extends ScoreKey>(
+  scores: PeaceAssessmentScores,
+  keys: T[],
+  firstKey: T
+): T {
+  const sorted = keys
+    .filter((key) => key !== firstKey)
+    .map((key) => ({
+      key,
+      value: scores[key],
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  return sorted[0].key;
+}
+
 function getCapacityStage(score: number): CapacityStage {
-  if (score <= 13) return "Emerging";
-  if (score <= 21) return "Developing";
-  return "Strengthening";
+  if (score <= 10) return "Emerging";
+  if (score <= 18) return "Developing";
+  if (score <= 26) return "Established";
+  return "Transforming";
 }
