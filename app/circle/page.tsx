@@ -37,8 +37,8 @@ export default function CirclePage() {
                 <span className="card-label">Growth</span>
                 <h3>Assessments & Graphs</h3>
                 <p>
-                  View your Peace Index patterns, assessment history, progress
-                  over time, and visual maps of your growth.
+                  View your Peace Index patterns, Peace Assessment history,
+                  progress over time, and visual maps of your growth.
                 </p>
               </div>
             </article>

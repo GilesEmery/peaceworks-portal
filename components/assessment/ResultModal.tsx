@@ -36,7 +36,7 @@ export default function ResultModal({
       result.responseType === "PullAway" ? "Pull Away" : result.responseType
     } • ${result.processingStyle} Processing`;
 
-  const fileName = `PeaceWorks-${subtype.replaceAll(" ", "-")}.pdf`;
+  const fileName = `Peace-Assessment-${subtype.replaceAll(" ", "-")}.pdf`;
 
   return (
     <>
@@ -46,7 +46,7 @@ export default function ResultModal({
         <div className="pi-result-modal premium-result">
           <div className="pi-result-hero">
             <div>
-              <div className="pi-result-label">Your Peace Index Profile</div>
+              <div className="pi-result-label">Your Peace Assessment Profile</div>
               <h2 className="pi-result-main-type">{mainType}</h2>
               <div className="pi-result-subtype">{subtype}</div>
               <div className="pi-profile-code">{profileCode}</div>

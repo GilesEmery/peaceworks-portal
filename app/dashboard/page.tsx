@@ -124,8 +124,8 @@ export default function DashboardPage() {
               <div className="eyebrow">The Peace Index</div>
               <h1 className="dashboard-title">Your PeaceWorks Dashboard</h1>
               <p className="dashboard-sub">
-                Signed in as {userEmail}. View your assessment, revisit your
-                results, and continue your PeaceWorks journey.
+                Signed in as {userEmail}. View your Peace Assessment, revisit
+                your results, and continue your PeaceWorks journey.
               </p>
             </div>
           </div>
@@ -134,9 +134,9 @@ export default function DashboardPage() {
             <article className="portal-card dashboard-wide-card">
               <div>
                 <span className="card-label">Assessment</span>
-                <h3>Take the PeaceWorks Assessment</h3>
+                <h3>Take the Peace Assessment</h3>
                 <p>
-                  Take the PeaceWorks assessment to discover what tends to steal
+                  Take the Peace Assessment to discover what tends to steal
                   your peace, how you respond under pressure, and what practices
                   can help you grow.
                 </p>
@@ -147,14 +147,14 @@ export default function DashboardPage() {
                 type="button"
                 onClick={() => router.push("/peace-assessment")}
               >
-                Take Assessment
+                Take Peace Assessment
               </button>
             </article>
 
             <article className="portal-card dashboard-wide-card">
               <div>
                 <span className="card-label">Latest Result</span>
-                <h3>Your Assessment Results</h3>
+                <h3>Your Peace Assessment Results</h3>
 
                 {latestResult ? (
                   <>
@@ -176,8 +176,8 @@ export default function DashboardPage() {
                   </>
                 ) : (
                   <p>
-                    Once you complete the assessment, your latest result will
-                    appear here.
+                    Once you complete the Peace Assessment, your latest result
+                    will appear here.
                   </p>
                 )}
               </div>
@@ -191,7 +191,7 @@ export default function DashboardPage() {
                     : () => router.push("/peace-assessment")
                 }
               >
-                {latestResult ? "View Full Result" : "Start Assessment"}
+                {latestResult ? "View Full Result" : "Start Peace Assessment"}
               </button>
             </article>
           </div>

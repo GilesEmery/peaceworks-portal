@@ -37,7 +37,7 @@ export default function CoachPage() {
                 <span className="card-label">Insights</span>
                 <h3>Participant Results</h3>
                 <p>
-                  Review Peace Index results, growth patterns, assessment
+                  Review Peace Index results, growth patterns, Peace Assessment
                   trends, and future analytics for approved participants.
                 </p>
               </div>

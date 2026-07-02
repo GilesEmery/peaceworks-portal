@@ -125,7 +125,7 @@ export default function PeaceAssessmentPage() {
 
   async function saveAssessmentResult() {
     setSaving(true);
-    setMessage("Saving your Peace Index result...");
+    setMessage("Saving your Peace Assessment result...");
 
     const result = calculatePeaceAssessmentResult(
       answers,
@@ -157,7 +157,7 @@ export default function PeaceAssessmentPage() {
     }
 
     setResultData(result);
-    setMessage("Your Peace Index result has been saved.");
+    setMessage("Your Peace Assessment result has been saved.");
     setSaving(false);
   }
 
@@ -167,7 +167,7 @@ export default function PeaceAssessmentPage() {
   }
 
   function restartAssessment() {
-    if (confirm("Restart the assessment?")) {
+    if (confirm("Restart the Peace Assessment?")) {
       setAnswers({});
       setCurrentIndex(0);
       setMessage("");
@@ -183,7 +183,7 @@ export default function PeaceAssessmentPage() {
 </div>
 
         <section className="portal-hero">
-          <div className="container">Loading assessment...</div>
+          <div className="container">Loading the Peace Assessment...</div>
         </section>
 
         <SiteFooter />
@@ -202,7 +202,7 @@ export default function PeaceAssessmentPage() {
           <div className="assessment-panel">
             <div className="assessment-top">
               <div>
-                <div className="assessment-kicker">Peace Index Assessment</div>
+                <div className="assessment-kicker">Peace Assessment</div>
 
                 <div className="assessment-count">
                   Question {currentIndex + 1} of {totalQuestions}

@@ -1,320 +1,191 @@
-"use client";
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
 
-import { useMemo, useState } from "react";
+import PeaceProfilesPreview from "./PeaceProfilesPreview";
+import {
+  DEV_PEACE_PROFILES_COOKIE_NAME,
+  getDevPeaceProfilesAuthConfig,
+  isValidDevPeaceProfilesCookie,
+} from "./auth";
 
-import ResultModal from "../../../components/assessment/ResultModal";
-import { peaceProfileRegistry } from "../../../data/peaceReport/profileRegistry";
-import { getPeaceMainType } from "../../../data/peaceReport/profileNaming";
+export const dynamic = "force-dynamic";
 
-import type { PeaceAssessmentResult } from "../../../lib/peaceAssessmentScoring";
-import type {
-  IdentityAnchor,
-  PeaceProfileDefinition,
-  PressureResponse,
-  ProcessingStyle,
-} from "../../../data/peaceReport/types";
+export const metadata: Metadata = {
+  title: "Development Access | PeaceWorks",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
-function splitProfileKey(key: string) {
-  const [identityType, secondaryIdentityType, responseType, processingStyle] =
-    key.split("|");
+type DevPeaceProfilesPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
-  return {
-    identityType: identityType as IdentityAnchor,
-    secondaryIdentityType: secondaryIdentityType as IdentityAnchor,
-    responseType: responseType as PressureResponse,
-    processingStyle: processingStyle as ProcessingStyle,
-  };
-}
+export default async function DevPeaceProfilesPage({
+  searchParams,
+}: DevPeaceProfilesPageProps) {
+  const config = getDevPeaceProfilesAuthConfig();
+  const resolvedSearchParams = searchParams ? await searchParams : {};
 
-function buildMockScores(parts: ReturnType<typeof splitProfileKey>) {
-  return {
-    Performance:
-      parts.identityType === "Performance"
-        ? 90
-        : parts.secondaryIdentityType === "Performance"
-          ? 75
-          : 45,
-    Prestige:
-      parts.identityType === "Prestige"
-        ? 90
-        : parts.secondaryIdentityType === "Prestige"
-          ? 75
-          : 45,
-    Prosperity:
-      parts.identityType === "Prosperity"
-        ? 90
-        : parts.secondaryIdentityType === "Prosperity"
-          ? 75
-          : 45,
-
-    Push: parts.responseType === "Push" ? 90 : 45,
-    Prove: parts.responseType === "Prove" ? 90 : 45,
-    Please: parts.responseType === "Please" ? 90 : 45,
-    PullAway: parts.responseType === "PullAway" ? 90 : 45,
-
-    Internal: parts.processingStyle === "Internal" ? 90 : 45,
-    External: parts.processingStyle === "External" ? 90 : 45,
-
-    PeaceCapacity: 24,
-  };
-}
-
-function buildMockResult(
-  key: string,
-  profile: PeaceProfileDefinition
-): PeaceAssessmentResult {
-  const parts = splitProfileKey(key);
-
-  return {
-    scores: buildMockScores(parts) as PeaceAssessmentResult["scores"],
-
-    identityType: parts.identityType,
-    secondaryIdentityType: parts.secondaryIdentityType,
-    responseType: parts.responseType,
-    processingStyle: parts.processingStyle,
-
-    capacityStage: "Established",
-
-    peaceProfile: profile.title,
-    basePattern: profile.subtitle,
-
-    profileContent: {
-      profileName: profile.title,
-      baseName: profile.subtitle,
-      description: profile.summary,
-      strengths: profile.peaceAnchorStrengths,
-      harder: profile.peaceAnchorGrowthEdges,
-      internalPractice:
-        profile.personalPractices[0]?.description ||
-        "Practice noticing what is happening within you before responding.",
-      relationalPractice:
-        profile.relationalPractices[0]?.description ||
-        "Practice staying present and connected during moments of pressure.",
-      stepOfPeace:
-        profile.personalPractices[1]?.description ||
-        "Take one small, honest step toward peace today.",
-      wayOfPeace: profile.wayOfPeace,
-      othersExperience: profile.communityPeace.body,
-      expandedReflection: profile.leadershipInsight,
-    },
-  };
-}
-
-export default function DevPeaceProfilesPage() {
-  const profileEntries = useMemo(
-    () =>
-      Object.entries(peaceProfileRegistry).sort(([, a], [, b]) =>
-        a.title.localeCompare(b.title)
-      ),
-    []
-  );
-
-  const [selectedKey, setSelectedKey] = useState(profileEntries[0]?.[0] || "");
-  const [modalResult, setModalResult] = useState<PeaceAssessmentResult | null>(
-    null
-  );
-
-  const selectedProfile = selectedKey
-    ? peaceProfileRegistry[selectedKey as keyof typeof peaceProfileRegistry]
-    : undefined;
-
-  function openSelectedProfile() {
-    if (!selectedKey || !selectedProfile) return;
-    setModalResult(buildMockResult(selectedKey, selectedProfile));
+  if (!config.isConfigured) {
+    return <DevelopmentAccessScreen configMissing />;
   }
 
+  const cookieStore = await cookies();
+  const accessCookie = cookieStore.get(DEV_PEACE_PROFILES_COOKIE_NAME)?.value;
+  const hasAccess = accessCookie
+    ? isValidDevPeaceProfilesCookie(accessCookie, config.secret)
+    : false;
+
+  if (hasAccess) {
+    return <PeaceProfilesPreview />;
+  }
+
+  return (
+    <DevelopmentAccessScreen
+      showError={resolvedSearchParams.error === "invalid-password"}
+    />
+  );
+}
+
+function DevelopmentAccessScreen({
+  showError = false,
+  configMissing = false,
+}: {
+  showError?: boolean;
+  configMissing?: boolean;
+}) {
   return (
     <main
       style={{
         minHeight: "100vh",
-        padding: 32,
-        background: "#f4f1ea",
+        display: "grid",
+        placeItems: "center",
+        padding: 24,
+        background:
+          "radial-gradient(circle at 12% 0%, rgba(184,204,183,0.22), transparent 26%), linear-gradient(180deg, #f8f5f0 0%, #f4f1eb 100%)",
         fontFamily: "system-ui, sans-serif",
       }}
     >
-      <div
+      <section
         style={{
-          maxWidth: 960,
-          margin: "0 auto",
-          background: "#fff",
-          borderRadius: 24,
+          width: "min(520px, 100%)",
           padding: 32,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
+          borderRadius: 24,
+          background: "rgba(255, 255, 255, 0.82)",
+          border: "1px solid rgba(255, 255, 255, 0.88)",
+          boxShadow: "0 24px 80px rgba(17,17,17,0.12)",
         }}
       >
         <p
           style={{
-            margin: 0,
-            color: "#5f7f62",
+            margin: "0 0 14px",
+            color: "#5a7a5c",
             fontSize: 13,
             fontWeight: 800,
             letterSpacing: "0.16em",
             textTransform: "uppercase",
           }}
         >
-          Dev Preview
+          PeaceWorks
         </p>
 
-        <h1 style={{ marginTop: 12, marginBottom: 8 }}>
-          PeaceWorks Profile Preview
+        <h1
+          style={{
+            margin: "0 0 10px",
+            color: "#141414",
+            fontSize: "clamp(2.3rem, 7vw, 4rem)",
+            lineHeight: 0.96,
+          }}
+        >
+          Development Access
         </h1>
 
-        <p style={{ marginTop: 0, color: "#666", lineHeight: 1.6 }}>
-          Preview all {profileEntries.length} PeaceWorks profiles without taking
-          the assessment. Select a profile, open the modal, and download the PDF
-          to test the full result experience.
+        <p style={{ margin: "0 0 24px", color: "#5f625f", lineHeight: 1.55 }}>
+          Enter the password to view the Peace Profiles development page.
         </p>
 
-        <div style={{ display: "grid", gap: 18, marginTop: 28 }}>
-          <label
+        {configMissing ? (
+          <p
+            role="alert"
             style={{
-              display: "grid",
-              gap: 8,
-              fontWeight: 700,
+              margin: 0,
+              padding: "14px 16px",
+              borderRadius: 14,
+              background: "rgba(120, 38, 38, 0.08)",
+              color: "#782626",
+              lineHeight: 1.45,
             }}
           >
-            Select Profile
-            <select
-              value={selectedKey}
-              onChange={(event) => setSelectedKey(event.target.value)}
+            Development access is unavailable because the server is missing the
+            required environment configuration.
+          </p>
+        ) : (
+          <form
+            action="/dev/peace-profiles/access"
+            method="post"
+            style={{ display: "grid", gap: 14 }}
+          >
+            <label
               style={{
-                width: "100%",
-                padding: "14px 16px",
-                borderRadius: 14,
-                border: "1px solid #ddd",
-                fontSize: 16,
-                background: "#fff",
+                display: "grid",
+                gap: 8,
+                color: "#141414",
+                fontWeight: 700,
               }}
             >
-              {profileEntries.map(([key, profile]) => (
-                <option key={key} value={key}>
-                  {getPeaceMainType(profile)} — {profile.title} —{" "}
-                  {profile.profileCode}
-                </option>
-              ))}
-            </select>
-          </label>
+              Password
+              <input
+                type="password"
+                name="password"
+                autoComplete="current-password"
+                required
+                style={{
+                  width: "100%",
+                  minHeight: 52,
+                  padding: "0 14px",
+                  borderRadius: 14,
+                  border: "1px solid rgba(20,20,20,0.16)",
+                  background: "#fff",
+                  color: "#141414",
+                  font: "inherit",
+                }}
+              />
+            </label>
 
-          {selectedProfile && (
-            <div
-              style={{
-                border: "1px solid #e3e0d8",
-                borderRadius: 20,
-                padding: 24,
-                background: "#faf9f5",
-              }}
-            >
+            {showError && (
               <p
+                role="alert"
                 style={{
                   margin: 0,
-                  color: "#5f7f62",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  letterSpacing: "0.16em",
-                  textTransform: "uppercase",
-                }}
-              >
-                Selected Profile
-              </p>
-
-              <p
-                style={{
-                  margin: "18px 0 0",
-                  color: "#141414",
-                  fontSize: "clamp(2.8rem, 7vw, 5rem)",
+                  color: "#9b2f2f",
                   fontWeight: 700,
-                  letterSpacing: 0,
-                  lineHeight: 0.95,
                 }}
               >
-                {getPeaceMainType(selectedProfile)}
+                Incorrect password. Please try again.
               </p>
+            )}
 
-              <h2
-                style={{
-                  margin: "6px 0 0",
-                  color: "#355c38",
-                  fontSize: "clamp(1.4rem, 3vw, 2rem)",
-                  fontWeight: 650,
-                  letterSpacing: 0,
-                  lineHeight: 1.1,
-                }}
-              >
-                {selectedProfile.title}
-              </h2>
-
-              <p
-                style={{
-                  marginTop: 20,
-                  color: "#5f7f62",
-                  fontSize: 13,
-                  fontWeight: 800,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                }}
-              >
-                {selectedProfile.profileCode}
-              </p>
-
-              <p
-                style={{
-                  display: "inline-flex",
-                  margin: "2px 0 16px",
-                  padding: "9px 13px",
-                  borderRadius: 999,
-                  background: "rgba(143, 171, 142, 0.15)",
-                  color: "#5f7f62",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                }}
-              >
-                Established Capacity
-              </p>
-
-              <code
-                style={{
-                  display: "inline-block",
-                  padding: "8px 10px",
-                  borderRadius: 10,
-                  background: "#eee",
-                  fontSize: 13,
-                }}
-              >
-                {selectedProfile.key}
-              </code>
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={openSelectedProfile}
-            disabled={!selectedProfile}
-            style={{
-              padding: "14px 22px",
-              borderRadius: 999,
-              border: "none",
-              background: "#111",
-              color: "#fff",
-              cursor: selectedProfile ? "pointer" : "not-allowed",
-              fontWeight: 800,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-            }}
-          >
-            Open Result Modal
-          </button>
-        </div>
-      </div>
-
-      {modalResult && (
-        <ResultModal
-          result={modalResult}
-          onClose={() => setModalResult(null)}
-          onGoToDashboard={() => setModalResult(null)}
-        />
-      )}
+            <button
+              type="submit"
+              style={{
+                minHeight: 52,
+                border: "none",
+                borderRadius: 999,
+                background: "#111",
+                color: "#fff",
+                cursor: "pointer",
+                fontWeight: 800,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+              }}
+            >
+              Enter
+            </button>
+          </form>
+        )}
+      </section>
     </main>
   );
 }

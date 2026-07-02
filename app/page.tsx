@@ -76,14 +76,14 @@ export default function Home() {
             <h2>Your Peace Index home</h2>
 
             <p>
-              Sign in to take the PeaceWorks Assessment, view your latest
+              Sign in to take the Peace Assessment, view your latest
               results, access Circle resources, and connect with future coaching
               pathways.
             </p>
 
             <div className="resource-list">
               <span>Peace Assessment</span>
-              <span>Assessment Results</span>
+              <span>Peace Assessment Results</span>
               <span>Circle Journey</span>
               <span>Coach Portal</span>
             </div>

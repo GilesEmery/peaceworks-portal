@@ -32,8 +32,8 @@ export default function PdfReport({ result }: PdfReportProps) {
 
   return (
     <div id="peace-pdf-report" className="pdf-report" aria-hidden="true">
-      <PdfPage pageNumber={1} footerText="PeaceWorks Peace Index">
-        <div className="pdf-eyebrow">Your Peace Index Profile</div>
+      <PdfPage pageNumber={1} footerText="Peace Assessment Results">
+        <div className="pdf-eyebrow">Your Peace Assessment Profile</div>
         <h1 className="pdf-title">{mainType}</h1>
         <div className="pdf-subtype">{subtype}</div>
         <div className="pdf-profile-code">{profileCode}</div>

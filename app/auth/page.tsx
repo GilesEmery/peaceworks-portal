@@ -85,7 +85,7 @@ export default function AuthPage() {
             <p>
               {mode === "reset"
                 ? "Enter your email and we will send you a password reset link."
-                : "Access your Peace Index dashboard, assessment results, Circle resources, and future coaching pathways."}
+                : "Access your Peace Index dashboard, Peace Assessment results, Circle resources, and future coaching pathways."}
             </p>
 
             <form onSubmit={handleAuth}>
