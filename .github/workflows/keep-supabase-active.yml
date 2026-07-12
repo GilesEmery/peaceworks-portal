@@ -1,0 +1,30 @@
+name: Keep Supabase Active
+
+on:
+  schedule:
+    - cron: "0 14 * * 1,4"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  health-check:
+    name: Request PeaceWorks health endpoint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify health URL secret is configured
+        env:
+          PEACEWORKS_HEALTH_URL: ${{ secrets.PEACEWORKS_HEALTH_URL }}
+        run: |
+          if [ -z "$PEACEWORKS_HEALTH_URL" ]; then
+            echo "PEACEWORKS_HEALTH_URL repository secret is not configured."
+            exit 1
+          fi
+
+      - name: Call health endpoint
+        env:
+          PEACEWORKS_HEALTH_URL: ${{ secrets.PEACEWORKS_HEALTH_URL }}
+        run: |
+          curl --fail --show-error --silent --retry 2 --retry-delay 10 "$PEACEWORKS_HEALTH_URL"
