@@ -106,10 +106,112 @@ export async function requireAdminFromRequest(
     };
   }
 
+  const profileStatus = await getAdminProfileStatus(user.id);
+
+  if (!profileStatus.ok) return profileStatus;
+
+  if (profileStatus.accountStatus !== "active") {
+    return {
+      ok: false,
+      status: 403,
+      message: "This admin account is not active.",
+    };
+  }
+
   return {
     ok: true,
     user,
     email,
+  };
+}
+
+async function getAdminProfileStatus(userId: string): Promise<
+  | { ok: true; accountStatus: "active" | "deactivated" | "archived" }
+  | { ok: false; status: 503; message: string }
+  | { ok: false; status: 403; message: string }
+> {
+  try {
+    const adminSupabase = createAdminSupabaseClient();
+    const { data: profile, error: profileError } = await adminSupabase
+      .from("profiles")
+      .select("id, account_status")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profileError) {
+      if (isMissingLifecycleColumnError(profileError)) {
+        console.warn(
+          "Admin authorization lifecycle columns are not available yet; requiring profile existence only."
+        );
+
+        return getAdminProfileExistenceStatus(userId);
+      }
+
+      console.error("Admin authorization profile status check failed", profileError);
+
+      return {
+        ok: false,
+        status: 503,
+        message: "Admin authorization could not be verified.",
+      };
+    }
+
+    if (!profile) {
+      return {
+        ok: false,
+        status: 403,
+        message: "Admin profile is required.",
+      };
+    }
+
+    return {
+      ok: true,
+      accountStatus: normalizeAccountStatus(profile.account_status),
+    };
+  } catch (error) {
+    console.error("Admin authorization status check failed", error);
+
+    return {
+      ok: false,
+      status: 503,
+      message: "Admin authorization could not be verified.",
+    };
+  }
+}
+
+async function getAdminProfileExistenceStatus(userId: string): Promise<
+  | { ok: true; accountStatus: "active" }
+  | { ok: false; status: 503; message: string }
+  | { ok: false; status: 403; message: string }
+> {
+  const adminSupabase = createAdminSupabaseClient();
+  const { data: profile, error } = await adminSupabase
+    .from("profiles")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Admin authorization profile existence check failed", error);
+
+    return {
+      ok: false,
+      status: 503,
+      message: "Admin authorization could not be verified.",
+    };
+  }
+
+  if (!profile) {
+    return {
+      ok: false,
+      status: 403,
+      message: "Admin profile is required.",
+    };
+  }
+
+  return {
+    ok: true,
+    accountStatus: "active",
   };
 }
 
@@ -145,4 +247,20 @@ function getBearerToken(request: Request) {
   if (!authorization?.toLowerCase().startsWith("bearer ")) return "";
 
   return authorization.slice("bearer ".length).trim();
+}
+
+function normalizeAccountStatus(value: unknown) {
+  if (value === "deactivated" || value === "archived") return value;
+  return "active";
+}
+
+function isMissingLifecycleColumnError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+
+  const values = Object.values(error as Record<string, unknown>)
+    .filter((value): value is string => typeof value === "string")
+    .join(" ")
+    .toLowerCase();
+
+  return values.includes("account_status") && values.includes("column");
 }

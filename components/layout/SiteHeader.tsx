@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
@@ -11,6 +12,8 @@ type SiteHeaderProps = {
 type Profile = {
   first_name: string | null;
   last_name: string | null;
+  avatar_path: string | null;
+  account_status: string | null;
 };
 
 export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
@@ -18,10 +21,11 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [authEmail, setAuthEmail] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  async function loadProfile() {
+  const loadProfile = useCallback(async function loadProfile() {
     const [
       {
         data: { user },
@@ -33,17 +37,38 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
 
     if (!user) {
       setProfile(null);
+      setAuthEmail("");
       setIsAdmin(false);
       return;
     }
 
-    const { data } = await supabase
+    setAuthEmail(user.email || "");
+
+    const { data, error } = await supabase
       .from("profiles")
-      .select("first_name, last_name")
+      .select("first_name, last_name, avatar_path")
       .eq("id", user.id)
       .maybeSingle();
 
-    setProfile(data ?? null);
+    if (error) {
+      console.error("Current user profile could not be loaded.", error);
+      setProfile(null);
+      setIsAdmin(false);
+      return;
+    }
+
+    const accountStatus = await loadAccountStatus(user.id);
+
+    if (accountStatus !== "active") {
+      await supabase.auth.signOut();
+      setProfile(null);
+      setAuthEmail("");
+      setIsAdmin(false);
+      router.replace("/auth");
+      return;
+    }
+
+    setProfile(data ? { ...data, account_status: accountStatus } : null);
 
     if (!session?.access_token) {
       setIsAdmin(false);
@@ -57,7 +82,7 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
     });
 
     setIsAdmin(adminResponse.ok);
-  }
+  }, [router]);
 
   useEffect(() => {
     void Promise.resolve().then(() => loadProfile());
@@ -74,7 +99,7 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
         handleProfileUpdated
       );
     };
-  }, []);
+  }, [loadProfile]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -93,14 +118,23 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
     };
   }, []);
 
-  const firstName = profile?.first_name?.trim() || "";
+  const profileName = getProfileName(profile);
+  const displayName = profileName || authEmail || "Account";
 
   const initials = useMemo(() => {
     const firstInitial = profile?.first_name?.trim().charAt(0) || "";
     const lastInitial = profile?.last_name?.trim().charAt(0) || "";
 
-    return `${firstInitial}${lastInitial}`.toUpperCase() || "PW";
-  }, [profile]);
+    if (firstInitial || lastInitial) {
+      return `${firstInitial}${lastInitial}`.toUpperCase();
+    }
+
+    const emailInitial = authEmail.trim().charAt(0);
+
+    if (emailInitial) return emailInitial.toUpperCase();
+
+    return "PW";
+  }, [authEmail, profile]);
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -120,9 +154,12 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
           href="https://www.peaceworks.network"
           aria-label="PeaceWorks home"
         >
-          <img
-            src="https://gilesemery.github.io/peaceworks-main/PeaceworksLogo.svg"
+          <Image
+            src="https://www.peaceworks.network/PeaceworksLogo.svg"
             alt="PeaceWorks"
+            width={260}
+            height={64}
+            priority
           />
         </a>
 
@@ -144,7 +181,7 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
               >
                 <span className="profile-initials">{initials}</span>
                 <span className="profile-name">
-                  {firstName || "Account"}
+                  {displayName}
                 </span>
                 <span className="profile-caret">▾</span>
               </button>
@@ -182,4 +219,48 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
       </div>
     </header>
   );
+}
+
+async function loadAccountStatus(userId: string) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("account_status")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    if (isMissingLifecycleColumnError(error)) {
+      console.warn(
+        "Profile lifecycle columns are not available yet; treating account as active."
+      );
+      return "active";
+    }
+
+    console.error("Current user account status could not be loaded.", error);
+    return "active";
+  }
+
+  if (data?.account_status === "deactivated" || data?.account_status === "archived") {
+    return data.account_status;
+  }
+
+  return "active";
+}
+
+function getProfileName(profile: Profile | null) {
+  return [profile?.first_name, profile?.last_name]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+function isMissingLifecycleColumnError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+
+  const values = Object.values(error as Record<string, unknown>)
+    .filter((value): value is string => typeof value === "string")
+    .join(" ")
+    .toLowerCase();
+
+  return values.includes("account_status") && values.includes("column");
 }

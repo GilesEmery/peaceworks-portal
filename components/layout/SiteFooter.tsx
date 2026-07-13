@@ -1,11 +1,15 @@
+import Image from "next/image";
+
 export default function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="container footer-inner">
         <div className="footer-branding">
-          <img
-            src="https://gilesemery.github.io/peaceworks-main/PeaceworksLogo.svg"
+          <Image
+            src="https://www.peaceworks.network/PeaceworksLogo.svg"
             alt="PeaceWorks"
+            width={240}
+            height={59}
           />
         </div>
 

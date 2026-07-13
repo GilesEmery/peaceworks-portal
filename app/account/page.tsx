@@ -119,6 +119,12 @@ export default function AccountPage() {
       return;
     }
 
+    if (!profile.lastName.trim()) {
+      setSaveStatus("error");
+      setMessage("Please enter your last name.");
+      return;
+    }
+
     setSaveStatus("saving");
     setMessage("");
 
@@ -126,7 +132,7 @@ export default function AccountPage() {
       const cleanedProfile = {
         id: userId,
         first_name: profile.firstName.trim(),
-        last_name: profile.lastName.trim() || null,
+        last_name: profile.lastName.trim(),
         organization: profile.organization.trim() || null,
         job_title: profile.jobTitle.trim() || null,
         timezone: profile.timezone.trim() || null,
@@ -202,7 +208,10 @@ export default function AccountPage() {
           <form className="account-form" onSubmit={handleSubmit}>
             <div className="form-section-heading">
               <h2>Personal information</h2>
-              <p>Your first name will appear in the portal navigation.</p>
+              <p>
+                First and last name are required for a complete profile and
+                help personalize your portal navigation.
+              </p>
             </div>
 
             <div className="account-grid">
@@ -228,6 +237,7 @@ export default function AccountPage() {
                     updateField("lastName", event.target.value)
                   }
                   autoComplete="family-name"
+                  required
                 />
               </label>
 
