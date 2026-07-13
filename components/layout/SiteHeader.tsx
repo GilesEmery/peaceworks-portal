@@ -19,13 +19,23 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   async function loadProfile() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const [
+      {
+        data: { user },
+      },
+      {
+        data: { session },
+      },
+    ] = await Promise.all([supabase.auth.getUser(), supabase.auth.getSession()]);
 
-    if (!user) return;
+    if (!user) {
+      setProfile(null);
+      setIsAdmin(false);
+      return;
+    }
 
     const { data } = await supabase
       .from("profiles")
@@ -34,10 +44,23 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
       .maybeSingle();
 
     setProfile(data ?? null);
+
+    if (!session?.access_token) {
+      setIsAdmin(false);
+      return;
+    }
+
+    const adminResponse = await fetch("/api/admin/me", {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    setIsAdmin(adminResponse.ok);
   }
 
   useEffect(() => {
-    loadProfile();
+    void Promise.resolve().then(() => loadProfile());
 
     function handleProfileUpdated() {
       loadProfile();
@@ -134,6 +157,11 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
                   <button type="button" onClick={() => goTo("/dashboard")}>
                     Dashboard
                   </button>
+                  {isAdmin && (
+                    <button type="button" onClick={() => goTo("/admin")}>
+                      Admin Dashboard
+                    </button>
+                  )}
                   <button type="button" onClick={() => goTo("/circle")}>
                     Your Circle
                   </button>
