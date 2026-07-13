@@ -8,7 +8,11 @@ import {
   peaceAssessmentQuestions,
   type PeaceAssessmentQuestion,
 } from "../../data/peaceAssessmentQuestions";
-import { calculatePeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
+import {
+  calculatePeaceAssessmentResult,
+  type AssessmentAnswers,
+  type PeaceAssessmentResult,
+} from "../../lib/peaceAssessmentScoring";
 
 import SiteHeader from "../../components/layout/SiteHeader";
 import SiteFooter from "../../components/layout/SiteFooter";
@@ -64,9 +68,11 @@ export default function PeaceAssessmentPage() {
   const [userId, setUserId] = useState("");
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, any>>({});
+  const [answers, setAnswers] = useState<AssessmentAnswers>({});
   const [message, setMessage] = useState("");
-  const [resultData, setResultData] = useState<any>(null);
+  const [resultData, setResultData] = useState<PeaceAssessmentResult | null>(
+    null
+  );
 
   useEffect(() => {
     async function checkUser() {

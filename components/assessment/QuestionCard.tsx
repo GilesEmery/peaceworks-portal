@@ -2,11 +2,12 @@ import type {
   PeaceAssessmentQuestion,
   QuestionOption,
 } from "../../data/peaceAssessmentQuestions";
+import type { AssessmentAnswer } from "../../lib/peaceAssessmentScoring";
 
 type QuestionCardProps = {
   question: PeaceAssessmentQuestion;
-  answer: any;
-  onAnswer: (answer: any) => void;
+  answer?: AssessmentAnswer;
+  onAnswer: (answer: AssessmentAnswer) => void;
 };
 
 const likertOptions = [

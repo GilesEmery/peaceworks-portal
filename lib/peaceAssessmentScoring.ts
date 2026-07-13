@@ -1,5 +1,6 @@
 import type {
   PeaceAssessmentQuestion,
+  QuestionOption,
   ScoreKey,
 } from "../data/peaceAssessmentQuestions";
 
@@ -8,7 +9,14 @@ import {
   type PeaceProfileContent,
 } from "../data/peaceAssessmentProfiles";
 
-export type AssessmentAnswers = Record<number, any>;
+export type AssessmentAnswer = Partial<QuestionOption> & {
+  selected?: QuestionOption[];
+  value?: number;
+  touched?: boolean;
+  capacity?: boolean;
+};
+
+export type AssessmentAnswers = Record<number, AssessmentAnswer>;
 
 export type PeaceAssessmentScores = Record<ScoreKey, number>;
 
@@ -56,7 +64,7 @@ export function calculatePeaceAssessmentResult(
     if (!question || !answer) return;
 
     if (answer.selected) {
-      answer.selected.forEach((selectedAnswer: any) => {
+      answer.selected.forEach((selectedAnswer) => {
         applyScores(scores, selectedAnswer.scores);
       });
 
@@ -134,7 +142,7 @@ function applyScores(
 function pickTop<T extends ScoreKey>(
   scores: PeaceAssessmentScores,
   keys: T[],
-  tieBreakerAnswer?: any
+  tieBreakerAnswer?: AssessmentAnswer
 ): T {
   const values = keys.map((key) => ({
     key,
