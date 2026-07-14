@@ -144,8 +144,8 @@ export async function fetchAdminMemberProfile(
   if (!profile) return null;
 
   const analytics = buildAdminAnalytics(assessmentData);
-  const assessments = analytics.records.filter(
-    (record) => record.userId === profileId
+  const assessments = getLatestAssessmentPerType(
+    analytics.records.filter((record) => record.userId === profileId)
   );
   const [growthStatus, notes] = await Promise.all([
     fetchGrowthStatus(profileId),
@@ -478,6 +478,37 @@ function buildActivity({
   ]
     .filter((item) => item.date)
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+}
+
+function getLatestAssessmentPerType(records: AdminAssessmentRecord[]) {
+  const latestByAssessmentKey = new Map<string, AdminAssessmentRecord>();
+
+  records.forEach((record) => {
+    const key = record.assessmentKey;
+    const current = latestByAssessmentKey.get(key);
+
+    if (!current || compareAssessmentRecords(record, current) < 0) {
+      latestByAssessmentKey.set(key, record);
+    }
+  });
+
+  return Array.from(latestByAssessmentKey.values()).sort(compareAssessmentRecords);
+}
+
+function compareAssessmentRecords(
+  first: AdminAssessmentRecord,
+  second: AdminAssessmentRecord
+) {
+  const firstTime = first.completionDate
+    ? new Date(first.completionDate).getTime()
+    : 0;
+  const secondTime = second.completionDate
+    ? new Date(second.completionDate).getTime()
+    : 0;
+
+  if (firstTime !== secondTime) return secondTime - firstTime;
+
+  return second.assessmentId.localeCompare(first.assessmentId);
 }
 
 function cleanGrowthStatus(values: AdminGrowthStatusUpdate) {

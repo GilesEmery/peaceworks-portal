@@ -19,7 +19,8 @@ export async function fetchAdminAssessmentData() {
       .select(
         "id, user_id, created_at, peace_profile, base_pattern, identity_type, secondary_identity_type, response_type, processing_style, capacity_stage, scores, answers"
       )
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false }),
   ]);
 
   if (profilesResponse.error || assessmentsResponse.error) {

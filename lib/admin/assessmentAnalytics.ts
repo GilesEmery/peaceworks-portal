@@ -17,6 +17,7 @@ type AdminUserSummary = {
 
 export type AdminAssessmentRecord = {
   assessmentId: string;
+  assessmentKey: "peace-assessment";
   userId: string;
   userName: string;
   email: string;
@@ -115,6 +116,7 @@ export function buildAdminAnalytics({
 
       return {
         assessmentId: assessment.id,
+        assessmentKey: "peace-assessment" as const,
         userId: assessment.user_id,
         userName,
         email: user?.email || "Unknown email",

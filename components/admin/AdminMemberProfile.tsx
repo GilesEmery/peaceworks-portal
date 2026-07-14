@@ -468,8 +468,9 @@ function AssessmentHistory({
         <div className="admin-member-card-list">
           {assessments.map((assessment) => (
             <article key={assessment.assessmentId}>
+              <span>{assessment.assessmentName}</span>
               <strong>{assessment.profileTitle}</strong>
-              <span>{assessment.profileType}</span>
+              <small>{assessment.profileType}</small>
               <small>
                 {formatDate(assessment.completionDate)} · {assessment.peaceAnchor} ·{" "}
                 {assessment.pressureResponse} · {assessment.processingStyle}
@@ -484,6 +485,11 @@ function AssessmentHistory({
             </article>
           ))}
         </div>
+      )}
+      {assessments.length > 0 && (
+        <p className="admin-member-history-note">
+          Previous results are preserved for future history and comparison views.
+        </p>
       )}
     </section>
   );
