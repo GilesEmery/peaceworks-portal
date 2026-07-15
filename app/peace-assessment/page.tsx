@@ -20,6 +20,20 @@ import SiteFooter from "../../components/layout/SiteFooter";
 import QuestionCard from "../../components/assessment/QuestionCard";
 import ProgressBar from "../../components/assessment/ProgressBar";
 import ResultModal from "../../components/assessment/ResultModal";
+import { peaceAssessmentProfiles } from "../../data/peaceAssessmentProfiles";
+import { buildPeaceReportProfile } from "../../data/peaceReport";
+
+type PeaceAssessmentRow = {
+  scores: PeaceAssessmentResult["scores"];
+  identity_type: PeaceAssessmentResult["identityType"];
+  secondary_identity_type?: PeaceAssessmentResult["identityType"] | null;
+  response_type: PeaceAssessmentResult["responseType"];
+  processing_style: PeaceAssessmentResult["processingStyle"];
+  capacity_stage: PeaceAssessmentResult["capacityStage"];
+  peace_profile: string;
+  base_pattern: string;
+  created_at: string | null;
+};
 
 function shuffleArray<T>(items: T[]): T[] {
   const shuffled = [...items];
@@ -66,6 +80,10 @@ export default function PeaceAssessmentPage() {
 
   const [userEmail, setUserEmail] = useState("");
   const [userId, setUserId] = useState("");
+  const [assessmentStarted, setAssessmentStarted] = useState(false);
+  const [latestResult, setLatestResult] = useState<PeaceAssessmentRow | null>(
+    null
+  );
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<AssessmentAnswers>({});
@@ -75,22 +93,42 @@ export default function PeaceAssessmentPage() {
   );
 
   useEffect(() => {
-    async function checkUser() {
+    async function loadAssessmentStatus() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
       if (!session) {
-        router.push("/auth");
-      } else {
-        setUserEmail(session.user.email || "");
-        setUserId(session.user.id);
         setLoading(false);
+        return;
       }
+
+      setUserEmail(session.user.email || "");
+      setUserId(session.user.id);
+
+      const { data, error } = await supabase
+        .from("peace_assessment_results")
+        .select(
+          "scores, identity_type, secondary_identity_type, response_type, processing_style, capacity_stage, peace_profile, base_pattern, created_at"
+        )
+        .eq("user_id", session.user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error("Unable to load Peace Assessment status.", error);
+      }
+
+      if (data) {
+        setLatestResult(data as PeaceAssessmentRow);
+      }
+
+        setLoading(false);
     }
 
-    checkUser();
-  }, [router]);
+    loadAssessmentStatus();
+  }, []);
 
   const currentQuestion: PeaceAssessmentQuestion =
     assessmentQuestions[currentIndex];
@@ -181,12 +219,49 @@ export default function PeaceAssessmentPage() {
     }
   }
 
+  function startAssessment() {
+    if (!userId) {
+      router.push("/auth");
+      return;
+    }
+
+    setAssessmentStarted(true);
+  }
+
+  function openLatestResult() {
+    if (!latestResult) return;
+
+    const secondaryIdentityType =
+      latestResult.secondary_identity_type ||
+      getSecondaryIdentityType(latestResult.scores, latestResult.identity_type);
+    const expandedProfile = buildPeaceReportProfile({
+      identityAnchor: latestResult.identity_type,
+      secondaryPeaceStrategy: secondaryIdentityType,
+      pressureResponse: latestResult.response_type,
+      processingStyle: latestResult.processing_style,
+    });
+    const profileKey = `${latestResult.identity_type}|${latestResult.response_type}|${latestResult.processing_style}`;
+    const profileContent = peaceAssessmentProfiles[profileKey];
+
+    setResultData({
+      scores: latestResult.scores,
+      identityType: latestResult.identity_type,
+      secondaryIdentityType,
+      responseType: latestResult.response_type,
+      processingStyle: latestResult.processing_style,
+      capacityStage: latestResult.capacity_stage,
+      peaceProfile: expandedProfile?.title || latestResult.peace_profile,
+      basePattern: latestResult.base_pattern,
+      profileContent,
+    });
+  }
+
   if (loading) {
     return (
       <main className="portal-page">
         <div className="assessment-static-header">
-  <SiteHeader />
-</div>
+          <SiteHeader />
+        </div>
 
         <section className="portal-hero">
           <div className="container">Loading the Peace Assessment...</div>
@@ -197,11 +272,116 @@ export default function PeaceAssessmentPage() {
     );
   }
 
+  if (!assessmentStarted) {
+    return (
+      <main className="portal-page">
+        <div className="assessment-static-header">
+          <SiteHeader />
+        </div>
+
+        <section className="peace-assessment-landing">
+          <div className="container">
+            <div className="peace-assessment-landing-card">
+              <div>
+                <div className="eyebrow">PeaceWorks Assessments</div>
+                <h1>Peace Assessment</h1>
+                <p>
+                  Discover how you seek, lose, protect, and restore peace when
+                  pressure rises. Your results give you a personalized profile,
+                  reflection language, and practices for growth.
+                </p>
+              </div>
+
+              <div className="peace-assessment-benefits">
+                <div>
+                  <strong>Your peace anchors</strong>
+                  <span>
+                    See the needs and strategies that help you feel grounded.
+                  </span>
+                </div>
+                <div>
+                  <strong>Your pressure response</strong>
+                  <span>
+                    Recognize whether you tend to please, prove, push, or pull
+                    away.
+                  </span>
+                </div>
+                <div>
+                  <strong>Your relational impact</strong>
+                  <span>
+                    Explore strengths, growth edges, and practices for your
+                    relationships.
+                  </span>
+                </div>
+              </div>
+
+              <div className="peace-assessment-actions">
+                {!userId ? (
+                  <>
+                    <button
+                      className="btn btn-primary"
+                      type="button"
+                      onClick={() => router.push("/auth")}
+                    >
+                      Sign In to Begin
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      type="button"
+                      onClick={() => router.push("/auth")}
+                    >
+                      Create an Account to Begin
+                    </button>
+                  </>
+                ) : latestResult ? (
+                  <>
+                    <button
+                      className="btn btn-primary"
+                      type="button"
+                      onClick={openLatestResult}
+                    >
+                      View Results
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      type="button"
+                      onClick={startAssessment}
+                    >
+                      Retake Assessment
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    onClick={startAssessment}
+                  >
+                    Start Assessment
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <SiteFooter />
+
+        {resultData && (
+          <ResultModal
+            result={resultData}
+            onClose={() => setResultData(null)}
+            onGoToDashboard={() => router.push("/dashboard")}
+          />
+        )}
+      </main>
+    );
+  }
+
   return (
     <main className="portal-page">
       <div className="assessment-static-header">
-  <SiteHeader />
-</div>
+        <SiteHeader />
+      </div>
 
       <section className="assessment-shell active">
         <div className="container">
@@ -280,4 +460,16 @@ export default function PeaceAssessmentPage() {
       )}
     </main>
   );
+}
+
+function getSecondaryIdentityType(
+  scores: PeaceAssessmentResult["scores"],
+  primary: PeaceAssessmentResult["identityType"]
+) {
+  const entries = (["Performance", "Prestige", "Prosperity"] as const)
+    .filter((key) => key !== primary)
+    .map((key) => [key, scores[key]] as const)
+    .sort(([, a], [, b]) => b - a);
+
+  return entries[0]?.[0] || primary;
 }

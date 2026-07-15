@@ -18,6 +18,7 @@ export type AdminAssessmentRow = {
   id: string;
   user_id: string;
   created_at: string | null;
+  completed_at?: string | null;
   peace_profile: string | null;
   base_pattern: string | null;
   identity_type: IdentityType | null;

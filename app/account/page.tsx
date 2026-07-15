@@ -197,10 +197,10 @@ export default function AccountPage() {
 
             <div>
               <p className="account-eyebrow">PeaceWorks member</p>
-              <h1>Your account</h1>
+              <h1>Account Settings</h1>
               <p className="account-introduction">
-                Keep your personal and professional information up to date. These
-                details help personalize your PeaceWorks experience.
+                Keep your personal information, work context, and portal access
+                settings up to date.
               </p>
             </div>
           </div>
@@ -327,6 +327,32 @@ export default function AccountPage() {
               </button>
             </div>
           </form>
+
+          <div className="form-divider" />
+
+          <div className="form-section-heading">
+            <h2>Password and security</h2>
+            <p>
+              Manage your login security for the PeaceWorks portal.
+            </p>
+          </div>
+
+          <div className="account-grid">
+            <div className="account-card-preview">
+              <h3>Password</h3>
+              <p>
+                Change your password and keep your portal access secure.
+              </p>
+
+              <button
+                className="settings-card-button"
+                type="button"
+                onClick={() => router.push("/auth/update-password")}
+              >
+                Change Password
+              </button>
+            </div>
+          </div>
         </section>
       </main>
 

@@ -2,7 +2,12 @@ import type { User } from "@supabase/supabase-js";
 
 import { createAdminSupabaseClient } from "./authorization";
 
-export type AdminRoleName = "member" | "circle_member" | "coach" | "admin";
+export type AdminRoleName =
+  | "member"
+  | "circle_member"
+  | "coach"
+  | "project_manager"
+  | "admin";
 export type AdminAccountStatus = "active" | "deactivated" | "archived";
 export type AdminLifecycleAction =
   | "deactivate"
@@ -126,6 +131,7 @@ const managedRoleNames: AdminRoleName[] = [
   "member",
   "circle_member",
   "coach",
+  "project_manager",
   "admin",
 ];
 
@@ -133,6 +139,7 @@ const fallbackRoleLabels: Record<AdminRoleName, string> = {
   member: "Member",
   circle_member: "Circle Member",
   coach: "Coach",
+  project_manager: "Project Manager",
   admin: "Admin",
 };
 
@@ -258,6 +265,7 @@ export async function updateAdminManagedUser(
     roleNames: AdminRoleName[];
     circleIds: string[];
     coachIds: string[];
+    adminRemovalConfirmation?: string;
   }
 ) {
   const supabase = createAdminSupabaseClient();
@@ -324,15 +332,54 @@ export async function updateAdminManagedUser(
   const roles = (rolesResponse.data || []) as RoleRow[];
   const roleByName = new Map(roles.map((role) => [role.name, role]));
   const requestedRoles = unique(values.roleNames);
-  const invalidRole = requestedRoles.find(
-    (roleName) => !managedRoleNames.includes(roleName) || !roleByName.has(roleName)
+  const currentRoles = (currentRolesResponse.data || []) as ProfileRoleRow[];
+  const unmanagedRole = requestedRoles.find(
+    (roleName) => !managedRoleNames.includes(roleName)
   );
 
-  if (invalidRole) {
+  if (unmanagedRole) {
     return {
       ok: false as const,
       status: 400,
-      message: `Role is not available: ${invalidRole}.`,
+      code: "role_not_managed",
+      error: "role_not_available",
+      message: `Role is not managed by this admin tool: ${unmanagedRole}.`,
+    };
+  }
+
+  const unavailableRole = requestedRoles.find((roleName) => !roleByName.has(roleName));
+
+  if (unavailableRole) {
+    return {
+      ok: false as const,
+      status: 400,
+      code:
+        unavailableRole === "project_manager"
+          ? "project_manager_role_missing"
+          : "role_missing",
+      error: "role_not_available",
+      message:
+        unavailableRole === "project_manager"
+          ? "The Project Manager role has not been configured."
+          : `Role is not available: ${unavailableRole}.`,
+    };
+  }
+
+  const adminRoleId = roleByName.get("admin")?.id || "";
+  const currentlyHasAdminRole = Boolean(
+    adminRoleId && currentRoles.some((role) => role.role_id === adminRoleId)
+  );
+  const removingAdminRole =
+    currentlyHasAdminRole && !requestedRoles.includes("admin");
+
+  if (
+    removingAdminRole &&
+    values.adminRemovalConfirmation?.trim() !== "REMOVE ADMIN"
+  ) {
+    return {
+      ok: false as const,
+      status: 400,
+      message: 'Type "REMOVE ADMIN" before removing Admin access.',
     };
   }
 
@@ -354,7 +401,16 @@ export async function updateAdminManagedUser(
 
   const coachRole = coachRoleResponse.data as { id: string } | null;
   const requestedCoachIds = unique(values.coachIds);
-  const validCoachIds = await getActiveCoachIds(coachRole?.id || "");
+  const currentActiveCoachIds = (
+    (currentAssignmentsResponse.data || []) as CoachAssignmentRow[]
+  )
+    .filter(isActiveRelationship)
+    .map((assignment) => assignment.coach_id);
+  const prospectiveCoachIds = requestedRoles.includes("coach") ? [profileId] : [];
+  const validCoachIds = await getActiveCoachIds(
+    coachRole?.id || "",
+    unique([...prospectiveCoachIds, ...currentActiveCoachIds])
+  );
   const invalidCoachId = requestedCoachIds.find(
     (coachId) => !validCoachIds.has(coachId)
   );
@@ -376,7 +432,7 @@ export async function updateAdminManagedUser(
   await updateProfileRoles({
     profileId,
     requestedRoleIds: requestedRoles.map((roleName) => roleByName.get(roleName)!.id),
-    currentRoles: (currentRolesResponse.data || []) as ProfileRoleRow[],
+    currentRoles,
     timestamp,
   });
 
@@ -399,6 +455,7 @@ export async function updateAdminManagedUser(
   return {
     ok: true as const,
     message: "User access was updated.",
+    roleNames: requestedRoles,
   };
 }
 
@@ -852,10 +909,20 @@ function buildAdminUsersPayload({
   return {
     ok: true,
     currentAdminId,
-    roleOptions: managedRoleNames.map((roleName) => ({
-      name: roleName,
-      label: roleByName(roles, roleName)?.label || fallbackRoleLabels[roleName],
-    })),
+    roleOptions: managedRoleNames
+      .map((roleName) => {
+        const role = roleByName(roles, roleName);
+
+        if (!role) return null;
+
+        return {
+          name: roleName,
+          label: role.label || fallbackRoleLabels[roleName],
+        };
+      })
+      .filter((role): role is { name: AdminRoleName; label: string } =>
+        Boolean(role)
+      ),
     circles: circles.map((circle) => ({
       id: circle.id,
       name: circle.name,
@@ -962,13 +1029,16 @@ async function updateProfileRoles({
     .filter((roleId) => !requestedRoleIdSet.has(roleId));
 
   if (roleIdsToAdd.length > 0) {
-    const { error } = await supabase.from("profile_roles").insert(
-      roleIdsToAdd.map((roleId) => ({
-        profile_id: profileId,
-        role_id: roleId,
-        assigned_at: timestamp,
-      }))
-    );
+    const { error } = await supabase
+      .from("profile_roles")
+      .upsert(
+        roleIdsToAdd.map((roleId) => ({
+          profile_id: profileId,
+          role_id: roleId,
+          assigned_at: timestamp,
+        })),
+        { onConflict: "profile_id,role_id", ignoreDuplicates: true }
+      );
 
     if (error) {
       console.error("Admin Supabase mutation failed: add profile roles", error);
@@ -1102,8 +1172,8 @@ async function updateCoachAssignments({
   }
 }
 
-async function getActiveCoachIds(coachRoleId: string) {
-  if (!coachRoleId) return new Set<string>();
+async function getActiveCoachIds(coachRoleId: string, extraCoachIds: string[] = []) {
+  if (!coachRoleId) return new Set(extraCoachIds);
 
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
@@ -1116,7 +1186,10 @@ async function getActiveCoachIds(coachRoleId: string) {
     throw new Error("Unable to validate selected coaches.");
   }
 
-  return new Set((data || []).map((row) => row.profile_id as string));
+  return new Set([
+    ...(data || []).map((row) => row.profile_id as string),
+    ...extraCoachIds,
+  ]);
 }
 
 async function fetchAllAuthUsers() {

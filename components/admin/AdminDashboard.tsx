@@ -5,12 +5,20 @@ import type { ReactNode, RefObject } from "react";
 import { useRouter } from "next/navigation";
 import {
   Activity,
+  Archive,
+  BookOpen,
+  CheckCircle,
   ClipboardCheck,
   Compass,
+  Copy,
+  Eye,
   FileText,
+  GraduationCap,
+  Library,
   Mail,
   Search,
   Settings,
+  Trash2,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -33,17 +41,42 @@ import {
 } from "../../lib/profileCompletion";
 
 type LoadState = "loading" | "ready" | "denied" | "error";
+type ContentStatus = "draft" | "published" | "archived";
+type ContentStudioTab = "monthly-questions" | "resources" | "trainings";
+type CommunicationStatus = "draft" | "published" | "archived";
+type CommunicationFormat =
+  | "email"
+  | "blog_article"
+  | "announcement"
+  | "newsletter"
+  | "dashboard_message"
+  | "circle_update";
+type AssignmentContentType = "monthly_question" | "resource" | "training";
+type AssignmentAudienceType =
+  | "coach_library"
+  | "all_members"
+  | "all_circle_members"
+  | "all_coaches"
+  | "selected_circle"
+  | "selected_member"
+  | "selected_coach";
+type AssignmentPlacement =
+  | "my_dashboard"
+  | "coach_dashboard_library"
+  | "circle_dashboard"
+  | "resources_area"
+  | "trainings_area"
+  | "featured_dashboard";
 
 type SectionId =
-  | "overview"
   | "people"
-  | "assessments"
   | "circles"
-  | "coaching"
-  | "content"
+  | "coaches"
+  | "assessments"
+  | "content-studio"
   | "communications"
-  | "diagnostics"
-  | "settings";
+  | "reports"
+  | "system-settings";
 
 type AdminSection = {
   id: SectionId;
@@ -51,21 +84,158 @@ type AdminSection = {
   description: string;
 };
 
+type AdminMonthlyQuestion = {
+  id: string;
+  title: string;
+  openingReflection: string;
+  questionText: string;
+  guidance: string;
+  discussionPrompts: string[];
+  status: ContentStatus;
+  category: string;
+  theme: string;
+  assignedCircleCount: number;
+  currentUseCount: number;
+  publishedAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+type AdminResource = {
+  id: string;
+  title: string;
+  description: string;
+  resourceType: string;
+  provider: string;
+  externalUrl: string;
+  embedUrl: string;
+  storagePath: string;
+  thumbnailUrl: string;
+  coverImagePath: string;
+  coverImageUrl: string;
+  bodyContent: string;
+  fileName: string;
+  fileSize: number | null;
+  mimeType: string;
+  category: string;
+  tags: string[];
+  status: ContentStatus;
+  publishedAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+type AdminTraining = {
+  id: string;
+  title: string;
+  description: string;
+  coverImageUrl: string;
+  category: string;
+  estimatedDuration: string;
+  status: ContentStatus;
+  publishedAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+type AdminCommunication = {
+  id: string;
+  format: CommunicationFormat;
+  title: string;
+  subject: string;
+  previewText: string;
+  summary: string;
+  bodyContent: string;
+  communicationType: string;
+  channel: string;
+  dashboardPresentation: string;
+  audienceScope: string;
+  senderId: string;
+  senderName: string;
+  replyToEmail: string;
+  visibleAuthorName: string;
+  headerImagePath: string;
+  headerImageUrl: string;
+  thumbnailImagePath: string;
+  thumbnailImageUrl: string;
+  imageAltText: string;
+  category: string;
+  tags: string[];
+  visibleFrom: string | null;
+  visibleUntil: string | null;
+  links: Array<{
+    id: string;
+    label: string;
+    url: string;
+    linkStyle: "text" | "button" | "featured";
+    sortOrder: number;
+  }>;
+  channels: string[];
+  audienceTargets: Array<{
+    id: string;
+    audienceType: string;
+    circleId: string;
+    profileId: string;
+  }>;
+  newsletterSections: Array<{
+    id: string;
+    heading: string;
+    bodyContent: string;
+    sortOrder: number;
+  }>;
+  resourceId: string;
+  status: CommunicationStatus;
+  publishedAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+type AdminCommunicationSender = {
+  id: string;
+  displayName: string;
+  verifiedFromEmail: string;
+  replyToEmail: string;
+  senderType: string;
+  profileId: string;
+  isDefault: boolean;
+};
+
+type AdminContentAssignment = {
+  id: string;
+  contentType: AssignmentContentType;
+  contentId: string;
+  audienceType: AssignmentAudienceType;
+  circleId: string;
+  profileId: string;
+  placement: AssignmentPlacement;
+  assignmentStatus: "active" | "archived";
+  visibleFrom: string | null;
+  visibleUntil: string | null;
+  assignedBy: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+type AdminContentStudioPayload = {
+  ok: true;
+  monthlyQuestions: AdminMonthlyQuestion[];
+  resources: AdminResource[];
+  trainings: AdminTraining[];
+  communications: AdminCommunication[];
+  communicationSenders: AdminCommunicationSender[];
+  assignments: AdminContentAssignment[];
+};
+
+type ContentMessage = {
+  type: "success" | "error";
+  text: string;
+} | null;
+
 const sections: AdminSection[] = [
   {
-    id: "overview",
-    title: "Overview",
-    description: "Operating signals across people, access, and assessments.",
-  },
-  {
     id: "people",
-    title: "People & Access",
+    title: "People",
     description: "Manage roles, Circle memberships, and coach assignments.",
-  },
-  {
-    id: "assessments",
-    title: "Assessments",
-    description: "Review completion patterns and profile distributions.",
   },
   {
     id: "circles",
@@ -73,28 +243,34 @@ const sections: AdminSection[] = [
     description: "Inspect Circle health and membership coverage.",
   },
   {
-    id: "coaching",
-    title: "Coaching",
+    id: "coaches",
+    title: "Coaches",
     description: "Review coach capacity and active assignments.",
   },
   {
-    id: "content",
+    id: "assessments",
+    title: "Assessments",
+    description: "Review completion patterns and profile distributions.",
+  },
+  {
+    id: "content-studio",
     title: "Content Studio",
-    description: "Prepare future monthly content workflows.",
+    description: "Create monthly questions, resources, and trainings.",
   },
   {
     id: "communications",
     title: "Communications",
-    description: "Prepare future email and audience workflows.",
+    description:
+      "Create messages, announcements, articles, and campaigns for PeaceWorks members.",
   },
   {
-    id: "diagnostics",
-    title: "Diagnostics",
-    description: "Find relationship, role, and profile data issues.",
+    id: "reports",
+    title: "Reports",
+    description: "Review operational health, alerts, and data diagnostics.",
   },
   {
-    id: "settings",
-    title: "Platform Settings",
+    id: "system-settings",
+    title: "System Settings",
     description: "Review safe configuration status.",
   },
 ];
@@ -104,7 +280,7 @@ export default function AdminDashboard() {
   const [state, setState] = useState<LoadState>("loading");
   const [analytics, setAnalytics] = useState<AdminAnalyticsPayload | null>(null);
   const [usersPayload, setUsersPayload] = useState<AdminUsersPayload | null>(null);
-  const [openSection, setOpenSection] = useState<SectionId>("overview");
+  const [openSection, setOpenSection] = useState<SectionId>("people");
   const [adminSearch, setAdminSearch] = useState("");
   const [showFloatingSearch, setShowFloatingSearch] = useState(false);
   const [modalResult, setModalResult] = useState<PeaceAssessmentResult | null>(
@@ -115,7 +291,7 @@ export default function AdminDashboard() {
   const featureGridRef = useRef<HTMLElement | null>(null);
   const workspaceRef = useRef<HTMLElement | null>(null);
   const workspaceHeadingRef = useRef<HTMLHeadingElement | null>(null);
-  const lastOpenedSectionRef = useRef<SectionId>("overview");
+  const lastOpenedSectionRef = useRef<SectionId>("people");
   const shouldScrollWorkspaceRef = useRef(false);
   const shouldScrollDashboardRef = useRef(false);
 
@@ -161,19 +337,26 @@ export default function AdminDashboard() {
   }, [router]);
 
   useEffect(() => {
-    function openHashSection() {
-      const hash = window.location.hash.replace("#", "") as SectionId;
+    function openUrlWorkspace() {
+      const params = new URLSearchParams(window.location.search);
+      const workspace = normalizeSectionId(
+        params.get("workspace") || window.location.hash.replace("#", "")
+      );
 
-      if (!sections.some((section) => section.id === hash)) return;
+      if (!workspace) return;
 
       shouldScrollWorkspaceRef.current = true;
-      setOpenSection(hash);
+      setOpenSection(workspace);
     }
 
-    openHashSection();
-    window.addEventListener("hashchange", openHashSection);
+    openUrlWorkspace();
+    window.addEventListener("popstate", openUrlWorkspace);
+    window.addEventListener("hashchange", openUrlWorkspace);
 
-    return () => window.removeEventListener("hashchange", openHashSection);
+    return () => {
+      window.removeEventListener("popstate", openUrlWorkspace);
+      window.removeEventListener("hashchange", openUrlWorkspace);
+    };
   }, []);
 
   useEffect(() => {
@@ -267,7 +450,9 @@ export default function AdminDashboard() {
     lastOpenedSectionRef.current = sectionId;
     shouldScrollWorkspaceRef.current = true;
     setOpenSection(sectionId);
-    window.history.replaceState(null, "", `#${sectionId}`);
+    const params = new URLSearchParams(window.location.search);
+    params.set("workspace", sectionId);
+    window.history.replaceState(null, "", `${window.location.pathname}?${params}`);
   }
 
   function openUser(userId: string) {
@@ -280,8 +465,8 @@ export default function AdminDashboard() {
 
   function returnToDashboard() {
     shouldScrollDashboardRef.current = true;
-    window.history.replaceState(null, "", window.location.pathname);
-    setOpenSection("overview");
+    window.history.replaceState(null, "", `${window.location.pathname}?workspace=people`);
+    setOpenSection("people");
   }
 
   function returnToSearch() {
@@ -331,8 +516,8 @@ export default function AdminDashboard() {
         <div className="container">
           <div className="admin-hero unified-admin-hero">
             <div>
-              <div className="eyebrow">PeaceWorks Administration</div>
-              <h1>PeaceWorks Administration</h1>
+              <div className="eyebrow">Admin Dashboard</div>
+              <h1>Admin Dashboard</h1>
               <p>
                 See the health of the network, find what needs attention, and
                 manage every part of the PeaceWorks system.
@@ -353,9 +538,6 @@ export default function AdminDashboard() {
               usersPayload={usersPayload}
             />
           </div>
-          <VisualDiagnosticsDashboard operations={operations} />
-
-          <NeedsAttention alerts={operations.alerts} onJump={goToSection} />
 
           <AdminFeatureGrid
             activeSection={openSection}
@@ -456,9 +638,9 @@ function AdminCommandSearch({
               Choose action
             </option>
             <option value="people">Manage access</option>
-            <option value="diagnostics">Review alerts</option>
+            <option value="reports">Review alerts</option>
             <option value="assessments">View results</option>
-            <option value="settings">Check settings</option>
+            <option value="system-settings">Check settings</option>
           </select>
         </label>
       </div>
@@ -762,7 +944,6 @@ function AdminExpandedWorkspace({
         headingRef={workspaceHeadingRef}
       />
 
-      {activeSection === "overview" && <AdminOverview operations={operations} />}
       {activeSection === "people" && (
         <PeopleManagementSection
           usersPayload={usersPayload}
@@ -783,33 +964,25 @@ function AdminExpandedWorkspace({
       {activeSection === "circles" && (
         <CirclesSection operations={operations} usersPayload={usersPayload} />
       )}
-      {activeSection === "coaching" && (
+      {activeSection === "coaches" && (
         <CoachingSection
           operations={operations}
           onOpenUser={onOpenUser}
           usersPayload={usersPayload}
         />
       )}
-      {activeSection === "content" && (
-        <DashboardEmptyState
-          title="Content Studio is ready for the next system layer."
-          description="Create monthly questions, articles, videos, and resources when the content backend is connected."
-        />
+      {activeSection === "content-studio" && (
+        <ContentStudioSection usersPayload={usersPayload} />
       )}
-      {activeSection === "communications" && (
-        <DashboardEmptyState
-          title="Communications is ready for future delivery workflows."
-          description="Prepare dashboard content for future email delivery without showing fake integration records."
-        />
-      )}
-      {activeSection === "diagnostics" && (
-        <DiagnosticsSection
+      {activeSection === "communications" && <CommunicationsSection />}
+      {activeSection === "reports" && (
+        <ReportsSection
           operations={operations}
           onJump={onJump}
           onOpenUser={onOpenUser}
         />
       )}
-      {activeSection === "settings" && <PlatformSettingsSection />}
+      {activeSection === "system-settings" && <PlatformSettingsSection />}
     </section>
   );
 }
@@ -1035,6 +1208,26 @@ function AssessmentsSection({
 
   return (
     <div className="admin-section-stack">
+      <div className="admin-card-grid">
+        <article className="admin-small-card">
+          <span>Published</span>
+          <strong>Peace Assessment</strong>
+          <p>
+            {analytics.overview.completedAssessments} completed result
+            {analytics.overview.completedAssessments === 1 ? "" : "s"} ·{" "}
+            {analytics.overview.usersWithCompletedAssessment} participant
+            {analytics.overview.usersWithCompletedAssessment === 1 ? "" : "s"}
+          </p>
+        </article>
+        <article className="admin-small-card">
+          <span>Assessment Assignments</span>
+          <strong>Audience planning</strong>
+          <p>
+            Organize assessment availability for members, Circles, selected
+            users, and date-based participation windows.
+          </p>
+        </article>
+      </div>
       <div className="admin-mini-chart-grid">
         <MiniBars
           title="Profile Results"
@@ -1503,7 +1696,2512 @@ function SharedCaseload({
   );
 }
 
-function DiagnosticsSection({
+function ContentStudioSection({ usersPayload }: { usersPayload: AdminUsersPayload }) {
+  const [activeTab, setActiveTab] = useState<ContentStudioTab>("monthly-questions");
+  const [payload, setPayload] = useState<AdminContentStudioPayload | null>(null);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
+    "loading"
+  );
+  const [message, setMessage] = useState<ContentMessage>(null);
+
+  async function loadContent() {
+    setLoadState("loading");
+    setMessage(null);
+
+    const token = await getAccessToken();
+
+    if (!token) {
+      setLoadState("error");
+      setMessage({ type: "error", text: "Admin session is no longer available." });
+      return;
+    }
+
+    const response = await fetch("/api/admin/content/monthly-questions", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const result = (await response.json().catch(() => null)) as
+      | AdminContentStudioPayload
+      | { ok?: false; message?: string }
+      | null;
+
+    if (!response.ok || !result || result.ok !== true) {
+      setLoadState("error");
+      setMessage({
+        type: "error",
+        text:
+          result && "message" in result && result.message
+            ? result.message
+            : "Content library could not be loaded.",
+      });
+      return;
+    }
+
+    setPayload(result);
+    setLoadState("ready");
+  }
+
+  useEffect(() => {
+    void Promise.resolve().then(loadContent);
+  }, []);
+
+  const tabs: Array<{
+    id: ContentStudioTab;
+    title: string;
+    description: string;
+    count: number;
+    icon: LucideIcon;
+  }> = [
+    {
+      id: "monthly-questions",
+      title: "Monthly Questions",
+      description: "Create the shared monthly prompts coaches assign to Circles.",
+      count: payload?.monthlyQuestions.length || 0,
+      icon: BookOpen,
+    },
+    {
+      id: "resources",
+      title: "Resource Library",
+      description: "Save links and references for future Circle resource sharing.",
+      count: payload?.resources.length || 0,
+      icon: Library,
+    },
+    {
+      id: "trainings",
+      title: "Training Library",
+      description: "Maintain training records for future learning experiences.",
+      count: payload?.trainings.length || 0,
+      icon: GraduationCap,
+    },
+  ];
+
+  return (
+    <div className="admin-section-stack">
+      {message && <div className={`admin-message ${message.type}`}>{message.text}</div>}
+
+      <div className="admin-content-card-grid">
+        {tabs.map((tab) => (
+          <button
+            className={`admin-content-card${activeTab === tab.id ? " active" : ""}`}
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+          >
+            <DashboardTileIcon icon={tab.icon} />
+            <span>
+              <strong>{tab.title}</strong>
+              <small>{tab.description}</small>
+            </span>
+            <em>{tab.count}</em>
+          </button>
+        ))}
+      </div>
+
+      {loadState === "loading" && (
+        <div className="admin-empty">Loading Content Studio...</div>
+      )}
+
+      {loadState === "error" && (
+        <DashboardEmptyState
+          title="Content Studio could not be loaded."
+          description="Please check the content library setup and try again."
+        />
+      )}
+
+      {loadState === "ready" && payload && (
+        <>
+          {activeTab === "monthly-questions" && (
+            <MonthlyQuestionLibrary
+              assignments={payload.assignments}
+              questions={payload.monthlyQuestions}
+              usersPayload={usersPayload}
+              onMessage={setMessage}
+              onRefresh={loadContent}
+            />
+          )}
+          {activeTab === "resources" && (
+            <ResourceLibrary
+              assignments={payload.assignments}
+              resources={payload.resources}
+              usersPayload={usersPayload}
+              onMessage={setMessage}
+              onRefresh={loadContent}
+            />
+          )}
+          {activeTab === "trainings" && (
+            <TrainingLibrary
+              assignments={payload.assignments}
+              trainings={payload.trainings}
+              usersPayload={usersPayload}
+              onMessage={setMessage}
+              onRefresh={loadContent}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function MonthlyQuestionLibrary({
+  assignments,
+  questions,
+  usersPayload,
+  onMessage,
+  onRefresh,
+}: {
+  assignments: AdminContentAssignment[];
+  questions: AdminMonthlyQuestion[];
+  usersPayload: AdminUsersPayload;
+  onMessage: (message: ContentMessage) => void;
+  onRefresh: () => Promise<void>;
+}) {
+  const emptyForm = {
+    id: "",
+    title: "",
+    category: "",
+    theme: "",
+    openingReflection: "",
+    questionText: "",
+    guidance: "",
+    discussionPrompts: "",
+  };
+  const [form, setForm] = useState(emptyForm);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<ContentStatus | "all">("all");
+  const [saving, setSaving] = useState(false);
+  const [assigningQuestion, setAssigningQuestion] =
+    useState<AdminMonthlyQuestion | null>(null);
+  const filtered = questions.filter((question) => {
+    const haystack = [
+      question.title,
+      question.category,
+      question.theme,
+      question.questionText,
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    return (
+      (status === "all" || question.status === status) &&
+      haystack.includes(query.trim().toLowerCase())
+    );
+  });
+
+  function editQuestion(question: AdminMonthlyQuestion) {
+    setForm({
+      id: question.id,
+      title: question.title,
+      category: question.category,
+      theme: question.theme,
+      openingReflection: question.openingReflection,
+      questionText: question.questionText,
+      guidance: question.guidance,
+      discussionPrompts: question.discussionPrompts.join("\n"),
+    });
+  }
+
+  async function saveQuestion() {
+    setSaving(true);
+    onMessage(null);
+
+    const result = await adminContentRequest(
+      form.id
+        ? `/api/admin/content/monthly-questions/${form.id}`
+        : "/api/admin/content/monthly-questions",
+      {
+        method: form.id ? "PATCH" : "POST",
+        body: {
+          title: form.title,
+          category: form.category,
+          theme: form.theme,
+          openingReflection: form.openingReflection,
+          questionText: form.questionText,
+          guidance: form.guidance,
+          discussionPrompts: form.discussionPrompts
+            .split("\n")
+            .map((item) => item.trim())
+            .filter(Boolean),
+        },
+      }
+    );
+
+    setSaving(false);
+
+    if (!result.ok) {
+      onMessage({ type: "error", text: result.message });
+      return;
+    }
+
+    setForm(emptyForm);
+    onMessage({ type: "success", text: "Monthly question was saved." });
+    await onRefresh();
+  }
+
+  return (
+    <div className="admin-content-workspace">
+      <ContentLibraryTools
+        search={query}
+        status={status}
+        searchLabel="Search monthly questions"
+        onSearch={setQuery}
+        onStatusChange={setStatus}
+      />
+
+      <section className="admin-content-editor">
+        <div className="admin-content-editor-head">
+          <div>
+            <span className="card-label">Monthly Question Library</span>
+            <h3>{form.id ? "Edit monthly question" : "Create monthly question"}</h3>
+          </div>
+          {form.id && (
+            <button className="admin-link-button" type="button" onClick={() => setForm(emptyForm)}>
+              New Question
+            </button>
+          )}
+        </div>
+
+        <div className="admin-content-form-grid">
+          <ContentInput label="Title" value={form.title} onChange={(title) => setForm({ ...form, title })} />
+          <ContentInput label="Category" value={form.category} onChange={(category) => setForm({ ...form, category })} />
+          <ContentInput label="Theme" value={form.theme} onChange={(theme) => setForm({ ...form, theme })} />
+          <ContentTextarea label="Opening Reflection" value={form.openingReflection} onChange={(openingReflection) => setForm({ ...form, openingReflection })} />
+          <ContentTextarea label="Question" value={form.questionText} onChange={(questionText) => setForm({ ...form, questionText })} />
+          <ContentTextarea label="Guidance" value={form.guidance} onChange={(guidance) => setForm({ ...form, guidance })} />
+          <ContentTextarea label="Discussion Prompts" value={form.discussionPrompts} onChange={(discussionPrompts) => setForm({ ...form, discussionPrompts })} />
+        </div>
+
+        <button className="btn btn-primary" type="button" onClick={saveQuestion} disabled={saving}>
+          {saving ? "Saving..." : "Save Question"}
+        </button>
+      </section>
+
+      <div className="admin-content-list">
+        {filtered.length === 0 ? (
+          <div className="admin-empty">No monthly questions match this view.</div>
+        ) : (
+          filtered.map((question) => (
+            <MonthlyQuestionCard
+              key={question.id}
+              question={question}
+              assignments={assignments.filter(
+                (assignment) =>
+                  assignment.contentType === "monthly_question" &&
+                  assignment.contentId === question.id
+              )}
+              onEdit={() => editQuestion(question)}
+              onAssign={() => setAssigningQuestion(question)}
+              onMessage={onMessage}
+              onRefresh={onRefresh}
+            />
+          ))
+        )}
+      </div>
+
+      {assigningQuestion && (
+        <ContentAssignmentPanel
+          content={{
+            id: assigningQuestion.id,
+            title: assigningQuestion.title,
+            type: "monthly_question",
+            status: assigningQuestion.status,
+          }}
+          assignments={assignments.filter(
+            (assignment) =>
+              assignment.contentType === "monthly_question" &&
+              assignment.contentId === assigningQuestion.id
+          )}
+          usersPayload={usersPayload}
+          onClose={() => setAssigningQuestion(null)}
+          onMessage={onMessage}
+          onRefresh={onRefresh}
+        />
+      )}
+    </div>
+  );
+}
+
+function MonthlyQuestionCard({
+  assignments,
+  question,
+  onEdit,
+  onAssign,
+  onMessage,
+  onRefresh,
+}: {
+  assignments: AdminContentAssignment[];
+  question: AdminMonthlyQuestion;
+  onEdit: () => void;
+  onAssign: () => void;
+  onMessage: (message: ContentMessage) => void;
+  onRefresh: () => Promise<void>;
+}) {
+  async function runAction(action: "publish" | "archive" | "delete" | "duplicate") {
+    const confirmed =
+      action !== "delete" ||
+      window.confirm("Delete this draft monthly question? Assigned questions should be archived instead.");
+
+    if (!confirmed) return;
+
+    const status = action === "publish" ? "published" : action === "archive" ? "archived" : null;
+    const result = await adminContentRequest(
+      action === "duplicate"
+        ? `/api/admin/content/monthly-questions/${question.id}/duplicate`
+        : `/api/admin/content/monthly-questions/${question.id}`,
+      {
+        method: action === "delete" ? "DELETE" : action === "duplicate" ? "POST" : "PATCH",
+        body: status ? { status } : undefined,
+      }
+    );
+
+    if (!result.ok) {
+      onMessage({ type: "error", text: result.message });
+      return;
+    }
+
+    onMessage({ type: "success", text: "Monthly question library was updated." });
+    await onRefresh();
+  }
+
+  return (
+    <article className="admin-content-item">
+      <div>
+        <span>{formatContentStatus(question.status)}</span>
+        <h3>{question.title}</h3>
+        <p>{question.questionText || "No question text yet."}</p>
+        <small>
+          {[question.category, question.theme].filter(Boolean).join(" · ") || "No category"} ·{" "}
+          {question.assignedCircleCount} assigned · {question.currentUseCount} current
+        </small>
+      </div>
+      <div className="admin-content-actions">
+        <button className="admin-link-button" type="button" onClick={onEdit}>
+          <FileText size={15} /> Edit
+        </button>
+        <button className="admin-link-button" type="button" onClick={() => runAction("duplicate")}>
+          <Copy size={15} /> Duplicate
+        </button>
+        {question.status !== "published" && (
+          <button className="admin-link-button" type="button" onClick={() => runAction("publish")}>
+            <CheckCircle size={15} /> Publish
+          </button>
+        )}
+        {question.status !== "archived" && (
+          <button className="admin-link-button" type="button" onClick={() => runAction("archive")}>
+            <Archive size={15} /> Archive
+          </button>
+        )}
+        {question.status === "published" && (
+          <button className="admin-link-button" type="button" onClick={onAssign}>
+            <Compass size={15} /> Assign Content
+          </button>
+        )}
+        {question.assignedCircleCount === 0 && (
+          <button className="admin-link-button danger" type="button" onClick={() => runAction("delete")}>
+            <Trash2 size={15} /> Delete
+          </button>
+        )}
+      </div>
+      <AssignmentSummary assignments={assignments} />
+    </article>
+  );
+}
+
+function ResourceLibrary({
+  assignments,
+  resources,
+  usersPayload,
+  onMessage,
+  onRefresh,
+}: {
+  assignments: AdminContentAssignment[];
+  resources: AdminResource[];
+  usersPayload: AdminUsersPayload;
+  onMessage: (message: ContentMessage) => void;
+  onRefresh: () => Promise<void>;
+}) {
+  const emptyForm = {
+    id: "",
+    title: "",
+    description: "",
+    resourceType: "link",
+    provider: "",
+    externalUrl: "",
+    embedUrl: "",
+    storagePath: "",
+    thumbnailUrl: "",
+    coverImagePath: "",
+    coverImageUrl: "",
+    bodyContent: "",
+    fileName: "",
+    fileSize: null as number | null,
+    mimeType: "",
+    category: "",
+    tags: "",
+  };
+  const [form, setForm] = useState(emptyForm);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<ContentStatus | "all">("all");
+  const [assigningResource, setAssigningResource] = useState<AdminResource | null>(null);
+  const filtered = resources.filter((resource) =>
+    (status === "all" || resource.status === status) &&
+    [resource.title, resource.description, resource.category, resource.tags.join(" ")]
+      .join(" ")
+      .toLowerCase()
+      .includes(query.trim().toLowerCase())
+  );
+
+  const isUploadedType = isUploadedResourceType(form.resourceType);
+  const isHostedType = form.resourceType === "video" || form.resourceType === "audio";
+
+  async function saveResource() {
+    const result = await adminContentRequest(
+      form.id
+        ? `/api/admin/content/resources/${form.id}`
+        : "/api/admin/content/resources",
+      {
+        method: form.id ? "PATCH" : "POST",
+        body: {
+          ...form,
+          tags: form.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+        },
+      }
+    );
+
+    if (!result.ok) {
+      onMessage({ type: "error", text: result.message });
+      return;
+    }
+
+    setForm(emptyForm);
+    onMessage({ type: "success", text: "Resource was saved." });
+    await onRefresh();
+  }
+
+  async function uploadResourceFile(file: File | null) {
+    if (!file) return;
+
+    const token = await getAccessToken();
+
+    if (!token) {
+      onMessage({ type: "error", text: "Admin session is no longer available." });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.set("resourceType", form.resourceType);
+    formData.set("file", file);
+
+    const response = await fetch("/api/admin/content/resources/upload", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    const result = (await response.json().catch(() => null)) as
+      | {
+          ok?: boolean;
+          message?: string;
+          upload?: {
+            storagePath: string;
+            fileName: string;
+            fileSize: number;
+            mimeType: string;
+          };
+        }
+      | null;
+
+    if (!response.ok || !result?.ok || !result.upload) {
+      onMessage({
+        type: "error",
+        text: result?.message || "Resource file could not be uploaded.",
+      });
+      return;
+    }
+
+    setForm({
+      ...form,
+      storagePath: result.upload.storagePath,
+      coverImagePath:
+        form.resourceType === "image" && !form.coverImagePath
+          ? result.upload.storagePath
+          : form.coverImagePath,
+      fileName: result.upload.fileName,
+      fileSize: result.upload.fileSize,
+      mimeType: result.upload.mimeType,
+    });
+    onMessage({ type: "success", text: "Resource file was uploaded." });
+  }
+
+  async function uploadCoverImage(file: File | null) {
+    if (!file) return;
+
+    const token = await getAccessToken();
+
+    if (!token) {
+      onMessage({ type: "error", text: "Admin session is no longer available." });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.set("resourceType", form.resourceType);
+    formData.set("uploadKind", "cover");
+    formData.set("file", file);
+
+    const response = await fetch("/api/admin/content/resources/upload", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    const result = (await response.json().catch(() => null)) as
+      | {
+          ok?: boolean;
+          message?: string;
+          upload?: {
+            storagePath: string;
+            fileName: string;
+          };
+        }
+      | null;
+
+    if (!response.ok || !result?.ok || !result.upload) {
+      onMessage({
+        type: "error",
+        text: result?.message || "Cover image could not be uploaded.",
+      });
+      return;
+    }
+
+    setForm({
+      ...form,
+      coverImagePath: result.upload.storagePath,
+      thumbnailUrl: "",
+    });
+    onMessage({ type: "success", text: "Cover image was uploaded." });
+  }
+
+  return (
+    <ContentRecordLibrary
+      title="Resource Library"
+      subtitle="Create links and reference records that can later be assigned to Circles."
+      search={query}
+      status={status}
+      onSearch={setQuery}
+      onStatusChange={setStatus}
+      form={
+        <>
+          <ContentInput label="Title" value={form.title} onChange={(title) => setForm({ ...form, title })} />
+          <ContentSelect
+            label="Type"
+            value={form.resourceType}
+            options={[
+              ["link", "Link"],
+              ["video", "Video"],
+              ["audio", "Audio"],
+              ["pdf", "PDF"],
+              ["image", "Image"],
+              ["document", "Document"],
+              ["worksheet", "Worksheet"],
+              ["guide", "Guide"],
+              ["article", "Article"],
+              ["blog", "Blog"],
+              ["reflection", "Reflection"],
+              ["case_study", "Case Study"],
+              ["downloadable_tool", "Downloadable Tool"],
+              ["other", "Other"],
+            ]}
+            onChange={(resourceType) =>
+              setForm({
+                ...form,
+                resourceType,
+                externalUrl: "",
+                embedUrl: "",
+                provider: "",
+                storagePath: "",
+                coverImagePath: "",
+                coverImageUrl: "",
+                bodyContent: "",
+                fileName: "",
+                fileSize: null,
+                mimeType: "",
+              })
+            }
+          />
+          {!isUploadedType && (
+            <ContentInput
+              label={form.resourceType === "video" ? "Video URL" : form.resourceType === "audio" ? "Audio or Podcast URL" : "URL"}
+              value={form.externalUrl}
+              onChange={(externalUrl) => setForm({ ...form, externalUrl })}
+            />
+          )}
+          {isHostedType && (
+            <ContentInput label="Approved Image URL" value={form.thumbnailUrl} onChange={(thumbnailUrl) => setForm({ ...form, thumbnailUrl })} />
+          )}
+          {isUploadedType && (
+            <label>
+              <span>{getPrimaryUploadLabel(form.resourceType)}</span>
+              <input
+                type="file"
+                accept={getResourceFileAccept(form.resourceType)}
+                onChange={(event) => uploadResourceFile(event.target.files?.[0] || null)}
+              />
+              {form.fileName && (
+                <small>
+                  {form.fileName} · {formatFileSize(form.fileSize)}
+                </small>
+              )}
+            </label>
+          )}
+          <label>
+            <span>Thumbnail or Cover Image</span>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+              onChange={(event) => uploadCoverImage(event.target.files?.[0] || null)}
+            />
+            <small>
+              Upload an optional image to represent this resource in the library and on member dashboards.
+            </small>
+            {form.coverImagePath && (
+              <button
+                className="admin-link-button"
+                type="button"
+                onClick={() =>
+                  setForm({ ...form, coverImagePath: "", coverImageUrl: "", thumbnailUrl: "" })
+                }
+              >
+                Remove Image
+              </button>
+            )}
+          </label>
+          {isWrittenResourceType(form.resourceType) && (
+            <ContentTextarea
+              label="Body Content"
+              value={form.bodyContent}
+              onChange={(bodyContent) => setForm({ ...form, bodyContent })}
+            />
+          )}
+          <ContentInput label="Category" value={form.category} onChange={(category) => setForm({ ...form, category })} />
+          <ContentInput label="Tags" value={form.tags} onChange={(tags) => setForm({ ...form, tags })} />
+          <ContentTextarea label="Description" value={form.description} onChange={(description) => setForm({ ...form, description })} />
+        </>
+      }
+      onSave={saveResource}
+    >
+      {filtered.map((resource) => (
+        <ContentRecordCard
+          key={resource.id}
+          title={resource.title}
+          detail={resource.description}
+          status={resource.status}
+          meta={[
+            resource.resourceType,
+            resource.provider,
+            resource.category,
+            resource.fileName,
+            resource.tags.join(", "),
+          ]}
+          externalUrl={resource.externalUrl}
+          fileOpenEndpoint={
+            resource.storagePath
+              ? `/api/admin/content/resources/${resource.id}/open`
+              : ""
+          }
+          coverImageUrl={resource.coverImageUrl || resource.thumbnailUrl}
+          assignments={assignments.filter(
+            (assignment) =>
+              assignment.contentType === "resource" &&
+              assignment.contentId === resource.id
+          )}
+          onEdit={() =>
+            setForm({
+              id: resource.id,
+              title: resource.title,
+              description: resource.description,
+              resourceType: resource.resourceType,
+              provider: resource.provider,
+              externalUrl: resource.externalUrl,
+              embedUrl: resource.embedUrl,
+              storagePath: resource.storagePath,
+              thumbnailUrl: resource.thumbnailUrl,
+              coverImagePath: resource.coverImagePath,
+              coverImageUrl: resource.coverImageUrl,
+              bodyContent: resource.bodyContent,
+              fileName: resource.fileName,
+              fileSize: resource.fileSize,
+              mimeType: resource.mimeType,
+              category: resource.category,
+              tags: resource.tags.join(", "),
+            })
+          }
+          onStatus={(nextStatus) =>
+            updateContentStatus(
+              `/api/admin/content/resources/${resource.id}`,
+              nextStatus,
+              onMessage,
+              onRefresh
+            )
+          }
+          onDuplicate={() =>
+            duplicateContentRecord(
+              `/api/admin/content/resources/${resource.id}/duplicate`,
+              onMessage,
+              onRefresh
+            )
+          }
+          onAssign={() => setAssigningResource(resource)}
+          onDelete={() =>
+            deleteContentRecord(
+              `/api/admin/content/resources/${resource.id}`,
+              "Delete this resource?",
+              onMessage,
+              onRefresh
+            )
+          }
+        />
+      ))}
+      {assigningResource && (
+        <ContentAssignmentPanel
+          content={{
+            id: assigningResource.id,
+            title: assigningResource.title,
+            type: "resource",
+            status: assigningResource.status,
+          }}
+          assignments={assignments.filter(
+            (assignment) =>
+              assignment.contentType === "resource" &&
+              assignment.contentId === assigningResource.id
+          )}
+          usersPayload={usersPayload}
+          onClose={() => setAssigningResource(null)}
+          onMessage={onMessage}
+          onRefresh={onRefresh}
+        />
+      )}
+    </ContentRecordLibrary>
+  );
+}
+
+function TrainingLibrary({
+  assignments,
+  trainings,
+  usersPayload,
+  onMessage,
+  onRefresh,
+}: {
+  assignments: AdminContentAssignment[];
+  trainings: AdminTraining[];
+  usersPayload: AdminUsersPayload;
+  onMessage: (message: ContentMessage) => void;
+  onRefresh: () => Promise<void>;
+}) {
+  const emptyForm = {
+    id: "",
+    title: "",
+    description: "",
+    coverImageUrl: "",
+    category: "",
+    estimatedDuration: "",
+  };
+  const [form, setForm] = useState(emptyForm);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<ContentStatus | "all">("all");
+  const [assigningTraining, setAssigningTraining] = useState<AdminTraining | null>(null);
+  const filtered = trainings.filter((training) =>
+    (status === "all" || training.status === status) &&
+    [training.title, training.description, training.category]
+      .join(" ")
+      .toLowerCase()
+      .includes(query.trim().toLowerCase())
+  );
+
+  async function saveTraining() {
+    const result = await adminContentRequest(
+      form.id
+        ? `/api/admin/content/trainings/${form.id}`
+        : "/api/admin/content/trainings",
+      {
+        method: form.id ? "PATCH" : "POST",
+        body: form,
+      }
+    );
+
+    if (!result.ok) {
+      onMessage({ type: "error", text: result.message });
+      return;
+    }
+
+    setForm(emptyForm);
+    onMessage({ type: "success", text: "Training was saved." });
+    await onRefresh();
+  }
+
+  return (
+    <ContentRecordLibrary
+      title="Training Library"
+      subtitle="Maintain training records for future learning paths."
+      search={query}
+      status={status}
+      onSearch={setQuery}
+      onStatusChange={setStatus}
+      form={
+        <>
+          <ContentInput label="Title" value={form.title} onChange={(title) => setForm({ ...form, title })} />
+          <ContentInput label="Category" value={form.category} onChange={(category) => setForm({ ...form, category })} />
+          <ContentInput label="Estimated Duration" value={form.estimatedDuration} onChange={(estimatedDuration) => setForm({ ...form, estimatedDuration })} />
+          <ContentInput label="Cover Image Reference" value={form.coverImageUrl} onChange={(coverImageUrl) => setForm({ ...form, coverImageUrl })} />
+          <ContentTextarea label="Description" value={form.description} onChange={(description) => setForm({ ...form, description })} />
+        </>
+      }
+      onSave={saveTraining}
+    >
+      {filtered.map((training) => (
+        <ContentRecordCard
+          key={training.id}
+          title={training.title}
+          detail={training.description}
+          status={training.status}
+          meta={[training.category, training.estimatedDuration]}
+          assignments={assignments.filter(
+            (assignment) =>
+              assignment.contentType === "training" &&
+              assignment.contentId === training.id
+          )}
+          onEdit={() =>
+            setForm({
+              id: training.id,
+              title: training.title,
+              description: training.description,
+              coverImageUrl: training.coverImageUrl,
+              category: training.category,
+              estimatedDuration: training.estimatedDuration,
+            })
+          }
+          onStatus={(nextStatus) =>
+            updateContentStatus(
+              `/api/admin/content/trainings/${training.id}`,
+              nextStatus,
+              onMessage,
+              onRefresh
+            )
+          }
+          onDuplicate={() =>
+            duplicateContentRecord(
+              `/api/admin/content/trainings/${training.id}/duplicate`,
+              onMessage,
+              onRefresh
+            )
+          }
+          onAssign={() => setAssigningTraining(training)}
+          onDelete={() =>
+            deleteContentRecord(
+              `/api/admin/content/trainings/${training.id}`,
+              "Delete this training?",
+              onMessage,
+              onRefresh
+            )
+          }
+        />
+      ))}
+      {assigningTraining && (
+        <ContentAssignmentPanel
+          content={{
+            id: assigningTraining.id,
+            title: assigningTraining.title,
+            type: "training",
+            status: assigningTraining.status,
+          }}
+          assignments={assignments.filter(
+            (assignment) =>
+              assignment.contentType === "training" &&
+              assignment.contentId === assigningTraining.id
+          )}
+          usersPayload={usersPayload}
+          onClose={() => setAssigningTraining(null)}
+          onMessage={onMessage}
+          onRefresh={onRefresh}
+        />
+      )}
+    </ContentRecordLibrary>
+  );
+}
+
+function CommunicationsSection() {
+  const emptyForm = {
+    id: "",
+    format: "announcement" as CommunicationFormat,
+    title: "",
+    subject: "",
+    previewText: "",
+    summary: "",
+    bodyContent: "",
+    communicationType: "announcement",
+    channel: "dashboard",
+    dashboardPresentation: "standard",
+    audienceScope: "all_members",
+    senderId: "",
+    replyToEmail: "",
+    visibleAuthorName: "",
+    headerImagePath: "",
+    headerImageUrl: "",
+    thumbnailImagePath: "",
+    thumbnailImageUrl: "",
+    useHeaderAsThumbnail: false,
+    imageAltText: "",
+    category: "",
+    tags: [] as string[],
+    visibleFrom: "",
+    visibleUntil: "",
+    links: [] as Array<{ label: string; url: string; linkStyle: string; sortOrder: number }>,
+    channels: ["my_dashboard"] as string[],
+    circleIds: [] as string[],
+    profileIds: [] as string[],
+    newsletterSections: [] as Array<{ heading: string; bodyContent: string; sortOrder: number }>,
+    addToResourceLibrary: false,
+    resourceTitle: "",
+    resourceSummary: "",
+    resourceType: "article",
+    resourceCategory: "",
+    resourceTags: [] as string[],
+    resourceStatus: "draft",
+  };
+  const [communications, setCommunications] = useState<AdminCommunication[]>([]);
+  const [senders, setSenders] = useState<AdminCommunicationSender[]>([]);
+  const [form, setForm] = useState(emptyForm);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<CommunicationStatus | "all">("all");
+  const [message, setMessage] = useState<ContentMessage>(null);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
+    "loading"
+  );
+
+  async function loadCommunications() {
+    setLoadState("loading");
+    const token = await getAccessToken();
+
+    if (!token) {
+      setLoadState("error");
+      setMessage({ type: "error", text: "Admin session is no longer available." });
+      return;
+    }
+
+    const response = await fetch("/api/admin/content/communications", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const result = (await response.json().catch(() => null)) as
+      | AdminContentStudioPayload
+      | { ok?: false; message?: string }
+      | null;
+
+    if (!response.ok || !result || result.ok !== true) {
+      setLoadState("error");
+      setMessage({
+        type: "error",
+        text:
+          result && "message" in result && result.message
+            ? result.message
+            : "Communications could not be loaded.",
+      });
+      return;
+    }
+
+    setCommunications(result.communications);
+    setSenders(result.communicationSenders || []);
+    setLoadState("ready");
+  }
+
+  useEffect(() => {
+    void Promise.resolve().then(loadCommunications);
+  }, []);
+
+  const filtered = communications.filter((communication) =>
+    (status === "all" || communication.status === status) &&
+    [
+      communication.title,
+      communication.subject,
+      communication.summary,
+      communication.visibleAuthorName,
+      communication.communicationType,
+      communication.channel,
+      communication.audienceScope,
+      communication.channels.join(" "),
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(query.trim().toLowerCase())
+  );
+
+  async function saveCommunication() {
+    const result = await adminContentRequest(
+      form.id
+        ? `/api/admin/content/communications/${form.id}`
+        : "/api/admin/content/communications",
+      {
+        method: form.id ? "PATCH" : "POST",
+        body: form,
+      }
+    );
+
+    if (!result.ok) {
+      setMessage({ type: "error", text: result.message });
+      return;
+    }
+
+    setForm(emptyForm);
+    setMessage({ type: "success", text: "Communication was saved." });
+    await loadCommunications();
+  }
+
+  const formatOptions: Array<[CommunicationFormat, string]> = [
+    ["email", "Email"],
+    ["blog_article", "Blog / Article"],
+    ["announcement", "Announcement"],
+    ["newsletter", "Newsletter"],
+    ["dashboard_message", "Dashboard Message"],
+    ["circle_update", "Circle Update"],
+  ];
+  const selectedSender = senders.find((sender) => sender.id === form.senderId);
+  const needsSender =
+    form.format === "email" ||
+    form.format === "newsletter" ||
+    form.channels.includes("email");
+  const showArticleFields = form.format === "blog_article";
+  const showNewsletterSections = form.format === "newsletter";
+  const showDashboardPresentation =
+    form.format === "announcement" || form.format === "dashboard_message";
+  const showMedia =
+    form.format !== "email" ||
+    form.channels.includes("my_dashboard") ||
+    form.channels.includes("resource_library");
+  const compatibleChannels = getCommunicationChannelOptions(form.format);
+  const requiresCircleTargets = form.audienceScope === "selected_circles";
+  const requiresProfileTargets =
+    form.audienceScope === "selected_members" || form.audienceScope === "selected_coaches";
+
+  function updateFormat(format: CommunicationFormat) {
+    const nextChannels = getDefaultCommunicationChannels(format);
+    setForm({
+      ...form,
+      format,
+      communicationType: format,
+      channels: nextChannels,
+      channel: nextChannels.includes("email")
+        ? nextChannels.length > 1
+          ? "both"
+          : "email"
+        : "dashboard",
+      dashboardPresentation:
+        format === "blog_article" ? "article" : form.dashboardPresentation,
+      audienceScope:
+        format === "circle_update" ? "selected_circles" : form.audienceScope,
+    });
+  }
+
+  function toggleChannel(channel: string) {
+    const next = form.channels.includes(channel)
+      ? form.channels.filter((item) => item !== channel)
+      : [...form.channels, channel];
+    const safeNext = next.length > 0 ? next : getDefaultCommunicationChannels(form.format);
+
+    setForm({
+      ...form,
+      channels: safeNext,
+      channel: safeNext.includes("email")
+        ? safeNext.length > 1
+          ? "both"
+          : "email"
+        : "dashboard",
+    });
+  }
+
+  function updateLink(index: number, patch: Partial<(typeof form.links)[number]>) {
+    setForm({
+      ...form,
+      links: form.links.map((link, itemIndex) =>
+        itemIndex === index ? { ...link, ...patch } : link
+      ),
+    });
+  }
+
+  function updateNewsletterSection(
+    index: number,
+    patch: Partial<(typeof form.newsletterSections)[number]>
+  ) {
+    setForm({
+      ...form,
+      newsletterSections: form.newsletterSections.map((section, itemIndex) =>
+        itemIndex === index ? { ...section, ...patch } : section
+      ),
+    });
+  }
+
+  async function uploadCommunicationImage(
+    file: File | undefined,
+    uploadKind: "header" | "thumbnail"
+  ) {
+    if (!file) return;
+
+    const token = await getAccessToken();
+
+    if (!token) {
+      setMessage({ type: "error", text: "Admin session is no longer available." });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("uploadKind", uploadKind);
+
+    const response = await fetch("/api/admin/content/communications/upload", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    const result = (await response.json().catch(() => null)) as
+      | { ok?: boolean; message?: string; upload?: { storagePath?: string } }
+      | null;
+
+    if (!response.ok || !result?.ok || !result.upload?.storagePath) {
+      setMessage({
+        type: "error",
+        text: result?.message || "Communication image could not be uploaded.",
+      });
+      return;
+    }
+
+    if (uploadKind === "header") {
+      setForm({
+        ...form,
+        headerImagePath: result.upload.storagePath,
+        headerImageUrl: "",
+        thumbnailImagePath: form.useHeaderAsThumbnail
+          ? result.upload.storagePath
+          : form.thumbnailImagePath,
+      });
+    } else {
+      setForm({
+        ...form,
+        thumbnailImagePath: result.upload.storagePath,
+        thumbnailImageUrl: "",
+        useHeaderAsThumbnail: false,
+      });
+    }
+
+    setMessage({ type: "success", text: "Image uploaded." });
+  }
+
+  return (
+    <div className="admin-section-stack">
+      {message && <div className={`admin-message ${message.type}`}>{message.text}</div>}
+      <div className="admin-feature-grid-head">
+        <div>
+          <span className="card-label">Communications</span>
+          <h2>Create and share messages, articles, announcements, and campaigns across the PeaceWorks community.</h2>
+        </div>
+        <p>
+          Choose the communication format first, then select audience and
+          distribution separately. Email delivery will be available after sender
+          setup is completed.
+        </p>
+      </div>
+
+      <ContentLibraryTools
+        search={query}
+        status={status}
+        searchLabel="Search communications"
+        onSearch={setQuery}
+        onStatusChange={(value) => setStatus(value as CommunicationStatus | "all")}
+      />
+
+      <section className="admin-content-editor">
+        <div className="admin-content-editor-head">
+          <div>
+            <span className="card-label">Communication Record</span>
+            <h3>{form.id ? "Edit communication" : "Create communication"}</h3>
+          </div>
+          {form.id && (
+            <button className="admin-link-button" type="button" onClick={() => setForm(emptyForm)}>
+              New Communication
+            </button>
+          )}
+        </div>
+        <CommunicationComposerBlock title="Choose a Format">
+          <div className="admin-communication-format-grid">
+            {formatOptions.map(([format, label]) => (
+              <button
+                key={format}
+                className={`admin-content-card ${form.format === format ? "active" : ""}`}
+                type="button"
+                onClick={() => updateFormat(format)}
+              >
+                <strong>{label}</strong>
+                <small>{getCommunicationFormatDescription(format)}</small>
+              </button>
+            ))}
+          </div>
+        </CommunicationComposerBlock>
+
+        <CommunicationComposerBlock title="Compose">
+          <div className="admin-content-form-grid">
+            <ContentInput
+              label={form.format === "announcement" ? "Headline" : "Title"}
+              value={form.title}
+              onChange={(title) => setForm({ ...form, title })}
+            />
+            {(form.format === "email" || form.format === "newsletter") && (
+              <>
+                <ContentInput
+                  label="Subject"
+                  value={form.subject}
+                  onChange={(subject) => setForm({ ...form, subject })}
+                />
+                <ContentInput
+                  label="Preview Text"
+                  value={form.previewText}
+                  onChange={(previewText) => setForm({ ...form, previewText })}
+                />
+              </>
+            )}
+            {showArticleFields && (
+              <>
+                <ContentInput
+                  label="Author"
+                  value={form.visibleAuthorName}
+                  onChange={(visibleAuthorName) => setForm({ ...form, visibleAuthorName })}
+                />
+                <ContentInput
+                  label="Category"
+                  value={form.category}
+                  onChange={(category) => setForm({ ...form, category })}
+                />
+                <ContentInput
+                  label="Tags"
+                  value={form.tags.join(", ")}
+                  onChange={(value) => setForm({ ...form, tags: splitTags(value) })}
+                />
+              </>
+            )}
+            {showDashboardPresentation && (
+              <ContentSelect
+                label="Dashboard Presentation"
+                value={form.dashboardPresentation}
+                options={[
+                  ["standard", "Standard"],
+                  ["featured", "Featured"],
+                  ["banner", "Banner"],
+                ]}
+                onChange={(dashboardPresentation) =>
+                  setForm({ ...form, dashboardPresentation })
+                }
+              />
+            )}
+            <ContentTextarea
+              label={form.format === "announcement" ? "Short Message" : "Summary"}
+              value={form.summary}
+              onChange={(summary) => setForm({ ...form, summary })}
+            />
+            <ContentTextarea
+              label={form.format === "email" ? "Email Body" : "Body Content"}
+              value={form.bodyContent}
+              onChange={(bodyContent) => setForm({ ...form, bodyContent })}
+            />
+          </div>
+        </CommunicationComposerBlock>
+
+        {showNewsletterSections && (
+          <CommunicationComposerBlock title="Newsletter Sections">
+            <div className="admin-repeatable-list">
+              {form.newsletterSections.map((section, index) => (
+                <div className="admin-repeatable-row" key={index}>
+                  <ContentInput
+                    label="Section Heading"
+                    value={section.heading}
+                    onChange={(heading) => updateNewsletterSection(index, { heading })}
+                  />
+                  <ContentTextarea
+                    label="Section Content"
+                    value={section.bodyContent}
+                    onChange={(bodyContent) =>
+                      updateNewsletterSection(index, { bodyContent })
+                    }
+                  />
+                  <button
+                    className="admin-link-button"
+                    type="button"
+                    onClick={() =>
+                      setForm({
+                        ...form,
+                        newsletterSections: form.newsletterSections.filter(
+                          (_, itemIndex) => itemIndex !== index
+                        ),
+                      })
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                className="admin-link-button"
+                type="button"
+                onClick={() =>
+                  setForm({
+                    ...form,
+                    newsletterSections: [
+                      ...form.newsletterSections,
+                      { heading: "", bodyContent: "", sortOrder: form.newsletterSections.length },
+                    ],
+                  })
+                }
+              >
+                Add Section
+              </button>
+            </div>
+          </CommunicationComposerBlock>
+        )}
+
+        {needsSender && (
+          <CommunicationComposerBlock title="Sender">
+            <div className="admin-content-form-grid">
+              <ContentSelect
+                label="From"
+                value={form.senderId}
+                options={[
+                  ["", "Choose sender"],
+                  ...senders.map((sender) => [
+                    sender.id,
+                    `${sender.displayName} (${sender.verifiedFromEmail})`,
+                  ] as [string, string]),
+                ]}
+                onChange={(senderId) => {
+                  const sender = senders.find((item) => item.id === senderId);
+                  setForm({
+                    ...form,
+                    senderId,
+                    replyToEmail: sender?.replyToEmail || "",
+                  });
+                }}
+              />
+              <ContentInput
+                label="Reply-To"
+                value={form.replyToEmail}
+                onChange={(replyToEmail) => setForm({ ...form, replyToEmail })}
+              />
+            </div>
+            {selectedSender && (
+              <p className="admin-muted-copy">
+                From address and Reply-To are stored separately for future email delivery.
+              </p>
+            )}
+          </CommunicationComposerBlock>
+        )}
+
+        {showMedia && (
+          <CommunicationComposerBlock title="Media">
+            <div className="admin-content-form-grid">
+              <label>
+                <span>Header Image</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(event) =>
+                    void uploadCommunicationImage(event.target.files?.[0], "header")
+                  }
+                />
+              </label>
+              <label>
+                <span>Thumbnail</span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(event) =>
+                    void uploadCommunicationImage(event.target.files?.[0], "thumbnail")
+                  }
+                />
+              </label>
+              <ContentInput
+                label="Image Alt Text"
+                value={form.imageAltText}
+                onChange={(imageAltText) => setForm({ ...form, imageAltText })}
+              />
+            </div>
+            <div className="admin-content-actions">
+              {form.headerImagePath && (
+                <button
+                  className="admin-link-button"
+                  type="button"
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      thumbnailImagePath: form.headerImagePath,
+                      useHeaderAsThumbnail: true,
+                    })
+                  }
+                >
+                  Use Header Image as Thumbnail
+                </button>
+              )}
+              {(form.headerImagePath || form.thumbnailImagePath) && (
+                <button
+                  className="admin-link-button"
+                  type="button"
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      headerImagePath: "",
+                      headerImageUrl: "",
+                      thumbnailImagePath: "",
+                      thumbnailImageUrl: "",
+                      useHeaderAsThumbnail: false,
+                    })
+                  }
+                >
+                  Remove Images
+                </button>
+              )}
+            </div>
+          </CommunicationComposerBlock>
+        )}
+
+        <CommunicationComposerBlock title="Links and Actions">
+          <div className="admin-repeatable-list">
+            {form.links.map((link, index) => (
+              <div className="admin-repeatable-row" key={index}>
+                <ContentInput
+                  label="Link Label"
+                  value={link.label}
+                  onChange={(label) => updateLink(index, { label })}
+                />
+                <ContentInput
+                  label="URL"
+                  value={link.url}
+                  onChange={(url) => updateLink(index, { url })}
+                />
+                <ContentSelect
+                  label="Display Style"
+                  value={link.linkStyle}
+                  options={[
+                    ["text", "Text"],
+                    ["button", "Button"],
+                    ["featured", "Featured"],
+                  ]}
+                  onChange={(linkStyle) => updateLink(index, { linkStyle })}
+                />
+                {link.url && (
+                  <a href={link.url} target="_blank" rel="noopener noreferrer">
+                    Open Link
+                  </a>
+                )}
+                <button
+                  className="admin-link-button"
+                  type="button"
+                  onClick={() =>
+                    setForm({
+                      ...form,
+                      links: form.links.filter((_, itemIndex) => itemIndex !== index),
+                    })
+                  }
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button
+              className="admin-link-button"
+              type="button"
+              onClick={() =>
+                setForm({
+                  ...form,
+                  links: [
+                    ...form.links,
+                    { label: "", url: "", linkStyle: "text", sortOrder: form.links.length },
+                  ],
+                })
+              }
+            >
+              Add Another Link
+            </button>
+          </div>
+        </CommunicationComposerBlock>
+
+        <CommunicationComposerBlock title="Audience">
+          <div className="admin-content-form-grid">
+            <ContentSelect
+              label="Audience"
+              value={form.audienceScope}
+              options={getCommunicationAudienceOptions(form.format)}
+              onChange={(audienceScope) => setForm({ ...form, audienceScope })}
+            />
+            {(requiresCircleTargets || requiresProfileTargets) && (
+              <ContentInput
+                label={requiresCircleTargets ? "Selected Circle IDs" : "Selected Profile IDs"}
+                value={(requiresCircleTargets ? form.circleIds : form.profileIds).join(", ")}
+                onChange={(value) =>
+                  requiresCircleTargets
+                    ? setForm({ ...form, circleIds: splitIds(value) })
+                    : setForm({ ...form, profileIds: splitIds(value) })
+                }
+              />
+            )}
+            <ContentInput
+              label="Visible From"
+              value={form.visibleFrom}
+              onChange={(visibleFrom) => setForm({ ...form, visibleFrom })}
+            />
+            <ContentInput
+              label="Visible Until"
+              value={form.visibleUntil}
+              onChange={(visibleUntil) => setForm({ ...form, visibleUntil })}
+            />
+          </div>
+        </CommunicationComposerBlock>
+
+        <CommunicationComposerBlock title="Publish & Distribute">
+          <div className="admin-checkbox-list">
+            {compatibleChannels.map(([channel, label]) => (
+              <CircleCheckboxRow
+                key={channel}
+                label={label}
+                description={
+                  channel === "email"
+                    ? "Email preview is available now. Sending is not active yet."
+                    : "Create a reusable distribution placement for this Communication."
+                }
+                checked={form.channels.includes(channel)}
+                onChange={() => toggleChannel(channel)}
+              />
+            ))}
+          </div>
+        </CommunicationComposerBlock>
+
+        <CommunicationComposerBlock title="Add to Resource Library">
+          <CircleCheckboxRow
+            label="Add to Resource Library"
+            description="Create a linked reusable Resource without duplicating the source Communication."
+            checked={form.addToResourceLibrary}
+            onChange={() =>
+              setForm({ ...form, addToResourceLibrary: !form.addToResourceLibrary })
+            }
+          />
+          {form.addToResourceLibrary && (
+            <div className="admin-content-form-grid">
+              <ContentInput
+                label="Resource Title"
+                value={form.resourceTitle || form.title}
+                onChange={(resourceTitle) => setForm({ ...form, resourceTitle })}
+              />
+              <ContentTextarea
+                label="Resource Summary"
+                value={form.resourceSummary || form.summary}
+                onChange={(resourceSummary) => setForm({ ...form, resourceSummary })}
+              />
+              <ContentSelect
+                label="Resource Type"
+                value={form.resourceType}
+                options={[
+                  ["article", "Article"],
+                  ["blog", "Blog"],
+                  ["reflection", "Reflection"],
+                  ["guide", "Guide"],
+                  ["other", "Other"],
+                ]}
+                onChange={(resourceType) => setForm({ ...form, resourceType })}
+              />
+              <ContentInput
+                label="Category"
+                value={form.resourceCategory || form.category}
+                onChange={(resourceCategory) => setForm({ ...form, resourceCategory })}
+              />
+              <ContentInput
+                label="Tags"
+                value={(form.resourceTags.length ? form.resourceTags : form.tags).join(", ")}
+                onChange={(value) => setForm({ ...form, resourceTags: splitTags(value) })}
+              />
+              <ContentSelect
+                label="Publication Status"
+                value={form.resourceStatus}
+                options={[
+                  ["draft", "Draft"],
+                  ["published", "Published"],
+                ]}
+                onChange={(resourceStatus) => setForm({ ...form, resourceStatus })}
+              />
+            </div>
+          )}
+        </CommunicationComposerBlock>
+
+        <CommunicationPreview communication={form} />
+
+        <div className="admin-content-actions">
+          <button className="btn btn-primary" type="button" onClick={saveCommunication}>
+            Save Draft
+          </button>
+          {(form.format === "email" || form.channels.includes("email")) && (
+            <span className="admin-muted-copy">
+              Email Preview is available. Sending will be available after sender setup is completed.
+            </span>
+          )}
+        </div>
+      </section>
+
+      {loadState === "loading" && <div className="admin-empty">Loading communications...</div>}
+      {loadState === "error" && (
+        <DashboardEmptyState
+          title="Communications could not be loaded."
+          description="Please check the communication setup and try again."
+        />
+      )}
+      {loadState === "ready" && (
+        <div className="admin-content-list">
+          {filtered.length === 0 ? (
+            <div className="admin-empty">No communications match this view.</div>
+          ) : (
+            filtered.map((communication) => (
+              <ContentRecordCard
+                key={communication.id}
+                title={communication.title}
+                detail={communication.summary || communication.bodyContent}
+                status={communication.status}
+                meta={[
+                  communication.communicationType,
+                  communication.channel,
+                  communication.audienceScope,
+                ]}
+                onEdit={() =>
+                  setForm({
+                    id: communication.id,
+                    title: communication.title,
+                    format: communication.format,
+                    subject: communication.subject,
+                    previewText: communication.previewText,
+                    summary: communication.summary,
+                    bodyContent: communication.bodyContent,
+                    communicationType: communication.communicationType,
+                    channel: communication.channel,
+                    dashboardPresentation: communication.dashboardPresentation,
+                    audienceScope: communication.audienceScope,
+                    senderId: communication.senderId,
+                    replyToEmail: communication.replyToEmail,
+                    visibleAuthorName: communication.visibleAuthorName,
+                    headerImagePath: communication.headerImagePath,
+                    headerImageUrl: communication.headerImageUrl,
+                    thumbnailImagePath: communication.thumbnailImagePath,
+                    thumbnailImageUrl: communication.thumbnailImageUrl,
+                    useHeaderAsThumbnail:
+                      communication.thumbnailImagePath === communication.headerImagePath,
+                    imageAltText: communication.imageAltText,
+                    category: communication.category,
+                    tags: communication.tags,
+                    visibleFrom: communication.visibleFrom || "",
+                    visibleUntil: communication.visibleUntil || "",
+                    links: communication.links.map((link) => ({
+                      label: link.label,
+                      url: link.url,
+                      linkStyle: link.linkStyle,
+                      sortOrder: link.sortOrder,
+                    })),
+                    channels: communication.channels,
+                    circleIds: communication.audienceTargets
+                      .map((target) => target.circleId)
+                      .filter(Boolean),
+                    profileIds: communication.audienceTargets
+                      .map((target) => target.profileId)
+                      .filter(Boolean),
+                    newsletterSections: communication.newsletterSections.map((section) => ({
+                      heading: section.heading,
+                      bodyContent: section.bodyContent,
+                      sortOrder: section.sortOrder,
+                    })),
+                    addToResourceLibrary: Boolean(communication.resourceId),
+                    resourceTitle: communication.title,
+                    resourceSummary: communication.summary,
+                    resourceType: "article",
+                    resourceCategory: communication.category,
+                    resourceTags: communication.tags,
+                    resourceStatus: "draft",
+                  })
+                }
+                onStatus={(nextStatus) =>
+                  updateContentStatus(
+                    `/api/admin/content/communications/${communication.id}`,
+                    nextStatus,
+                    setMessage,
+                    loadCommunications
+                  )
+                }
+                onDelete={() =>
+                  deleteContentRecord(
+                    `/api/admin/content/communications/${communication.id}`,
+                    "Delete this communication?",
+                    setMessage,
+                    loadCommunications
+                  )
+                }
+              />
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CommunicationComposerBlock({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="admin-communication-block">
+      <h4>{title}</h4>
+      {children}
+    </section>
+  );
+}
+
+function CommunicationPreview({
+  communication,
+}: {
+  communication: {
+    format: CommunicationFormat;
+    title: string;
+    subject: string;
+    previewText: string;
+    summary: string;
+    bodyContent: string;
+    senderId: string;
+    visibleAuthorName: string;
+    links: Array<{ label: string; url: string; linkStyle: string }>;
+    channels: string[];
+    addToResourceLibrary: boolean;
+  };
+}) {
+  return (
+    <CommunicationComposerBlock title="Preview Communication">
+      <div className="admin-communication-preview-grid">
+        {communication.channels.includes("email") && (
+          <article className="admin-communication-preview">
+            <span>Email Preview</span>
+            <h4>{communication.subject || communication.title || "Subject"}</h4>
+            <p>{communication.previewText || "Preview text will appear here."}</p>
+            <div>{communication.bodyContent || communication.summary || "Email body preview"}</div>
+          </article>
+        )}
+        {communication.channels.some((channel) => channel.includes("dashboard")) && (
+          <article className="admin-communication-preview">
+            <span>Dashboard Card Preview</span>
+            <h4>{communication.title || "Dashboard title"}</h4>
+            <p>{communication.summary || "Dashboard summary will appear here."}</p>
+          </article>
+        )}
+        {communication.format === "blog_article" && (
+          <article className="admin-communication-preview">
+            <span>Dashboard Article Preview</span>
+            <h4>{communication.title || "Article title"}</h4>
+            <p>{communication.visibleAuthorName || "Author"}</p>
+            <div>{communication.bodyContent || "Article body preview"}</div>
+          </article>
+        )}
+        {communication.addToResourceLibrary && (
+          <article className="admin-communication-preview">
+            <span>Resource Card Preview</span>
+            <h4>{communication.title || "Resource title"}</h4>
+            <p>{communication.summary || "Resource summary will appear here."}</p>
+          </article>
+        )}
+        {communication.links.length > 0 && (
+          <div className="admin-communication-preview-links">
+            {communication.links
+              .filter((link) => link.url)
+              .map((link, index) => (
+                <a
+                  key={`${link.url}-${index}`}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {link.label || link.url}
+                </a>
+              ))}
+          </div>
+        )}
+      </div>
+    </CommunicationComposerBlock>
+  );
+}
+
+function ContentAssignmentPanel({
+  content,
+  assignments,
+  usersPayload,
+  onClose,
+  onMessage,
+  onRefresh,
+}: {
+  content: {
+    id: string;
+    title: string;
+    type: AssignmentContentType;
+    status: ContentStatus;
+  };
+  assignments: AdminContentAssignment[];
+  usersPayload: AdminUsersPayload;
+  onClose: () => void;
+  onMessage: (message: ContentMessage) => void;
+  onRefresh: () => Promise<void>;
+}) {
+  const [audienceType, setAudienceType] =
+    useState<AssignmentAudienceType>("coach_library");
+  const [placement, setPlacement] = useState<AssignmentPlacement>(
+    getDefaultPlacement(content.type, "coach_library")
+  );
+  const [circleIds, setCircleIds] = useState<string[]>([]);
+  const [profileIds, setProfileIds] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const [visibleFrom, setVisibleFrom] = useState("");
+  const [visibleUntil, setVisibleUntil] = useState("");
+  const activeCircles = usersPayload.circles.filter(
+    (circle) => circle.status === "active"
+  );
+  const activeProfiles = usersPayload.users.filter(
+    (user) => user.accountStatus === "active"
+  );
+  const targetProfiles =
+    audienceType === "selected_coach"
+      ? activeProfiles.filter((user) => user.roles.includes("coach"))
+      : activeProfiles;
+  const targetQuery = search.trim().toLowerCase();
+  const visibleProfiles = targetProfiles.filter((user) =>
+    [
+      formatManagedUserName(user),
+      user.email,
+      user.organization,
+      user.roles.join(" "),
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(targetQuery)
+  );
+  const visibleCircles = activeCircles.filter((circle) =>
+    circle.name.toLowerCase().includes(targetQuery)
+  );
+  const validPlacements = getValidAssignmentPlacements(content.type, audienceType);
+  const needsCircles = audienceType === "selected_circle";
+  const needsProfiles =
+    audienceType === "selected_member" || audienceType === "selected_coach";
+
+  async function assignContent() {
+    const result = await adminContentRequest("/api/admin/content/assignments", {
+      method: "POST",
+      body: {
+        contentType: content.type,
+        contentId: content.id,
+        audienceType,
+        placement,
+        circleIds,
+        profileIds,
+        visibleFrom,
+        visibleUntil,
+      },
+    });
+
+    if (!result.ok) {
+      onMessage({ type: "error", text: result.message });
+      return;
+    }
+
+    onMessage({ type: "success", text: "Content assignment was saved." });
+    await onRefresh();
+  }
+
+  async function archiveAssignment(assignmentId: string) {
+    const result = await adminContentRequest(
+      `/api/admin/content/assignments/${assignmentId}`,
+      {
+        method: "PATCH",
+      }
+    );
+
+    if (!result.ok) {
+      onMessage({ type: "error", text: result.message });
+      return;
+    }
+
+    onMessage({ type: "success", text: "Content assignment was archived." });
+    await onRefresh();
+  }
+
+  async function removeAssignment(assignmentId: string) {
+    const result = await adminContentRequest(
+      `/api/admin/content/assignments/${assignmentId}`,
+      {
+        method: "DELETE",
+      }
+    );
+
+    if (!result.ok) {
+      onMessage({ type: "error", text: result.message });
+      return;
+    }
+
+    onMessage({ type: "success", text: "Content assignment was removed." });
+    await onRefresh();
+  }
+
+  function duplicateAssignment(assignment: AdminContentAssignment) {
+    setAudienceType(assignment.audienceType);
+    setPlacement(assignment.placement);
+    setCircleIds(assignment.circleId ? [assignment.circleId] : []);
+    setProfileIds(assignment.profileId ? [assignment.profileId] : []);
+    setVisibleFrom(assignment.visibleFrom || "");
+    setVisibleUntil(assignment.visibleUntil || "");
+    onMessage({
+      type: "success",
+      text: "Assignment settings copied. Adjust the target or dates, then assign content.",
+    });
+  }
+
+  function toggleValue(values: string[], value: string, setter: (next: string[]) => void) {
+    setter(values.includes(value) ? values.filter((item) => item !== value) : [...values, value]);
+  }
+
+  return (
+    <section className="admin-content-assignment-panel">
+      <div className="admin-content-editor-head">
+        <div>
+          <span className="card-label">Assign Content</span>
+          <h3>{content.title}</h3>
+          <p>Choose who receives this content and where it should appear.</p>
+        </div>
+        <button className="admin-link-button" type="button" onClick={onClose}>
+          Close
+        </button>
+      </div>
+
+      {content.status !== "published" ? (
+        <div className="admin-empty">Publish this content before assigning it.</div>
+      ) : (
+        <>
+          <div className="admin-content-form-grid">
+            <ContentSelect
+              label="Who should receive this?"
+              value={audienceType}
+              options={getAudienceOptions(content.type)}
+              onChange={(value) => {
+                const nextAudience = value as AssignmentAudienceType;
+                setAudienceType(nextAudience);
+                setCircleIds([]);
+                setProfileIds([]);
+                const nextPlacement = getDefaultPlacement(content.type, nextAudience);
+                setPlacement(nextPlacement);
+              }}
+            />
+            <ContentSelect
+              label="Where should this appear?"
+              value={placement}
+              options={validPlacements.map((item) => [item, formatPlacement(item)])}
+              onChange={(value) => setPlacement(value as AssignmentPlacement)}
+            />
+            <ContentInput
+              label="Start Date"
+              value={visibleFrom}
+              onChange={setVisibleFrom}
+            />
+            <ContentInput
+              label="Optional End Date"
+              value={visibleUntil}
+              onChange={setVisibleUntil}
+            />
+          </div>
+
+          {(needsCircles || needsProfiles) && (
+            <div className="admin-assignment-selector">
+              <div className="admin-table-tools">
+                <label>
+                  <span>Search Targets</span>
+                  <input
+                    type="search"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search by name, email, Circle, or role"
+                  />
+                </label>
+                {needsCircles && (
+                  <div className="admin-content-actions">
+                    <button className="admin-link-button" type="button" onClick={() => setCircleIds(activeCircles.map((circle) => circle.id))}>
+                      Select All
+                    </button>
+                    <button className="admin-link-button" type="button" onClick={() => setCircleIds([])}>
+                      Clear Selection
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="admin-checkbox-list">
+                {needsCircles &&
+                  visibleCircles.map((circle) => (
+                    <CircleCheckboxRow
+                      key={circle.id}
+                      label={circle.name}
+                      description={`${circle.status} Circle`}
+                      checked={circleIds.includes(circle.id)}
+                      onChange={() => toggleValue(circleIds, circle.id, setCircleIds)}
+                    />
+                  ))}
+                {needsProfiles &&
+                  visibleProfiles.slice(0, 80).map((profile) => (
+                    <CircleCheckboxRow
+                      key={profile.id}
+                      label={formatManagedUserName(profile)}
+                      description={[
+                        profile.email,
+                        profile.organization,
+                        profile.roles.map(formatRoleName).join(", "),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                      checked={profileIds.includes(profile.id)}
+                      onChange={() => toggleValue(profileIds, profile.id, setProfileIds)}
+                    />
+                  ))}
+              </div>
+
+              <p className="admin-assignment-count">
+                {needsCircles
+                  ? `${circleIds.length} Circle${circleIds.length === 1 ? "" : "s"} selected`
+                  : `${profileIds.length} person${profileIds.length === 1 ? "" : "s"} selected`}
+              </p>
+            </div>
+          )}
+
+          <button className="btn btn-primary" type="button" onClick={assignContent}>
+            Assign Content
+          </button>
+        </>
+      )}
+
+      <AssignmentSummary
+        assignments={assignments}
+        detailed
+        onArchive={archiveAssignment}
+        onDuplicate={duplicateAssignment}
+        onRemove={removeAssignment}
+      />
+    </section>
+  );
+}
+
+function AssignmentSummary({
+  assignments,
+  detailed = false,
+  onArchive,
+  onDuplicate,
+  onRemove,
+}: {
+  assignments: AdminContentAssignment[];
+  detailed?: boolean;
+  onArchive?: (assignmentId: string) => void;
+  onDuplicate?: (assignment: AdminContentAssignment) => void;
+  onRemove?: (assignmentId: string) => void;
+}) {
+  const activeAssignments = assignments.filter(
+    (assignment) => assignment.assignmentStatus === "active"
+  );
+
+  if (assignments.length === 0) {
+    return detailed ? (
+      <div className="admin-empty">No current assignments.</div>
+    ) : null;
+  }
+
+  return (
+    <div className="admin-assignment-summary">
+      <strong>Current Assignments</strong>
+      <div>
+        {assignments.slice(0, detailed ? 100 : 3).map((assignment) => (
+          <span key={assignment.id}>
+            <span>
+              {formatAudienceType(assignment.audienceType)} ·{" "}
+              {formatPlacement(assignment.placement)} ·{" "}
+              {formatAssignmentStatus(assignment.assignmentStatus)}
+            </span>
+            {detailed && (onArchive || onDuplicate || onRemove) && (
+              <span className="admin-assignment-actions">
+                {assignment.assignmentStatus === "active" && onArchive && (
+                  <button
+                    className="admin-link-button"
+                    type="button"
+                    onClick={() => onArchive(assignment.id)}
+                  >
+                    Archive
+                  </button>
+                )}
+                {onDuplicate && (
+                  <button
+                    className="admin-link-button"
+                    type="button"
+                    onClick={() => onDuplicate(assignment)}
+                  >
+                    Duplicate
+                  </button>
+                )}
+                {onRemove && (
+                  <button
+                    className="admin-link-button"
+                    type="button"
+                    onClick={() => onRemove(assignment.id)}
+                  >
+                    Remove
+                  </button>
+                )}
+              </span>
+            )}
+          </span>
+        ))}
+      </div>
+      {!detailed && assignments.length > 3 && <small>{assignments.length - 3} more</small>}
+      {detailed && <small>{activeAssignments.length} active assignment{activeAssignments.length === 1 ? "" : "s"}</small>}
+    </div>
+  );
+}
+
+function ContentRecordLibrary({
+  title,
+  subtitle,
+  search,
+  status,
+  form,
+  children,
+  onSearch,
+  onStatusChange,
+  onSave,
+}: {
+  title: string;
+  subtitle: string;
+  search: string;
+  status: ContentStatus | "all";
+  form: ReactNode;
+  children: ReactNode;
+  onSearch: (value: string) => void;
+  onStatusChange: (value: ContentStatus | "all") => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="admin-content-workspace">
+      <ContentLibraryTools
+        search={search}
+        status={status}
+        searchLabel={`Search ${title.toLowerCase()}`}
+        onSearch={onSearch}
+        onStatusChange={onStatusChange}
+      />
+      <section className="admin-content-editor">
+        <div className="admin-content-editor-head">
+          <div>
+            <span className="card-label">{title}</span>
+            <h3>{subtitle}</h3>
+          </div>
+        </div>
+        <div className="admin-content-form-grid">{form}</div>
+        <button className="btn btn-primary" type="button" onClick={onSave}>
+          Save
+        </button>
+      </section>
+      <div className="admin-content-list">{children}</div>
+    </div>
+  );
+}
+
+function ContentRecordCard({
+  title,
+  detail,
+  status,
+  meta,
+  externalUrl,
+  fileOpenEndpoint,
+  coverImageUrl,
+  assignments = [],
+  onEdit,
+  onStatus,
+  onDuplicate,
+  onAssign,
+  onDelete,
+}: {
+  title: string;
+  detail: string;
+  status: ContentStatus;
+  meta: string[];
+  externalUrl?: string;
+  fileOpenEndpoint?: string;
+  coverImageUrl?: string;
+  assignments?: AdminContentAssignment[];
+  onEdit: () => void;
+  onStatus: (status: ContentStatus) => void;
+  onDuplicate?: () => void;
+  onAssign?: () => void;
+  onDelete: () => void;
+}) {
+  async function openStoredResource() {
+    if (!fileOpenEndpoint) return;
+
+    const result = await adminContentRequest(fileOpenEndpoint, { method: "POST" });
+
+    if (!result.ok || !("url" in result)) return;
+
+    window.open(result.url, "_blank", "noopener,noreferrer");
+  }
+
+  return (
+    <article className="admin-content-item">
+      <div
+        className="admin-resource-cover"
+        aria-hidden="true"
+        style={coverImageUrl ? { backgroundImage: `url(${coverImageUrl})` } : undefined}
+      >
+        {!coverImageUrl && (
+          <FileText size={24} strokeWidth={1.8} />
+        )}
+      </div>
+      <div>
+        <span>{formatContentStatus(status)}</span>
+        <h3>{title}</h3>
+        <p>{detail || "No description yet."}</p>
+        <small>{meta.filter(Boolean).join(" · ") || "No category"}</small>
+      </div>
+      <div className="admin-content-actions">
+        {externalUrl && (
+          <a className="admin-link-button" href={externalUrl} target="_blank" rel="noopener noreferrer">
+            <Eye size={15} /> Open
+          </a>
+        )}
+        {fileOpenEndpoint && (
+          <button className="admin-link-button" type="button" onClick={openStoredResource}>
+            <Eye size={15} /> Open File
+          </button>
+        )}
+        <button className="admin-link-button" type="button" onClick={onEdit}>
+          <FileText size={15} /> Edit
+        </button>
+        {onDuplicate && (
+          <button className="admin-link-button" type="button" onClick={onDuplicate}>
+            <Copy size={15} /> Duplicate
+          </button>
+        )}
+        {status !== "published" && (
+          <button className="admin-link-button" type="button" onClick={() => onStatus("published")}>
+            <CheckCircle size={15} /> Publish
+          </button>
+        )}
+        {status !== "archived" && (
+          <button className="admin-link-button" type="button" onClick={() => onStatus("archived")}>
+            <Archive size={15} /> Archive
+          </button>
+        )}
+        {status === "published" && onAssign && (
+          <button className="admin-link-button" type="button" onClick={onAssign}>
+            <Compass size={15} /> Assign Content
+          </button>
+        )}
+        <button className="admin-link-button danger" type="button" onClick={onDelete}>
+          <Trash2 size={15} /> Delete
+        </button>
+      </div>
+      <AssignmentSummary assignments={assignments} />
+    </article>
+  );
+}
+
+function ContentLibraryTools({
+  search,
+  status,
+  searchLabel,
+  onSearch,
+  onStatusChange,
+}: {
+  search: string;
+  status: ContentStatus | "all";
+  searchLabel: string;
+  onSearch: (value: string) => void;
+  onStatusChange: (value: ContentStatus | "all") => void;
+}) {
+  return (
+    <div className="admin-table-tools">
+      <label>
+        <span>{searchLabel}</span>
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => onSearch(event.target.value)}
+          placeholder="Search by title, category, or text"
+        />
+      </label>
+      <label>
+        <span>Status</span>
+        <select
+          value={status}
+          onChange={(event) => onStatusChange(event.target.value as ContentStatus | "all")}
+        >
+          <option value="all">All statuses</option>
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+          <option value="archived">Archived</option>
+        </select>
+      </label>
+    </div>
+  );
+}
+
+function ContentInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label>
+      <span>{label}</span>
+      <input value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
+}
+
+function ContentSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: Array<[string, string]>;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label>
+      <span>{label}</span>
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
+        {options.map(([optionValue, optionLabel]) => (
+          <option key={optionValue} value={optionValue}>
+            {optionLabel}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function ContentTextarea({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label>
+      <span>{label}</span>
+      <textarea value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  );
+}
+
+async function updateContentStatus(
+  url: string,
+  status: ContentStatus,
+  onMessage: (message: ContentMessage) => void,
+  onRefresh: () => Promise<void>
+) {
+  const result = await adminContentRequest(url, {
+    method: "PATCH",
+    body: { status },
+  });
+
+  if (!result.ok) {
+    onMessage({ type: "error", text: result.message });
+    return;
+  }
+
+  onMessage({ type: "success", text: "Library item was updated." });
+  await onRefresh();
+}
+
+async function duplicateContentRecord(
+  url: string,
+  onMessage: (message: ContentMessage) => void,
+  onRefresh: () => Promise<void>
+) {
+  const result = await adminContentRequest(url, { method: "POST" });
+
+  if (!result.ok) {
+    onMessage({ type: "error", text: result.message });
+    return;
+  }
+
+  onMessage({ type: "success", text: "Library item was duplicated as a draft." });
+  await onRefresh();
+}
+
+async function deleteContentRecord(
+  url: string,
+  confirmation: string,
+  onMessage: (message: ContentMessage) => void,
+  onRefresh: () => Promise<void>
+) {
+  if (!window.confirm(confirmation)) return;
+
+  const result = await adminContentRequest(url, { method: "DELETE" });
+
+  if (!result.ok) {
+    onMessage({ type: "error", text: result.message });
+    return;
+  }
+
+  onMessage({ type: "success", text: "Library item was deleted." });
+  await onRefresh();
+}
+
+async function adminContentRequest(
+  url: string,
+  options: { method: string; body?: unknown }
+): Promise<{ ok: true; url?: string } | { ok: false; message: string }> {
+  const token = await getAccessToken();
+
+  if (!token) return { ok: false, message: "Admin session is no longer available." };
+
+  const response = await fetch(url, {
+    method: options.method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const result = (await response.json().catch(() => null)) as
+    | { ok?: boolean; message?: string; url?: string }
+    | null;
+
+  if (!response.ok || !result?.ok) {
+    return {
+      ok: false,
+      message: result?.message || "The request could not be completed.",
+    };
+  }
+
+  return { ok: true, url: typeof result.url === "string" ? result.url : undefined };
+}
+
+function ReportsSection({
   operations,
   onJump,
   onOpenUser,
@@ -1514,6 +4212,9 @@ function DiagnosticsSection({
 }) {
   return (
     <div className="admin-section-stack">
+      <VisualDiagnosticsDashboard operations={operations} />
+      <NeedsAttention alerts={operations.alerts} onJump={onJump} />
+      <AdminOverview operations={operations} />
       <DiagnosticsList
         title="Operational diagnostics"
         items={[
@@ -1740,7 +4441,7 @@ type AdminSearchResults = {
 };
 
 type AdminFeatureTile = {
-  id: Exclude<SectionId, "overview">;
+  id: SectionId;
   icon: LucideIcon;
   title: string;
   description: string;
@@ -1958,16 +4659,6 @@ function buildFeatureTiles({
       ],
     },
     {
-      id: "assessments",
-      icon: ClipboardCheck,
-      title: "Assessments",
-      description: "Review completion, results, trends, and profile distributions.",
-      metrics: [
-        `${analytics.overview.completedAssessments} completed`,
-        `${analytics.overview.usersWithCompletedAssessment} users assessed`,
-      ],
-    },
-    {
       id: "circles",
       icon: Users,
       title: "Circles",
@@ -1978,9 +4669,9 @@ function buildFeatureTiles({
       ],
     },
     {
-      id: "coaching",
+      id: "coaches",
       icon: Compass,
-      title: "Coaching",
+      title: "Coaches",
       description: "See coaching teams, shared Circle caseloads, and direct assignments.",
       metrics: [
         `${operations.metrics.totalCircleCoaches} Circle coaches`,
@@ -1988,30 +4679,40 @@ function buildFeatureTiles({
       ],
     },
     {
-      id: "content",
+      id: "assessments",
+      icon: ClipboardCheck,
+      title: "Assessments",
+      description: "Review completion, results, trends, and profile distributions.",
+      metrics: [
+        `${analytics.overview.completedAssessments} completed`,
+        `${analytics.overview.usersWithCompletedAssessment} users assessed`,
+      ],
+    },
+    {
+      id: "content-studio",
       icon: FileText,
       title: "Content Studio",
-      description: "Create monthly questions, articles, videos, and resources.",
-      metrics: ["Setup ready", "No content backend"],
+      description: "Create monthly questions, resources, and trainings.",
+      metrics: ["Monthly questions", "Resources + trainings"],
     },
     {
       id: "communications",
       icon: Mail,
       title: "Communications",
-      description: "Prepare dashboard content for future email delivery.",
-      metrics: ["No email integration", "Design-ready"],
+      description: "Create messages, announcements, and campaigns.",
+      metrics: ["Draft + publish", "Dashboard/email model"],
     },
     {
-      id: "diagnostics",
+      id: "reports",
       icon: Activity,
-      title: "Diagnostics",
+      title: "Reports",
       description: "Review data alignment, incomplete records, and operational health.",
       metrics: [`${operations.alerts.length} alerts`, `${operations.metrics.activeUsers} active users`],
     },
     {
-      id: "settings",
+      id: "system-settings",
       icon: Settings,
-      title: "Platform Settings",
+      title: "System Settings",
       description: "Manage integrations, storage, permissions, and platform configuration.",
       metrics: [`${usersPayload.roleOptions.length} roles`, "Secrets hidden"],
     },
@@ -2170,7 +4871,7 @@ function buildAlerts(diagnostics: AdminDiagnostics): AdminAlert[] {
       key: "members-without-coaching-coverage",
       label: "Circle members without coaching coverage",
       count: diagnostics.membersWithoutCoachingCoverage.length,
-      section: "coaching",
+      section: "coaches",
     },
     {
       key: "circles-without-active-coach",
@@ -2182,7 +4883,7 @@ function buildAlerts(diagnostics: AdminDiagnostics): AdminAlert[] {
       key: "coaches-without-assignments",
       label: "Self-assigned coaches without active Circle",
       count: diagnostics.selfAssignedCoachesWithoutCircle.length,
-      section: "coaching",
+      section: "coaches",
     },
     {
       key: "incomplete-profiles",
@@ -2220,7 +4921,7 @@ function buildAlerts(diagnostics: AdminDiagnostics): AdminAlert[] {
 }
 
 function buildRoleDistribution(users: AdminManagedProfile[]) {
-  const roles = ["member", "circle_member", "coach", "admin"] as const;
+  const roles = ["member", "circle_member", "coach", "project_manager", "admin"] as const;
 
   return roles.map((role) => ({
     label: formatRoleName(role),
@@ -2321,6 +5022,219 @@ function formatCircleUserDescription(user: AdminManagedProfile) {
     .map((part) => part.trim())
     .filter(Boolean)
     .join(" · ");
+}
+
+function normalizeSectionId(value: string | null): SectionId | null {
+  const legacyMap: Record<string, SectionId> = {
+    overview: "reports",
+    coaching: "coaches",
+    content: "content-studio",
+    communications: "content-studio",
+    diagnostics: "reports",
+    settings: "system-settings",
+  };
+  const normalized = (value || "").trim();
+  const candidate = legacyMap[normalized] || normalized;
+
+  return sections.some((section) => section.id === candidate)
+    ? (candidate as SectionId)
+    : null;
+}
+
+function formatContentStatus(status: ContentStatus) {
+  if (status === "published") return "Published";
+  if (status === "archived") return "Archived";
+
+  return "Draft";
+}
+
+function getCommunicationFormatDescription(format: CommunicationFormat) {
+  const descriptions: Record<CommunicationFormat, string> = {
+    email: "Subject, preview text, sender, and email body.",
+    blog_article: "Article title, author, category, tags, and body.",
+    announcement: "Short message with optional image and display style.",
+    newsletter: "Sender, subject, intro, and repeatable sections.",
+    dashboard_message: "Dashboard card or featured message.",
+    circle_update: "Update for selected Circle dashboards.",
+  };
+
+  return descriptions[format];
+}
+
+function getDefaultCommunicationChannels(format: CommunicationFormat) {
+  if (format === "email" || format === "newsletter") return ["email"];
+  if (format === "circle_update") return ["circle_dashboards"];
+
+  return ["my_dashboard"];
+}
+
+function getCommunicationChannelOptions(format: CommunicationFormat): Array<[string, string]> {
+  const email: Array<[string, string]> = [["email", "Email Preview"]];
+  const dashboard: Array<[string, string]> = [["my_dashboard", "My Dashboard"]];
+  const circle: Array<[string, string]> = [["circle_dashboards", "Selected Circle Dashboards"]];
+  const coach: Array<[string, string]> = [["coach_dashboards", "Coach Dashboards"]];
+
+  if (format === "email") return [...email, ...dashboard];
+  if (format === "newsletter") return [...email, ...dashboard];
+  if (format === "blog_article") return [...dashboard, ...circle, ...coach, ...email];
+  if (format === "announcement") return [...dashboard, ...circle, ...coach, ...email];
+  if (format === "circle_update") return [...circle, ...email];
+
+  return [...dashboard, ...circle, ...coach];
+}
+
+function getCommunicationAudienceOptions(format: CommunicationFormat): Array<[string, string]> {
+  const base: Array<[string, string]> = [
+    ["all_members", "All Members"],
+    ["all_circle_members", "All Circle Members"],
+    ["all_coaches", "All Coaches"],
+    ["selected_circles", "Selected Circles"],
+    ["selected_members", "Selected Members"],
+    ["selected_coaches", "Selected Coaches"],
+    ["admins", "Admins"],
+  ];
+
+  if (format === "circle_update") {
+    return [["selected_circles", "Selected Circles"]];
+  }
+
+  return base;
+}
+
+function splitTags(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function splitIds(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function formatAssignmentStatus(status: AdminContentAssignment["assignmentStatus"]) {
+  if (status === "archived") return "Archived";
+
+  return "Active";
+}
+
+function getAudienceOptions(contentType: AssignmentContentType): Array<[string, string]> {
+  const common: Array<[string, string]> = [
+    ["coach_library", "Available to Coaches"],
+    ["selected_circle", "Assign to Circles"],
+    ["selected_member", "Assign to Members"],
+    ["all_coaches", "All Coaches"],
+    ["selected_coach", "Selected Coaches"],
+  ];
+
+  if (contentType === "monthly_question") return common;
+
+  return [
+    ...common,
+    ["all_members", "All Members"],
+    ["all_circle_members", "All Circle Members"],
+  ];
+}
+
+function getValidAssignmentPlacements(
+  contentType: AssignmentContentType,
+  audienceType?: AssignmentAudienceType
+): AssignmentPlacement[] {
+  if (audienceType === "coach_library") {
+    return ["coach_dashboard_library"];
+  }
+
+  if (audienceType === "selected_circle") {
+    if (contentType === "monthly_question") return ["circle_dashboard"];
+    if (contentType === "training") return ["trainings_area", "featured_dashboard"];
+
+    return ["resources_area", "featured_dashboard"];
+  }
+
+  if (contentType === "monthly_question") {
+    return ["my_dashboard", "coach_dashboard_library", "circle_dashboard"];
+  }
+
+  if (contentType === "training") {
+    return ["my_dashboard", "trainings_area", "featured_dashboard", "coach_dashboard_library"];
+  }
+
+  return ["my_dashboard", "resources_area", "featured_dashboard", "coach_dashboard_library"];
+}
+
+function getDefaultPlacement(
+  contentType: AssignmentContentType,
+  audienceType: AssignmentAudienceType
+): AssignmentPlacement {
+  if (audienceType === "coach_library") return "coach_dashboard_library";
+  if (contentType === "monthly_question" && audienceType === "selected_circle") return "circle_dashboard";
+  if (contentType === "training") return "trainings_area";
+  if (contentType === "resource") return "resources_area";
+
+  return "my_dashboard";
+}
+
+function formatAudienceType(audienceType: AssignmentAudienceType) {
+  const labels: Record<AssignmentAudienceType, string> = {
+    coach_library: "Available to Coaches",
+    all_members: "All Members",
+    all_circle_members: "All Circle Members",
+    all_coaches: "All Coaches",
+    selected_circle: "Selected Circles",
+    selected_member: "Selected Members",
+    selected_coach: "Selected Coaches",
+  };
+
+  return labels[audienceType];
+}
+
+function formatPlacement(placement: AssignmentPlacement) {
+  const labels: Record<AssignmentPlacement, string> = {
+    my_dashboard: "My Dashboard",
+    coach_dashboard_library: "Coach Dashboard Library",
+    circle_dashboard: "Circle Dashboard",
+    resources_area: "Resources Area",
+    trainings_area: "Trainings Area",
+    featured_dashboard: "Featured Dashboard",
+  };
+
+  return labels[placement];
+}
+
+function isUploadedResourceType(resourceType: string) {
+  return ["pdf", "image", "document", "worksheet", "guide", "downloadable_tool"].includes(resourceType);
+}
+
+function isWrittenResourceType(resourceType: string) {
+  return ["article", "blog", "reflection", "case_study"].includes(resourceType);
+}
+
+function getPrimaryUploadLabel(resourceType: string) {
+  if (resourceType === "pdf") return "PDF File";
+  if (resourceType === "image") return "Image File";
+  if (resourceType === "worksheet") return "Worksheet File";
+  if (resourceType === "guide") return "Guide File";
+  if (resourceType === "downloadable_tool") return "Downloadable Tool File";
+
+  return "Document File";
+}
+
+function getResourceFileAccept(resourceType: string) {
+  if (resourceType === "pdf") return "application/pdf,.pdf";
+  if (resourceType === "image") return "image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp";
+
+  return ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+}
+
+function formatFileSize(value: number | null) {
+  if (!value) return "Size unavailable";
+
+  if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function formatCoachTeamLabel(coaches: AdminCircleCoach[]) {

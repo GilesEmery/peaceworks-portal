@@ -16,9 +16,11 @@ export default function SiteFooter() {
         <div className="footer-links" aria-label="Footer navigation">
           <a href="https://www.peaceworks.network/join">Join</a>
           <a href="https://www.peaceworks.network/contact">About</a>
-          <a href="/dashboard">Dashboard</a>
-          <a href="/circle">Your Circle</a>
-          <a href="/coach">Coaches</a>
+          <a href="/dashboard">My Dashboard</a>
+          <a href="/assessments">Assessments</a>
+          <a href="https://www.peaceworks.network/roi-calculator">
+            ROI Calculator
+          </a>
         </div>
       </div>
     </footer>

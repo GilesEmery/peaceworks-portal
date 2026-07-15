@@ -98,7 +98,8 @@ export function buildAdminAnalytics({
   const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
   const userById = new Map(users.map((user) => [user.id, user]));
 
-  const records = assessments
+  const latestCompletedAssessments = getLatestCompletedAssessmentRows(assessments);
+  const records = latestCompletedAssessments
     .filter(
       (assessment) =>
         assessment.identity_type &&
@@ -128,7 +129,7 @@ export function buildAdminAnalytics({
         secondaryStrategy: assessment.secondary_identity_type || "",
         pressureResponse: formatPressureResponse(assessment.response_type!),
         processingStyle: assessment.processing_style!,
-        completionDate: assessment.created_at,
+        completionDate: getAssessmentCompletionDate(assessment),
         resultStatus: "Completed" as const,
       };
     });
@@ -179,6 +180,54 @@ export function buildAdminAnalytics({
       "The current database stores completed Peace Assessment results. Separate started-but-not-completed assessment sessions are not stored yet.",
     ],
   };
+}
+
+function getLatestCompletedAssessmentRows(assessments: AdminAssessmentRow[]) {
+  const latestByProfileAndAssessment = new Map<string, AdminAssessmentRow>();
+
+  assessments
+    .filter(isCompletedPeaceAssessment)
+    .forEach((assessment) => {
+      const key = `${assessment.user_id}|peace-assessment`;
+      const current = latestByProfileAndAssessment.get(key);
+
+      if (!current || compareAssessmentRows(assessment, current) < 0) {
+        latestByProfileAndAssessment.set(key, assessment);
+      }
+    });
+
+  return Array.from(latestByProfileAndAssessment.values()).sort(compareAssessmentRows);
+}
+
+function isCompletedPeaceAssessment(assessment: AdminAssessmentRow) {
+  return Boolean(
+    assessment.user_id &&
+      assessment.identity_type &&
+      assessment.response_type &&
+      assessment.processing_style
+  );
+}
+
+function compareAssessmentRows(
+  first: AdminAssessmentRow,
+  second: AdminAssessmentRow
+) {
+  const firstTime = getAssessmentCompletionTime(first);
+  const secondTime = getAssessmentCompletionTime(second);
+
+  if (firstTime !== secondTime) return secondTime - firstTime;
+
+  return second.id.localeCompare(first.id);
+}
+
+function getAssessmentCompletionDate(assessment: AdminAssessmentRow) {
+  return assessment.completed_at || assessment.created_at;
+}
+
+function getAssessmentCompletionTime(assessment: AdminAssessmentRow) {
+  const value = getAssessmentCompletionDate(assessment);
+
+  return value ? new Date(value).getTime() : 0;
 }
 
 export function buildResultFromAssessmentRow(

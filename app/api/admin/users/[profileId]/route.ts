@@ -16,6 +16,7 @@ type AdminUserUpdateBody = {
   roleNames?: unknown;
   circleIds?: unknown;
   coachIds?: unknown;
+  adminRemovalConfirmation?: unknown;
 };
 
 export async function PATCH(
@@ -77,12 +78,17 @@ export async function PATCH(
       roleNames: body.roleNames.filter(isString) as AdminRoleName[],
       circleIds: body.circleIds.filter(isString),
       coachIds: body.coachIds.filter(isString),
+      adminRemovalConfirmation: isString(body.adminRemovalConfirmation)
+        ? body.adminRemovalConfirmation
+        : "",
     });
 
     if (!result.ok) {
       return Response.json(
         {
           ok: false,
+          error: "error" in result ? result.error : undefined,
+          code: "code" in result ? result.code : undefined,
           message: result.message,
         },
         { status: result.status }

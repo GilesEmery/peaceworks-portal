@@ -276,7 +276,7 @@ export const peaceAssessmentQuestions: PeaceAssessmentQuestion[] = [
       { id: "q18a", text: "Take control of what is happening.", scores: { Push: 1 } },
       { id: "q18b", text: "Become more direct or forceful.", scores: { Push: 1 } },
       { id: "q18c", text: "Work harder or carry more.", scores: { Prove: 1 } },
-      { id: "q18d", text: "Try to fix or prove the solution.", scores: { Prove: 1 } },
+      { id: "q18d", text: "Try to fix or improve the solution.", scores: { Prove: 1 } },
       { id: "q18e", text: "Smooth things over or keep people okay.", scores: { Please: 1 } },
       { id: "q18f", text: "Pull back, delay, or retreat inwardly.", scores: { PullAway: 1 } },
     ],

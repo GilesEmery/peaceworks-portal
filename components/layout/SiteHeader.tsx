@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
 type SiteHeaderProps = {
@@ -18,12 +18,18 @@ type Profile = {
 
 export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const assessmentsMenuRef = useRef<HTMLDivElement | null>(null);
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [authEmail, setAuthEmail] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [assessmentsMenuOpen, setAssessmentsMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [canViewCoachDashboard, setCanViewCoachDashboard] = useState(false);
+  const [canViewProjectDashboard, setCanViewProjectDashboard] = useState(false);
 
   const loadProfile = useCallback(async function loadProfile() {
     const [
@@ -38,10 +44,14 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
     if (!user) {
       setProfile(null);
       setAuthEmail("");
+      setIsAuthenticated(false);
       setIsAdmin(false);
+      setCanViewCoachDashboard(false);
+      setCanViewProjectDashboard(false);
       return;
     }
 
+    setIsAuthenticated(true);
     setAuthEmail(user.email || "");
 
     const { data, error } = await supabase
@@ -54,6 +64,8 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
       console.error("Current user profile could not be loaded.", error);
       setProfile(null);
       setIsAdmin(false);
+      setCanViewCoachDashboard(false);
+      setCanViewProjectDashboard(false);
       return;
     }
 
@@ -63,7 +75,10 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
       await supabase.auth.signOut();
       setProfile(null);
       setAuthEmail("");
+      setIsAuthenticated(false);
       setIsAdmin(false);
+      setCanViewCoachDashboard(false);
+      setCanViewProjectDashboard(false);
       router.replace("/auth");
       return;
     }
@@ -72,16 +87,29 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
 
     if (!session?.access_token) {
       setIsAdmin(false);
+      setCanViewCoachDashboard(false);
+      setCanViewProjectDashboard(false);
       return;
     }
 
-    const adminResponse = await fetch("/api/admin/me", {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
+    const headers = {
+      Authorization: `Bearer ${session.access_token}`,
+    };
+    const [adminResponse, coachResponse, projectResponse] = await Promise.all([
+      fetch("/api/admin/me", { cache: "no-store", headers }),
+      fetch("/api/coach/me", { cache: "no-store", headers }),
+      fetch("/api/project/me", { cache: "no-store", headers }),
+    ]);
+    const coachResult = (await coachResponse.json().catch(() => null)) as
+      | { isCoach?: boolean }
+      | null;
+    const projectResult = (await projectResponse.json().catch(() => null)) as
+      | { code?: string; isProjectManager?: boolean; message?: string }
+      | null;
 
     setIsAdmin(adminResponse.ok);
+    setCanViewCoachDashboard(Boolean(coachResult?.isCoach));
+    setCanViewProjectDashboard(Boolean(projectResult?.isProjectManager));
   }, [router]);
 
   useEffect(() => {
@@ -103,11 +131,15 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      const clickedProfileMenu = Boolean(menuRef.current?.contains(target));
+      const clickedAssessmentsMenu = Boolean(
+        assessmentsMenuRef.current?.contains(target)
+      );
+
+      if (!clickedProfileMenu && !clickedAssessmentsMenu) {
         setMenuOpen(false);
+        setAssessmentsMenuOpen(false);
       }
     }
 
@@ -115,6 +147,21 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        setAssessmentsMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
     };
   }, []);
 
@@ -143,6 +190,7 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
 
   function goTo(path: string) {
     setMenuOpen(false);
+    setAssessmentsMenuOpen(false);
     router.push(path);
   }
 
@@ -164,13 +212,59 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
         </a>
 
         <nav className="site-nav" aria-label="Primary navigation">
-          <a href="https://www.peaceworks.network/join">Join</a>
           <a href="https://www.peaceworks.network/contact">About</a>
-          <a href="/dashboard">Dashboard</a>
-          <a href="/circle">Your Circle</a>
-          <a href="/coach">Coaches</a>
+          <a href="https://www.peaceworks.network/roi-calculator">
+            ROI Calculator
+          </a>
+          <a href="https://www.peaceworks.network/join">Join a Circle</a>
+          <div
+            className={`assessment-nav-menu ${
+              isAssessmentPath(pathname) ? "active" : ""
+            }`}
+            ref={assessmentsMenuRef}
+            onMouseEnter={() => setAssessmentsMenuOpen(true)}
+            onMouseLeave={() => setAssessmentsMenuOpen(false)}
+          >
+            <a
+              className="assessment-nav-link"
+              href="/assessments"
+              onFocus={() => setAssessmentsMenuOpen(true)}
+            >
+              Assessments
+            </a>
+            <button
+              className="assessment-nav-toggle"
+              type="button"
+              aria-label="Open assessments menu"
+              aria-haspopup="menu"
+              aria-expanded={assessmentsMenuOpen}
+              onClick={() =>
+                setAssessmentsMenuOpen((current) => !current)
+              }
+            >
+              ▾
+            </button>
 
-          {showSignOut && (
+            {assessmentsMenuOpen && (
+              <div className="assessment-nav-dropdown" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => goTo("/peace-assessment")}
+                >
+                  Peace Assessment
+                </button>
+              </div>
+            )}
+          </div>
+          <a
+            className={isActivePath(pathname, "/dashboard") ? "active" : ""}
+            href="/dashboard"
+          >
+            My Dashboard
+          </a>
+
+          {showSignOut && isAuthenticated && (
             <div className="profile-menu" ref={menuRef}>
               <button
                 className="profile-menu-button"
@@ -188,26 +282,55 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
 
               {menuOpen && (
                 <div className="profile-dropdown" role="menu">
-                  <button type="button" onClick={() => goTo("/account")}>
-                    My Account
+                  <button
+                    className={isActivePath(pathname, "/account") ? "active" : ""}
+                    type="button"
+                    onClick={() => goTo("/account")}
+                  >
+                    Account Settings
                   </button>
-                  <button type="button" onClick={() => goTo("/dashboard")}>
-                    Dashboard
+                  <button
+                    className={isActivePath(pathname, "/dashboard") ? "active" : ""}
+                    type="button"
+                    onClick={() => goTo("/dashboard")}
+                  >
+                    My Dashboard
                   </button>
+                  <button
+                    className={isAssessmentPath(pathname) ? "active" : ""}
+                    type="button"
+                    onClick={() => goTo("/assessments")}
+                  >
+                    Assessments
+                  </button>
+                  {canViewCoachDashboard && (
+                    <button
+                      className={isActivePath(pathname, "/coach") ? "active" : ""}
+                      type="button"
+                      onClick={() => goTo("/coach")}
+                    >
+                      Coach Dashboard
+                    </button>
+                  )}
+                  {canViewProjectDashboard && (
+                    <button
+                      className={isActivePath(pathname, "/project") ? "active" : ""}
+                      type="button"
+                      onClick={() => goTo("/project")}
+                    >
+                      Project Dashboard
+                    </button>
+                  )}
                   {isAdmin && (
-                    <button type="button" onClick={() => goTo("/admin")}>
+                    <button
+                      className={isActivePath(pathname, "/admin") ? "active" : ""}
+                      type="button"
+                      onClick={() => goTo("/admin")}
+                    >
                       Admin Dashboard
                     </button>
                   )}
-                  <button type="button" onClick={() => goTo("/circle")}>
-                    Your Circle
-                  </button>
 
-                  <div className="profile-dropdown-divider" />
-
-                  <button type="button" onClick={() => goTo("/settings")}>
-                    Settings
-                  </button>
                   <button type="button" onClick={handleSignOut}>
                     Sign Out
                   </button>
@@ -252,6 +375,17 @@ function getProfileName(profile: Profile | null) {
     .map((part) => part?.trim())
     .filter(Boolean)
     .join(" ");
+}
+
+function isActivePath(pathname: string, basePath: string) {
+  return pathname === basePath || pathname.startsWith(`${basePath}/`);
+}
+
+function isAssessmentPath(pathname: string) {
+  return (
+    isActivePath(pathname, "/assessments") ||
+    isActivePath(pathname, "/peace-assessment")
+  );
 }
 
 function isMissingLifecycleColumnError(error: unknown) {

@@ -60,9 +60,12 @@ export default function AdminUsersManager({
   const [message, setMessage] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
   const [lifecycleDialog, setLifecycleDialog] = useState<LifecycleDialog>(null);
+  const [lifecycleMenuUser, setLifecycleMenuUser] =
+    useState<AdminManagedProfile | null>(null);
   const [lifecycleReason, setLifecycleReason] = useState("");
   const [lifecycleConfirmed, setLifecycleConfirmed] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [adminRemovalConfirmation, setAdminRemovalConfirmation] = useState("");
 
   useEffect(() => {
     if (initialPayload) {
@@ -207,6 +210,7 @@ export default function AdminUsersManager({
     resetSelections(payload, user.id);
     setSaveState("idle");
     setMessage("");
+    setAdminRemovalConfirmation("");
   }
 
   function resetSelections(nextPayload = payload, userId = selectedUserId) {
@@ -230,6 +234,10 @@ export default function AdminUsersManager({
     });
     setSaveState("idle");
     setMessage("");
+
+    if (field === "roleNames" && value === "admin") {
+      setAdminRemovalConfirmation("");
+    }
   }
 
   function updateProfileField(
@@ -256,6 +264,14 @@ export default function AdminUsersManager({
       return;
     }
 
+    if (isRemovingAdminRole(selectedUser, selections.roleNames)) {
+      if (adminRemovalConfirmation.trim() !== "REMOVE ADMIN") {
+        setSaveState("error");
+        setMessage('Type "REMOVE ADMIN" before removing Admin access.');
+        return;
+      }
+    }
+
     setSaveState("saving");
     setMessage("");
 
@@ -272,7 +288,10 @@ export default function AdminUsersManager({
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(selections),
+      body: JSON.stringify({
+        ...selections,
+        adminRemovalConfirmation,
+      }),
     });
 
     const result = (await response.json().catch(() => null)) as {
@@ -288,7 +307,9 @@ export default function AdminUsersManager({
 
     setSaveState("success");
     setMessage(result.message || "User access was updated.");
+    setAdminRemovalConfirmation("");
     await loadUsers(selectedUser.id);
+    window.dispatchEvent(new Event("peaceworks-profile-updated"));
   }
 
   function openLifecycleDialog(
@@ -539,6 +560,22 @@ export default function AdminUsersManager({
                         onChange={() => toggleValue("roleNames", role.name)}
                       />
                     ))}
+                    {isRemovingAdminRole(selectedUser, selections.roleNames) && (
+                      <div className="admin-danger-confirmation">
+                        <strong>Confirm Admin removal</strong>
+                        <p>
+                          Removing Admin access changes who can manage PeaceWorks.
+                          Type <code>REMOVE ADMIN</code> to confirm this change.
+                        </p>
+                        <input
+                          value={adminRemovalConfirmation}
+                          onChange={(event) =>
+                            setAdminRemovalConfirmation(event.target.value)
+                          }
+                          placeholder="REMOVE ADMIN"
+                        />
+                      </div>
+                    )}
                   </CheckboxSection>
 
                   <CheckboxSection
@@ -578,7 +615,7 @@ export default function AdminUsersManager({
                   <AccountActionsSection
                     user={selectedUser}
                     isSelf={selectedUser.id === payload.currentAdminId}
-                    onAction={openLifecycleDialog}
+                    onOpen={() => setLifecycleMenuUser(selectedUser)}
                   />
                 </div>
 
@@ -616,6 +653,17 @@ export default function AdminUsersManager({
             onDeleteConfirmationChange={setDeleteConfirmation}
             onCancel={() => setLifecycleDialog(null)}
             onConfirm={confirmLifecycleAction}
+          />
+        )}
+        {lifecycleMenuUser && (
+          <LifecycleActionMenu
+            isSelf={lifecycleMenuUser.id === payload?.currentAdminId}
+            user={lifecycleMenuUser}
+            onCancel={() => setLifecycleMenuUser(null)}
+            onSelect={(action, user) => {
+              setLifecycleMenuUser(null);
+              openLifecycleDialog(action, user);
+            }}
           />
         )}
     </>
@@ -761,43 +809,116 @@ function AccountStatusSection({ user }: { user: AdminManagedProfile }) {
 function AccountActionsSection({
   user,
   isSelf,
-  onAction,
+  onOpen,
 }: {
   user: AdminManagedProfile;
   isSelf: boolean;
-  onAction: (action: AdminLifecycleAction | "delete", user: AdminManagedProfile) => void;
+  onOpen: () => void;
 }) {
-  const actions = getLifecycleActions(user.accountStatus);
-
   return (
     <section className="admin-checkbox-section admin-account-actions-section">
       <div>
         <h3>Account Actions</h3>
         <p>
-          Deactivation blocks access while preserving relationships. Archiving
-          blocks access and ends active PeaceWorks relationships.
+          Current status: <strong>{statusFilterLabel(user.accountStatus)}</strong>
+        </p>
+        <p>
+          Manage access, participation, or permanent removal for this account.
         </p>
         {isSelf && (
           <small>
-            You cannot change the status of your own active administrator account.
+            Some account-status actions are protected for your own active
+            administrator account.
           </small>
         )}
       </div>
 
       <div className="admin-account-actions">
-        {actions.map((action) => (
-          <button
-            className={action === "delete" ? "btn btn-danger" : "btn btn-secondary"}
-            disabled={isSelf}
-            key={action}
-            type="button"
-            onClick={() => onAction(action, user)}
-          >
-            {lifecycleActionLabel(action)}
-          </button>
-        ))}
+        <button className="btn btn-secondary" type="button" onClick={onOpen}>
+          Manage Account Status
+        </button>
       </div>
     </section>
+  );
+}
+
+function LifecycleActionMenu({
+  isSelf,
+  onCancel,
+  onSelect,
+  user,
+}: {
+  isSelf: boolean;
+  onCancel: () => void;
+  onSelect: (
+    action: AdminLifecycleAction | "delete",
+    user: AdminManagedProfile
+  ) => void;
+  user: AdminManagedProfile;
+}) {
+  const actions = getLifecycleActions(user.accountStatus);
+
+  return (
+    <div className="admin-dialog-backdrop" role="presentation">
+      <section
+        aria-labelledby="admin-lifecycle-menu-title"
+        aria-modal="true"
+        className="admin-dialog admin-lifecycle-menu portal-card"
+        role="dialog"
+      >
+        <div>
+          <span className="card-label">Account Options</span>
+          <h3 id="admin-lifecycle-menu-title">Manage Account Status</h3>
+          <p>
+            Current status: <strong>{statusFilterLabel(user.accountStatus)}</strong>
+          </p>
+        </div>
+
+        <div className="admin-lifecycle-options">
+          {actions.map((action) => {
+            const option = lifecycleMenuCopy(action);
+            const disabled =
+              isSelf &&
+              (action === "deactivate" || action === "archive" || action === "delete");
+
+            return (
+              <article className={`admin-lifecycle-option ${option.tone}`} key={action}>
+                <div>
+                  <strong>{option.title}</strong>
+                  <p>{option.description}</p>
+                </div>
+                <button
+                  className={
+                    option.tone === "danger"
+                      ? "btn btn-danger"
+                      : option.tone === "warning"
+                        ? "btn btn-primary"
+                        : "btn btn-secondary"
+                  }
+                  disabled={disabled}
+                  type="button"
+                  onClick={() => onSelect(action, user)}
+                >
+                  {option.actionLabel}
+                </button>
+              </article>
+            );
+          })}
+        </div>
+
+        {isSelf && (
+          <small>
+            Self-deactivation, self-archive, and self-deletion remain protected.
+          </small>
+        )}
+
+        <div className="admin-user-actions">
+          <button className="btn btn-secondary" type="button" onClick={onCancel}>
+            Cancel
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -1045,12 +1166,54 @@ function getLifecycleActions(
   return ["restore", "delete"];
 }
 
-function lifecycleActionLabel(action: AdminLifecycleAction | "delete") {
-  if (action === "deactivate") return "Deactivate";
-  if (action === "reactivate") return "Reactivate";
-  if (action === "archive") return "Archive";
-  if (action === "restore") return "Restore";
-  return "Permanently Delete";
+function lifecycleMenuCopy(action: AdminLifecycleAction | "delete") {
+  if (action === "deactivate") {
+    return {
+      title: "Deactivate",
+      description:
+        "Temporarily blocks access while preserving roles, Circle memberships, and coaching relationships.",
+      actionLabel: "Deactivate User",
+      tone: "caution",
+    };
+  }
+
+  if (action === "reactivate") {
+    return {
+      title: "Reactivate",
+      description:
+        "Restores account access while keeping current roles and relationships unchanged.",
+      actionLabel: "Reactivate User",
+      tone: "neutral",
+    };
+  }
+
+  if (action === "archive") {
+    return {
+      title: "Archive",
+      description:
+        "Ends active participation and relationships while preserving profile and historical records.",
+      actionLabel: "Archive User",
+      tone: "warning",
+    };
+  }
+
+  if (action === "restore") {
+    return {
+      title: "Restore",
+      description:
+        "Restores account access. Previous relationships remain ended until reassigned.",
+      actionLabel: "Restore User",
+      tone: "neutral",
+    };
+  }
+
+  return {
+    title: "Permanently Delete",
+    description:
+      "Permanently removes the account and related PeaceWorks records. This cannot be undone.",
+    actionLabel: "Permanently Delete User",
+    tone: "danger",
+  };
 }
 
 function lifecycleDialogCopy(
@@ -1163,6 +1326,13 @@ function availableCoaches(payload: AdminUsersPayload, selectedCoachIds: string[]
     (coach) =>
       coach.accountStatus === "active" || selectedCoachIds.includes(coach.id)
   );
+}
+
+function isRemovingAdminRole(
+  user: AdminManagedProfile | null,
+  selectedRoles: AdminRoleName[]
+) {
+  return Boolean(user?.roles.includes("admin") && !selectedRoles.includes("admin"));
 }
 
 function formatCoachDescription(coach: AdminCoachOption) {
