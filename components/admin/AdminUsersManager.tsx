@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { supabase } from "../../lib/supabase";
+import { routes } from "../../lib/navigation";
 import type {
   AdminAccountStatus,
   AdminCoachOption,
@@ -79,7 +80,7 @@ export default function AdminUsersManager({
       const token = await getAccessToken();
 
       if (!token) {
-        router.replace("/auth");
+        router.replace(routes.login);
         return;
       }
 
@@ -90,7 +91,7 @@ export default function AdminUsersManager({
       });
 
       if (response.status === 401) {
-        router.replace("/auth");
+        router.replace(routes.login);
         return;
       }
 
@@ -124,7 +125,7 @@ export default function AdminUsersManager({
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -135,7 +136,7 @@ export default function AdminUsersManager({
     });
 
     if (response.status === 401) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -278,7 +279,7 @@ export default function AdminUsersManager({
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -350,7 +351,7 @@ export default function AdminUsersManager({
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 

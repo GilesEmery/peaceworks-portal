@@ -1,93 +1,91 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-import { supabase } from "../lib/supabase";
-import SiteHeader from "../components/layout/SiteHeader";
 import SiteFooter from "../components/layout/SiteFooter";
+import SiteHeader from "../components/layout/SiteHeader";
+import { dashboardLoginHref, routes } from "../lib/navigation";
+import { supabase } from "../lib/supabase";
+
+const homeFeatures = [
+  {
+    title: "Calm Leadership",
+    description: "Lead through pressure without transmitting panic.",
+  },
+  {
+    title: "Conflict Repair",
+    description: "Address tension before it hardens.",
+  },
+  {
+    title: "Relational Strength",
+    description: "Build cultures where trust holds.",
+  },
+];
 
 export default function Home() {
-  const router = useRouter();
-  const [checkingSession, setCheckingSession] = useState(true);
+  const [dashboardHref, setDashboardHref] = useState(
+    dashboardLoginHref(routes.myDashboard)
+  );
 
   useEffect(() => {
-    async function checkSession() {
+    let isMounted = true;
+
+    async function loadDashboardDestination() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (session) {
-        router.replace("/dashboard");
-        return;
-      }
+      if (!isMounted) return;
 
-      setCheckingSession(false);
+      setDashboardHref(session ? routes.myDashboard : dashboardLoginHref(routes.myDashboard));
     }
 
-    checkSession();
-  }, [router]);
+    void loadDashboardDestination();
 
-  if (checkingSession) {
-    return (
-      <main className="portal-page">
-        <SiteHeader showSignOut={false} />
-
-        <section className="portal-hero">
-          <div className="container">Opening your Peace Index...</div>
-        </section>
-
-        <SiteFooter />
-      </main>
-    );
-  }
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <main className="portal-page">
-      <SiteHeader showSignOut={false} />
+      <SiteHeader />
 
-      <section className="portal-hero">
-        <div className="container portal-grid">
-          <div className="portal-copy">
-            <div className="eyebrow">The Peace Index</div>
+      <section className="home-foundation-shell">
+        <div className="container">
+          <div className="home-foundation-card">
+            <div className="home-foundation-copy">
+              <div className="eyebrow">Peace Made Practical</div>
+              <h1>
+                Peace isn’t passive.
+                <br />
+                It’s practiced.
+              </h1>
+              <p>
+                PeaceWorks helps leaders strengthen the relationships, habits,
+                and cultures that allow trust to hold under pressure.
+              </p>
 
-            <h1>Discover how peace moves under pressure.</h1>
+              <div className="btn-row">
+                <Link className="btn btn-primary" href={routes.about}>
+                  Explore PeaceWorks
+                </Link>
+                <Link className="btn btn-secondary" href={dashboardHref}>
+                  My Dashboard
+                </Link>
+              </div>
+            </div>
 
-            <p>
-              The Peace Index helps leaders understand what tends to steal their
-              peace, how they respond under pressure, and what practices can
-              help them grow into steadier, healthier leadership.
-            </p>
-
-            <div className="btn-row">
-              <a className="btn btn-primary" href="/auth">
-                Start the Peace Assessment
-              </a>
-
-              <a className="btn btn-secondary" href="/auth">
-                Sign In
-              </a>
+            <div className="home-foundation-features" aria-label="PeaceWorks focus areas">
+              {homeFeatures.map((feature) => (
+                <article key={feature.title}>
+                  <h2>{feature.title}</h2>
+                  <p>{feature.description}</p>
+                </article>
+              ))}
             </div>
           </div>
-
-          <aside className="login-card">
-            <span className="card-label">PeaceWorks</span>
-
-            <h2>Your Peace Index home</h2>
-
-            <p>
-              Sign in to take the Peace Assessment, view your latest
-              results, access Circle resources, and connect with future coaching
-              pathways.
-            </p>
-
-            <div className="resource-list">
-              <span>Peace Assessment</span>
-              <span>Peace Assessment Results</span>
-              <span>Circle Journey</span>
-              <span>Coach Portal</span>
-            </div>
-          </aside>
         </div>
       </section>
 

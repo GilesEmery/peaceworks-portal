@@ -1,4 +1,7 @@
 import Image from "next/image";
+import Link from "next/link";
+
+import { footerNavigation } from "../../lib/navigation";
 
 export default function SiteFooter() {
   return (
@@ -14,13 +17,11 @@ export default function SiteFooter() {
         </div>
 
         <div className="footer-links" aria-label="Footer navigation">
-          <a href="https://www.peaceworks.network/join">Join</a>
-          <a href="https://www.peaceworks.network/contact">About</a>
-          <a href="/dashboard">My Dashboard</a>
-          <a href="/assessments">Assessments</a>
-          <a href="https://www.peaceworks.network/roi-calculator">
-            ROI Calculator
-          </a>
+          {footerNavigation.map((item) => (
+            <Link key={item.href} href={item.href}>
+              {item.label}
+            </Link>
+          ))}
         </div>
       </div>
     </footer>

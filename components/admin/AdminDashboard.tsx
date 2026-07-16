@@ -26,6 +26,7 @@ import {
 import ResultModal from "../assessment/ResultModal";
 import AdminUsersManager from "./AdminUsersManager";
 import { supabase } from "../../lib/supabase";
+import { routes } from "../../lib/navigation";
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
 import type {
   AdminAnalyticsPayload,
@@ -300,7 +301,7 @@ export default function AdminDashboard() {
       const token = await getAccessToken();
 
       if (!token) {
-        router.replace("/dashboard");
+        router.replace(routes.myDashboard);
         return;
       }
 
@@ -314,7 +315,7 @@ export default function AdminDashboard() {
       ]);
 
       if (analyticsResponse.status === 401 || usersResponse.status === 401) {
-        router.replace("/auth");
+        router.replace(routes.login);
         return;
       }
 
@@ -423,7 +424,7 @@ export default function AdminDashboard() {
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -494,7 +495,7 @@ export default function AdminDashboard() {
         label="Access denied"
         title="Admin access is not available for this account."
         message="This dashboard is limited to approved PeaceWorks administrators."
-        onAction={() => router.push("/dashboard")}
+        onAction={() => router.push(routes.myDashboard)}
       />
     );
   }

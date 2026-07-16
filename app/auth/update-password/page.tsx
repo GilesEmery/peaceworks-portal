@@ -6,6 +6,7 @@ import { supabase } from "../../../lib/supabase";
 
 import SiteHeader from "../../../components/layout/SiteHeader";
 import SiteFooter from "../../../components/layout/SiteFooter";
+import { routes } from "../../../lib/navigation";
 
 export default function UpdatePasswordPage() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function UpdatePasswordPage() {
     setMessage("Password updated successfully.");
 
     setTimeout(() => {
-      router.push("/dashboard");
+      router.push(routes.myDashboard);
     }, 1000);
   }
 

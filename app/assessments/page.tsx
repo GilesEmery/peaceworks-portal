@@ -10,6 +10,7 @@ import { peaceAssessmentProfiles } from "../../data/peaceAssessmentProfiles";
 import {
   buildPeaceReportProfile,
 } from "../../data/peaceReport";
+import { routes } from "../../lib/navigation";
 import { supabase } from "../../lib/supabase";
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
 
@@ -251,7 +252,7 @@ export default function AssessmentsPage() {
         <ResultModal
           result={modalResult}
           onClose={() => setModalResult(null)}
-          onGoToDashboard={() => router.push("/dashboard")}
+          onGoToDashboard={() => router.push(routes.myDashboard)}
         />
       )}
     </main>

@@ -22,6 +22,7 @@ import ProgressBar from "../../components/assessment/ProgressBar";
 import ResultModal from "../../components/assessment/ResultModal";
 import { peaceAssessmentProfiles } from "../../data/peaceAssessmentProfiles";
 import { buildPeaceReportProfile } from "../../data/peaceReport";
+import { routes } from "../../lib/navigation";
 
 type PeaceAssessmentRow = {
   scores: PeaceAssessmentResult["scores"];
@@ -221,7 +222,7 @@ export default function PeaceAssessmentPage() {
 
   function startAssessment() {
     if (!userId) {
-      router.push("/auth");
+      router.push(routes.login);
       return;
     }
 
@@ -321,14 +322,14 @@ export default function PeaceAssessmentPage() {
                     <button
                       className="btn btn-primary"
                       type="button"
-                      onClick={() => router.push("/auth")}
+                      onClick={() => router.push(routes.login)}
                     >
                       Sign In to Begin
                     </button>
                     <button
                       className="btn btn-secondary"
                       type="button"
-                      onClick={() => router.push("/auth")}
+                      onClick={() => router.push(routes.login)}
                     >
                       Create an Account to Begin
                     </button>
@@ -370,7 +371,7 @@ export default function PeaceAssessmentPage() {
           <ResultModal
             result={resultData}
             onClose={() => setResultData(null)}
-            onGoToDashboard={() => router.push("/dashboard")}
+            onGoToDashboard={() => router.push(routes.myDashboard)}
           />
         )}
       </main>
@@ -455,7 +456,7 @@ export default function PeaceAssessmentPage() {
         <ResultModal
           result={resultData}
           onClose={() => setResultData(null)}
-          onGoToDashboard={() => router.push("/dashboard")}
+          onGoToDashboard={() => router.push(routes.myDashboard)}
         />
       )}
     </main>

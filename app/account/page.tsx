@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { routes } from "../../lib/navigation";
 import SiteHeader from "../../components/layout/SiteHeader";
 import SiteFooter from "../../components/layout/SiteFooter";
 
@@ -45,7 +46,7 @@ export default function AccountPage() {
         } = await supabase.auth.getUser();
 
         if (userError || !user) {
-          router.replace("/auth");
+          router.replace(routes.login);
           return;
         }
 
@@ -347,7 +348,7 @@ export default function AccountPage() {
               <button
                 className="settings-card-button"
                 type="button"
-                onClick={() => router.push("/auth/update-password")}
+                onClick={() => router.push(`${routes.auth}/update-password`)}
               >
                 Change Password
               </button>

@@ -1,10 +1,10 @@
 import AuthPageClient from "../../components/auth/AuthPageClient";
 
-type AuthPageProps = {
+type LoginPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function AuthPage({ searchParams }: AuthPageProps) {
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const next = resolvedSearchParams.next;
 

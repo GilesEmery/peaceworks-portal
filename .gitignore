@@ -19,6 +19,7 @@
 
 # production
 /build
+peaceworks-portal-backup-*.zip
 
 # misc
 .DS_Store

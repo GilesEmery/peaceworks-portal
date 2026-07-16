@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 
 import ResultModal from "../assessment/ResultModal";
 import { supabase } from "../../lib/supabase";
+import { routes } from "../../lib/navigation";
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
 import type {
   CoachCircleMemberCard,
@@ -249,7 +250,7 @@ export default function CoachDashboard() {
       const token = providedToken || (await getAccessToken());
 
       if (!token) {
-        router.replace("/auth");
+        router.replace(routes.login);
         return;
       }
 
@@ -282,7 +283,7 @@ export default function CoachDashboard() {
       const token = providedToken || (await getAccessToken());
 
       if (!token) {
-        router.replace("/auth");
+        router.replace(routes.login);
         return;
       }
 
@@ -332,7 +333,7 @@ export default function CoachDashboard() {
     const token = providedToken || (await getAccessToken());
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -384,7 +385,7 @@ export default function CoachDashboard() {
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -395,7 +396,7 @@ export default function CoachDashboard() {
     });
 
     if (response.status === 401) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -597,7 +598,7 @@ export default function CoachDashboard() {
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -628,7 +629,7 @@ export default function CoachDashboard() {
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -670,7 +671,7 @@ export default function CoachDashboard() {
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return false;
     }
 
@@ -731,7 +732,7 @@ export default function CoachDashboard() {
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return false;
     }
 
@@ -776,7 +777,7 @@ export default function CoachDashboard() {
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return false;
     }
 
@@ -816,7 +817,7 @@ export default function CoachDashboard() {
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return false;
     }
 
@@ -857,7 +858,7 @@ export default function CoachDashboard() {
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return false;
     }
 
@@ -900,7 +901,7 @@ export default function CoachDashboard() {
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -934,7 +935,7 @@ export default function CoachDashboard() {
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -959,7 +960,7 @@ export default function CoachDashboard() {
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -1016,7 +1017,7 @@ export default function CoachDashboard() {
       <CoachState
         title="Coach access required"
         message="This workspace is available to approved PeaceWorks coaches and administrators."
-        onAction={() => router.push("/dashboard")}
+        onAction={() => router.push(routes.myDashboard)}
       />
     );
   }

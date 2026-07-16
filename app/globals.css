@@ -137,6 +137,7 @@ a {
 }
 
 .assessment-nav-toggle:focus-visible,
+.assessment-nav-dropdown a:focus-visible,
 .assessment-nav-dropdown button:focus-visible {
   outline: 3px solid rgba(90, 122, 92, 0.28);
   outline-offset: 2px;
@@ -156,6 +157,7 @@ a {
   backdrop-filter: blur(14px);
 }
 
+.assessment-nav-dropdown a,
 .assessment-nav-dropdown button {
   width: 100%;
   min-height: 42px;
@@ -167,8 +169,11 @@ a {
   cursor: pointer;
   font: inherit;
   text-align: left;
+  display: flex;
+  align-items: center;
 }
 
+.assessment-nav-dropdown a:hover,
 .assessment-nav-dropdown button:hover {
   background: rgba(143, 171, 142, 0.14);
   color: var(--sage-dark);
@@ -176,6 +181,110 @@ a {
 
 .portal-hero {
   padding: 90px 0 70px;
+}
+
+.public-route-shell {
+  padding: 96px 0 88px;
+}
+
+.public-route-card {
+  max-width: 860px;
+  padding: clamp(30px, 5vw, 54px);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(16px);
+}
+
+.public-route-card h1 {
+  max-width: 9ch;
+  margin: 0 0 20px;
+  font-size: clamp(4rem, 8vw, 7rem);
+  line-height: 0.94;
+  letter-spacing: -0.04em;
+  font-weight: 500;
+}
+
+.public-route-card p {
+  max-width: 680px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.28rem;
+  line-height: 1.55;
+}
+
+.public-route-note {
+  margin-top: 26px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(143, 171, 142, 0.13);
+  color: var(--sage-dark);
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.home-foundation-shell {
+  padding: 96px 0 88px;
+}
+
+.home-foundation-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: clamp(28px, 5vw, 58px);
+  align-items: end;
+  padding: clamp(30px, 5vw, 58px);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(circle at 92% 8%, rgba(184, 204, 183, 0.28), transparent 28%),
+    rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(16px);
+}
+
+.home-foundation-copy h1 {
+  max-width: 10ch;
+  margin: 0 0 24px;
+  font-size: clamp(4rem, 8vw, 7.2rem);
+  line-height: 0.94;
+  letter-spacing: -0.04em;
+  font-weight: 500;
+}
+
+.home-foundation-copy p {
+  max-width: 700px;
+  margin: 0 0 30px;
+  color: var(--muted);
+  font-size: 1.32rem;
+  line-height: 1.55;
+}
+
+.home-foundation-features {
+  display: grid;
+  gap: 14px;
+}
+
+.home-foundation-features article {
+  padding: 20px 22px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(20, 20, 20, 0.07);
+}
+
+.home-foundation-features h2 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 1.55rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.home-foundation-features p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.06rem;
+  line-height: 1.45;
 }
 
 .portal-grid {
@@ -438,7 +547,8 @@ a {
 @media (max-width: 1100px) {
   .portal-grid,
   .section-head,
-  .next-step-shell {
+  .next-step-shell,
+  .home-foundation-card {
     grid-template-columns: 1fr;
   }
 

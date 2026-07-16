@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import ResultModal from "../assessment/ResultModal";
 import AdminUsersManager from "./AdminUsersManager";
 import { supabase } from "../../lib/supabase";
+import { routes } from "../../lib/navigation";
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
 import type {
   AdminGrowthStatus,
@@ -60,7 +61,7 @@ export default function AdminMemberProfile({
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -71,7 +72,7 @@ export default function AdminMemberProfile({
     });
 
     if (response.status === 401) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -100,7 +101,7 @@ export default function AdminMemberProfile({
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -131,7 +132,7 @@ export default function AdminMemberProfile({
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -173,7 +174,7 @@ export default function AdminMemberProfile({
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -199,7 +200,7 @@ export default function AdminMemberProfile({
     const token = await getAccessToken();
 
     if (!token) {
-      router.replace("/auth");
+      router.replace(routes.login);
       return;
     }
 
@@ -239,7 +240,7 @@ export default function AdminMemberProfile({
       <AdminMemberState
         title="Admin access required"
         message="This member profile is limited to approved PeaceWorks administrators."
-        onAction={() => router.push("/dashboard")}
+        onAction={() => router.push(routes.myDashboard)}
       />
     );
   }
