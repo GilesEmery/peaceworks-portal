@@ -5,8 +5,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "www.peaceworks.network",
-        pathname: "/PeaceworksLogo.svg",
+        hostname: "raw.githubusercontent.com",
+        pathname: "/gilesemery/peaceworks-main/main/PeaceworksLogo.svg",
       },
     ],
   },

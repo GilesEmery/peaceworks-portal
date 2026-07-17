@@ -19,7 +19,13 @@ export const metadata: Metadata = {
   applicationName: "PeaceWorks",
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/icon.png", type: "image/png", sizes: "64x64" }],
+    icon: [
+      {
+        url: "/images/home/peaceworks-circle.svg",
+        type: "image/svg+xml",
+        sizes: "any",
+      },
+    ],
     apple: [
       {
         url: "/apple-touch-icon.png",

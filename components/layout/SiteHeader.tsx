@@ -158,11 +158,13 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
         <Link className="brand" href={routes.home} aria-label="PeaceWorks home">
           <Image
             className="brand-logo desktop-brand-logo"
-            src="https://www.peaceworks.network/PeaceworksLogo.svg"
+            src="https://raw.githubusercontent.com/gilesemery/peaceworks-main/main/PeaceworksLogo.svg"
             alt="PeaceWorks"
             width={260}
             height={64}
             priority
+            style={{ height: "auto" }}
+            unoptimized
           />
           <span className="mobile-brand-lockup" aria-hidden="true">
             <Image
