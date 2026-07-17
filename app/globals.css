@@ -520,10 +520,6 @@ a {
     grid-template-columns: 1fr;
   }
 
-  .peace-assessment-benefits {
-    grid-template-columns: 1fr;
-  }
-
   .assessments-library-head {
     flex-direction: column;
   }
@@ -2002,6 +1998,49 @@ a {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+@media (max-width: 1024px) {
+  .peace-assessment-benefits {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .peace-assessment-benefits > :last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .peace-assessment-landing {
+    padding: 48px 0 64px;
+  }
+
+  .peace-assessment-landing-card {
+    gap: 22px;
+    padding: 24px;
+    border-radius: 26px;
+  }
+
+  .peace-assessment-benefits {
+    grid-template-columns: 1fr;
+  }
+
+  .peace-assessment-benefits > :last-child {
+    grid-column: auto;
+  }
+
+  .peace-assessment-benefits div {
+    padding: 18px;
+  }
+
+  .peace-assessment-actions {
+    flex-direction: column;
+  }
+
+  .peace-assessment-actions .btn {
+    width: 100%;
+    min-height: 48px;
+  }
 }
 
 .dashboard-divider {
