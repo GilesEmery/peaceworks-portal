@@ -566,6 +566,11 @@ a {
   font-size: 1.3rem;
   color: var(--muted);
 }
+
+.dashboard-shell {
+  padding-top: 42px;
+}
+
 .assessment-shell {
   min-height: calc(100svh - 96px);
   display: grid;
@@ -2154,6 +2159,10 @@ a {
 }
 
 @media (max-width: 860px) {
+  .dashboard-shell {
+    padding-top: 34px;
+  }
+
   .site-header {
     padding-top: 10px;
   }
