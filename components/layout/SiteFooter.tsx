@@ -1,7 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
-
-import { footerNavigation } from "../../lib/navigation";
 
 export default function SiteFooter() {
   return (
@@ -9,20 +6,18 @@ export default function SiteFooter() {
       <div className="container footer-inner">
         <div className="footer-branding">
           <Image
-            src="https://www.peaceworks.network/PeaceworksLogo.svg"
+            src="https://raw.githubusercontent.com/gilesemery/peaceworks-main/main/PeaceworksLogo.svg"
             alt="PeaceWorks"
             width={240}
             height={59}
+            style={{ height: "auto" }}
+            unoptimized
           />
         </div>
 
-        <div className="footer-links" aria-label="Footer navigation">
-          {footerNavigation.map((item) => (
-            <Link key={item.href} href={item.href}>
-              {item.label}
-            </Link>
-          ))}
-        </div>
+        <p className="footer-copyright">
+          © 2026 PeaceWorks. All rights reserved.
+        </p>
       </div>
     </footer>
   );

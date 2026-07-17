@@ -143,6 +143,9 @@
 }
 
 .hero {
+  display: grid;
+  min-height: calc(100svh - 96px);
+  align-items: center;
   padding: 42px 0 34px;
 }
 
@@ -151,20 +154,6 @@
   grid-template-columns: 1.02fr 0.98fr;
   gap: 38px;
   align-items: center;
-}
-
-.heroTitle {
-  max-width: 9ch;
-  margin-bottom: 22px;
-  font-size: clamp(3.8rem, 8vw, 7.2rem);
-}
-
-.heroCopy p {
-  max-width: 780px;
-}
-
-.heroCopy .btnRow {
-  margin-top: 28px;
 }
 
 .heroNote,
@@ -992,16 +981,8 @@
   }
 
   .hero {
+    min-height: auto;
     padding: 34px 0 30px;
-  }
-
-  .heroTitle {
-    margin-bottom: 0;
-    line-height: 1;
-  }
-
-  .heroCopy p {
-    padding-top: 36px;
   }
 
   .calculatorShell,
@@ -1023,10 +1004,6 @@
 @media (max-width: 640px) {
   .roiPage {
     --public-major-section-gap-mobile: 84px;
-  }
-
-  .heroTitle {
-    font-size: clamp(3rem, 15vw, 4.8rem);
   }
 
   .splitHead h2,

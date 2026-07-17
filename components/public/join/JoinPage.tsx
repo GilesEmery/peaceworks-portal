@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { routes } from "../../../lib/navigation";
+import PublicPageIntro from "../shared/PublicPageIntro";
 import styles from "./JoinPage.module.css";
 
 const benefits = [
@@ -27,11 +28,15 @@ export default function JoinPage() {
     <div className={styles.joinPage}>
       <section className={styles.hero}>
         <div className={`${styles.container} ${styles.heroGrid}`}>
-          <div className={styles.heroCopy}>
-            <div className={styles.eyebrow}>Join PeaceWorks</div>
-            <h1 className={`${styles.display} ${styles.heroTitle}`}>
-              A cohort for leaders who want healthier, more resilient cultures.
-            </h1>
+          <PublicPageIntro
+            eyebrow="Join PeaceWorks"
+            title="A cohort for leaders who want healthier, more resilient cultures."
+            actions={
+              <a className={`${styles.btn} ${styles.btnPrimary}`} href="#payment-options">
+                Choose a Payment Method
+              </a>
+            }
+          >
             <p>
               The PeaceWorks cohort experience is for business leaders who want
               to build healthier, more resilient cultures. Through monthly
@@ -41,12 +46,7 @@ export default function JoinPage() {
               who believe peace is not passive—it is something we practice
               together.
             </p>
-            <div className={styles.btnRow}>
-              <a className={`${styles.btn} ${styles.btnPrimary}`} href="#payment-options">
-                Choose a Payment Method
-              </a>
-            </div>
-          </div>
+          </PublicPageIntro>
 
           <div className={styles.heroVisual} aria-hidden="true">
             <div className={styles.heroGlow} />

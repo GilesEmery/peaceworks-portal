@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { routes } from "../../../lib/navigation";
+import PublicPageIntro from "../shared/PublicPageIntro";
 import styles from "./AboutPage.module.css";
 
 const commonQuestions = [
@@ -37,22 +38,21 @@ export default function AboutPage() {
       <main>
         <section className={styles.hero}>
           <div className={`${styles.container} ${styles.heroGrid}`}>
-            <div className={styles.heroCopy}>
-              <div className={styles.eyebrow}>Contact PeaceWorks</div>
-              <h1 className={`${styles.display} ${styles.heroTitle}`}>
-                Questions are welcome.
-              </h1>
+            <PublicPageIntro
+              eyebrow="Contact PeaceWorks"
+              title="Questions are welcome."
+              actions={
+                <a className={`${styles.btn} ${styles.btnPrimary}`} href={contactLinks.peaceworks}>
+                  Email PeaceWorks
+                </a>
+              }
+            >
               <p>
                 If you have questions about PeaceWorks, the cohort experience,
                 the ROI work, or whether this may fit your organization, the
                 simplest next step is to email us directly.
               </p>
-              <div className={styles.btnRow}>
-                <a className={`${styles.btn} ${styles.btnPrimary}`} href={contactLinks.peaceworks}>
-                  Email PeaceWorks
-                </a>
-              </div>
-            </div>
+            </PublicPageIntro>
 
             <div className={styles.heroVisual} aria-hidden="true">
               <div className={styles.heroGlow} />
@@ -74,7 +74,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className={`${styles.section} ${styles.sectionTight}`}>
+        <section className={styles.section}>
           <div className={styles.container}>
             <div className={styles.questionsShell}>
               <div className={styles.splitHead}>

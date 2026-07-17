@@ -157,28 +157,12 @@
   align-items: center;
 }
 
-.heroCopy {
-  padding: 34px 0;
+.heroTitleLine {
+  display: block;
 }
 
-.heroTitle {
-  max-width: 8.2ch;
-  margin-bottom: 22px;
-  font-size: clamp(4rem, 9vw, 8rem);
-}
-
-.heroSub {
-  max-width: 690px;
-  margin-bottom: 30px;
-}
-
-.heroKicker {
-  max-width: 620px;
-  margin-top: 24px;
-  color: var(--text);
-  font-size: 1.18rem;
-  font-weight: 600;
-  line-height: 1.4;
+.heroTitleLine + .heroTitleLine {
+  margin-top: 0.25em;
 }
 
 .heroVisual {
@@ -1098,24 +1082,6 @@
     gap: 28px;
   }
 
-  .heroCopy {
-    padding: 20px 0 0;
-  }
-
-  .heroTitle {
-    margin-bottom: 0;
-    line-height: 1;
-  }
-
-  .heroSub {
-    padding-top: 36px;
-    margin-bottom: 22px;
-  }
-
-  .heroKicker {
-    margin-top: 18px;
-  }
-
   .heroVisual {
     min-height: auto;
     display: none;
@@ -1155,10 +1121,6 @@
 
   .section {
     padding: var(--home-section-space-mobile) 0;
-  }
-
-  .heroTitle {
-    font-size: clamp(3.2rem, 16vw, 4.8rem);
   }
 
   .roiShell h2,

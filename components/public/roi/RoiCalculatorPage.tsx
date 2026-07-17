@@ -15,6 +15,7 @@ import {
   type RoiResults,
 } from "../../../lib/roi/calculations";
 import { routes } from "../../../lib/navigation";
+import PublicPageIntro from "../shared/PublicPageIntro";
 import styles from "./RoiCalculator.module.css";
 
 type InputKey = keyof RoiInputs;
@@ -228,11 +229,30 @@ export default function RoiCalculatorPage() {
       <main>
         <section className={styles.hero}>
           <div className={`${styles.container} ${styles.heroGrid}`}>
-            <div className={styles.heroCopy}>
-              <div className={styles.eyebrow}>PeaceWorks ROI Calculator</div>
-              <h1 className={`${styles.display} ${styles.heroTitle}`}>
-                Make relational drag visible.
-              </h1>
+            <PublicPageIntro
+              eyebrow="PeaceWorks ROI Calculator"
+              title="Make relational drag visible."
+              actions={
+                <>
+                  <a className={`${styles.btn} ${styles.btnPrimary}`} href="#calculator">
+                    Start the Calculator
+                  </a>
+                  <Link className={`${styles.btn} ${styles.btnSecondary}`} href={routes.join}>
+                    Join the Founders Circle
+                  </Link>
+                </>
+              }
+              belowContent={
+                <div className={styles.heroNote}>
+                  <strong>This is not abstract culture talk.</strong>
+                  <span>
+                    It is a practical way to translate trust, calm leadership, and
+                    relational health into business language leaders can actually
+                    see, discuss, and act on.
+                  </span>
+                </div>
+              }
+            >
               <p>
                 Most leaders can feel the cost of tension, disengagement, and
                 low trust. Very few can see it clearly. This calculator helps
@@ -241,23 +261,7 @@ export default function RoiCalculatorPage() {
                 leadership and culture recovered even part of that lost
                 capacity.
               </p>
-              <div className={styles.btnRow}>
-                <a className={`${styles.btn} ${styles.btnPrimary}`} href="#calculator">
-                  Start the Calculator
-                </a>
-                <Link className={`${styles.btn} ${styles.btnSecondary}`} href={routes.join}>
-                  Join the Founders Circle
-                </Link>
-              </div>
-              <div className={styles.heroNote}>
-                <strong>This is not abstract culture talk.</strong>
-                <span>
-                  It is a practical way to translate trust, calm leadership, and
-                  relational health into business language leaders can actually
-                  see, discuss, and act on.
-                </span>
-              </div>
-            </div>
+            </PublicPageIntro>
 
             <div className={styles.heroVisual} aria-hidden="true">
               <div className={styles.heroGlow} />
@@ -273,7 +277,7 @@ export default function RoiCalculatorPage() {
           </div>
         </section>
 
-        <section className={`${styles.section} ${styles.sectionTight}`} id="calculator">
+        <section className={styles.section} id="calculator">
           <div className={styles.container}>
             <div className={styles.calculatorShell}>
               <div className={styles.splitHead}>

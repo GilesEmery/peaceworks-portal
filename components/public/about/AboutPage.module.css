@@ -82,16 +82,6 @@
   align-items: center;
 }
 
-.heroTitle {
-  max-width: 8.4ch;
-  margin-bottom: 22px;
-  font-size: clamp(3.8rem, 8vw, 7rem);
-}
-
-.heroCopy p {
-  max-width: 760px;
-}
-
 .btnRow {
   display: flex;
   flex-wrap: wrap;
@@ -436,15 +426,6 @@
     padding: 34px 0 30px;
   }
 
-  .heroTitle {
-    margin-bottom: 0;
-    line-height: 1;
-  }
-
-  .heroCopy p {
-    padding-top: 36px;
-  }
-
   .questionsShell,
   .contactShell {
     padding: 22px;
@@ -458,10 +439,6 @@
 @media (max-width: 640px) {
   .aboutPage {
     --public-major-section-gap-mobile: 84px;
-  }
-
-  .heroTitle {
-    font-size: clamp(3rem, 15vw, 4.8rem);
   }
 
   .splitHead h2 {

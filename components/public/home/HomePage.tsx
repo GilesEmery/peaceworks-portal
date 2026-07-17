@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { routes } from "../../../lib/navigation";
+import PublicPageIntro from "../shared/PublicPageIntro";
 import styles from "./HomePage.module.css";
 
 const pathways = [
@@ -122,25 +123,28 @@ export default function HomePage() {
     <div className={styles.homePage}>
       <section className={styles.hero}>
         <div className={`${styles.container} ${styles.heroGrid}`}>
-          <div className={`${styles.heroCopy} ${styles.reveal}`}>
-            <div className={styles.eyebrow}>
-              PeaceWorks • Relational Operating System
-            </div>
-            <h1 className={`${styles.display} ${styles.heroTitle}`}>
-              Peace isn’t passive.
-              <br />
-              It’s practiced.
-            </h1>
-            <p className={styles.heroSub}>
+          <PublicPageIntro
+            className={styles.reveal}
+            eyebrow="PeaceWorks • Relational Operating System"
+            title={
+              <>
+                <span className={styles.heroTitleLine}>
+                  Peace isn’t passive.
+                </span>
+                <span className={styles.heroTitleLine}>It’s practiced.</span>
+              </>
+            }
+            secondaryCopy={
+              <p>For leaders who want calm, honest, durable cultures.</p>
+            }
+          >
+            <p>
               Most companies invest in strategy and execution. Very few invest
               in the relational operating system that holds everything together.
               PeaceWorks equips business leaders to build cultures where trust
               holds under pressure.
             </p>
-            <p className={styles.heroKicker}>
-              For leaders who want calm, honest, durable cultures.
-            </p>
-          </div>
+          </PublicPageIntro>
 
           <div className={`${styles.heroVisual} ${styles.reveal}`} aria-hidden="true">
             <div className={styles.heroGlow} />

@@ -2115,6 +2115,14 @@ a {
   height: auto;
 }
 
+.footer-copyright {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: right;
+}
+
 .footer-links {
   display: flex;
   align-items: center;
@@ -2178,6 +2186,10 @@ a {
   .footer-links {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .footer-copyright {
+    text-align: left;
   }
 }
 
