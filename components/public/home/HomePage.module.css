@@ -1091,11 +1091,34 @@
 
   .hero {
     min-height: auto;
-    padding-top: 42px;
+    padding: 34px 0 30px;
+  }
+
+  .heroGrid {
+    gap: 28px;
+  }
+
+  .heroCopy {
+    padding: 20px 0 0;
+  }
+
+  .heroTitle {
+    margin-bottom: 0;
+    line-height: 1;
+  }
+
+  .heroSub {
+    padding-top: 36px;
+    margin-bottom: 22px;
+  }
+
+  .heroKicker {
+    margin-top: 18px;
   }
 
   .heroVisual {
-    min-height: 420px;
+    min-height: auto;
+    display: none;
   }
 
   .heroPathways,
@@ -1105,32 +1128,14 @@
     grid-template-columns: 1fr;
   }
 
-  .floatingCard {
-    position: relative;
-    inset: auto;
-    max-width: none;
+  .heroPathways {
+    gap: 14px;
+    margin-top: 6px;
+    padding-bottom: 0;
   }
 
-  .orbits {
-    width: min(90vw, 520px);
-  }
-
-  .float1 {
-    position: absolute;
-    top: 4%;
-    left: 0;
-  }
-
-  .float2 {
-    position: absolute;
-    top: 15%;
-    right: 0;
-  }
-
-  .float3 {
-    position: absolute;
-    bottom: 7%;
-    left: 0;
+  .heroPathway {
+    min-height: auto;
   }
 
   .assessmentShell,
@@ -1144,6 +1149,10 @@
 }
 
 @media (max-width: 640px) {
+  .homePage {
+    --home-major-section-gap-mobile: 84px;
+  }
+
   .section {
     padding: var(--home-section-space-mobile) 0;
   }

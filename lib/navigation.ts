@@ -12,6 +12,8 @@ export const routes = {
   about: "/about",
   roiCalculator: "/roi-calculator",
   join: "/join",
+  joinCreditCard: "/join/credit-card",
+  joinAch: "/join/ach",
   assessments: "/assessments",
   peaceAssessment: "/peace-assessment",
   login: "/login",
@@ -38,6 +40,21 @@ export const assessmentNavigation: NavigationItem[] = [
   { label: "Peace Assessment", href: routes.peaceAssessment },
 ];
 
+export function getMobilePrimaryNavigation(isAuthenticated: boolean) {
+  const navigation = publicPrimaryNavigation.filter(
+    (item) => item.href !== routes.assessments
+  );
+
+  if (!isAuthenticated) {
+    return navigation.filter((item) => item.href !== routes.myDashboard);
+  }
+
+  return [
+    ...navigation.filter((item) => item.href === routes.myDashboard),
+    ...navigation.filter((item) => item.href !== routes.myDashboard),
+  ];
+}
+
 export const roleAccountNavigation: RoleNavigationItem[] = [
   { label: "Coach Dashboard", href: routes.coach, role: "coach" },
   { label: "Project Dashboard", href: routes.project, role: "project_manager" },
@@ -47,7 +64,6 @@ export const roleAccountNavigation: RoleNavigationItem[] = [
 export const footerNavigation: NavigationItem[] = [
   { label: "Join", href: routes.join },
   { label: "About", href: routes.about },
-  { label: "My Dashboard", href: routes.myDashboard },
   { label: "Assessments", href: routes.assessments },
   { label: "ROI Calculator", href: routes.roiCalculator },
 ];
@@ -60,8 +76,26 @@ export function isSafeInternalPath(value: string | null | undefined) {
   if (!value) return false;
   if (!value.startsWith("/")) return false;
   if (value.startsWith("//")) return false;
-  if (value.includes("://")) return false;
-  return true;
+  if (value.includes("\\") || /[\u0000-\u001f\u007f]/.test(value)) return false;
+
+  try {
+    const decodedValue = decodeURIComponent(value);
+    if (!decodedValue.startsWith("/") || decodedValue.startsWith("//")) return false;
+    if (
+      decodedValue.includes("\\") ||
+      /[\u0000-\u001f\u007f]/.test(decodedValue)
+    ) {
+      return false;
+    }
+
+    const destination = new URL(decodedValue, "https://peaceworks.local");
+    return (
+      destination.origin === "https://peaceworks.local" &&
+      destination.pathname.startsWith("/")
+    );
+  } catch {
+    return false;
+  }
 }
 
 export function safeNextPath(value: string | null | undefined): string {

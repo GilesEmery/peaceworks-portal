@@ -1,0 +1,1069 @@
+.roiPage {
+  --public-radius-sm: 20px;
+  --public-major-section-gap: 136px;
+  --public-section-space: calc(var(--public-major-section-gap) / 2);
+  --public-major-section-gap-mobile: 96px;
+  --public-section-space-mobile: calc(var(--public-major-section-gap-mobile) / 2);
+  position: relative;
+  overflow: hidden;
+}
+
+.roiPage::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.35) 0.6px, transparent 0.7px);
+  background-size: 10px 10px;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  width: min(var(--max), calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.roiPage h1,
+.roiPage h2,
+.roiPage h3,
+.roiPage p {
+  margin: 0;
+}
+
+.roiPage p,
+.roiPage label,
+.metricNote,
+.chartLabel,
+.chartValue,
+.valueChip {
+  color: var(--muted);
+  font-size: 1.15rem;
+  line-height: 1.5;
+  letter-spacing: 0.005em;
+}
+
+.display {
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.eyebrow,
+.eyebrowLight {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+  color: var(--sage-dark);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.eyebrowLight {
+  color: var(--sage-light);
+}
+
+.eyebrow::before,
+.eyebrowLight::before {
+  content: "";
+  width: 34px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.btnRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+}
+
+.btn {
+  display: inline-flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    color 0.22s ease,
+    transform 0.22s ease;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.btn:focus-visible,
+.field input:focus-visible {
+  outline: 3px solid rgba(184, 204, 183, 0.42);
+  outline-offset: 3px;
+}
+
+.btnPrimary {
+  color: #fff;
+  background: linear-gradient(135deg, #111 0%, #1a1f1a 100%);
+  box-shadow: 0 14px 28px rgba(17, 17, 17, 0.18);
+}
+
+.btnSecondary {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(20, 20, 20, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.btnGhost {
+  color: var(--sage-dark);
+  background: transparent;
+  border: 1px solid rgba(90, 122, 92, 0.22);
+}
+
+.hero {
+  padding: 42px 0 34px;
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: 1.02fr 0.98fr;
+  gap: 38px;
+  align-items: center;
+}
+
+.heroTitle {
+  max-width: 9ch;
+  margin-bottom: 22px;
+  font-size: clamp(3.8rem, 8vw, 7.2rem);
+}
+
+.heroCopy p {
+  max-width: 780px;
+}
+
+.heroCopy .btnRow {
+  margin-top: 28px;
+}
+
+.heroNote,
+.darkNote {
+  max-width: 740px;
+  margin-top: 24px;
+  padding: 20px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: var(--public-radius-sm);
+  background: rgba(255, 255, 255, 0.54);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.heroNote strong,
+.darkNote strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text);
+  font-size: 1.16rem;
+  font-weight: 600;
+  line-height: 1.14;
+}
+
+.heroNote span,
+.darkNote span {
+  display: block;
+  color: var(--muted);
+  font-size: 1.03rem;
+  line-height: 1.42;
+}
+
+.heroVisual {
+  position: relative;
+  display: grid;
+  min-height: 560px;
+  place-items: center;
+}
+
+.heroGlow {
+  position: absolute;
+  width: 720px;
+  height: 720px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(184, 204, 183, 0.34) 0%,
+    rgba(143, 171, 142, 0.14) 38%,
+    transparent 70%
+  );
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+.orbits {
+  position: relative;
+  display: grid;
+  width: min(76vw, 540px);
+  aspect-ratio: 1 / 1;
+  place-items: center;
+}
+
+.orbit {
+  position: absolute;
+  border: 1px solid rgba(143, 171, 142, 0.28);
+  border-radius: 50%;
+}
+
+.orbit::before,
+.orbit::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sage-light), var(--sage-dark));
+  box-shadow: 0 0 20px rgba(143, 171, 142, 0.36);
+}
+
+.orbit1 {
+  width: 100%;
+  height: 100%;
+  animation: spin 40s linear infinite;
+}
+
+.orbit1::before {
+  top: 50%;
+  left: -5px;
+  transform: translateY(-50%);
+}
+
+.orbit1::after {
+  top: 14%;
+  right: 15%;
+}
+
+.orbit2 {
+  width: 76%;
+  height: 76%;
+  border-color: rgba(143, 171, 142, 0.4);
+  animation: spinReverse 28s linear infinite;
+}
+
+.orbit2::before {
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.orbit2::after {
+  top: 60%;
+  right: -5px;
+}
+
+.orbit3 {
+  width: 54%;
+  height: 54%;
+  border-color: rgba(90, 122, 92, 0.46);
+  animation: spin 18s linear infinite;
+}
+
+.orbit3::before {
+  bottom: 10%;
+  left: 14%;
+}
+
+.orbit3::after {
+  top: 12%;
+  right: 12%;
+}
+
+.logoWrap {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 52%;
+  aspect-ratio: 1 / 1;
+  place-items: center;
+}
+
+.logoWrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 24px 42px rgba(17, 17, 17, 0.12));
+}
+
+.section {
+  position: relative;
+  padding: var(--public-section-space) 0;
+}
+
+.sectionTight {
+  padding-top: 0;
+}
+
+.calculatorShell,
+.whyShell,
+.advantageShell,
+.ctaShell {
+  position: relative;
+  overflow: hidden;
+  padding: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 34px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.62));
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(16px);
+}
+
+.calculatorShell::before,
+.whyShell::before,
+.advantageShell::before,
+.ctaShell::before {
+  content: "";
+  position: absolute;
+  top: -120px;
+  right: -120px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(184, 204, 183, 0.32), transparent 70%);
+  pointer-events: none;
+}
+
+.splitHead {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 32px;
+  align-items: end;
+  margin-bottom: 26px;
+}
+
+.splitHead h2 {
+  color: var(--text);
+  font-size: clamp(2.7rem, 5.3vw, 4.8rem);
+  font-weight: 500;
+  line-height: 0.96;
+  letter-spacing: -0.03em;
+}
+
+.calculatorGrid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 0.96fr 1.04fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.inputsPanel,
+.resultsPanel {
+  position: relative;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: var(--shadow);
+}
+
+.panelTitle {
+  margin-bottom: 14px;
+  color: var(--text);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.panelCopy,
+.groupCopy {
+  margin-bottom: 20px;
+  font-size: 1.08rem;
+}
+
+.groupCopy {
+  margin-bottom: 14px;
+}
+
+.inputGroups {
+  display: grid;
+  gap: 18px;
+}
+
+.inputGroup {
+  padding: 18px;
+  border: 1px solid rgba(20, 20, 20, 0.06);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.inputGroup h3 {
+  margin: 0 0 14px;
+  color: var(--text);
+  font-size: 1.42rem;
+  font-weight: 600;
+  line-height: 1.05;
+}
+
+.fieldGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field label {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.field input {
+  width: 100%;
+  font-family: inherit;
+}
+
+.field input[type="number"] {
+  appearance: textfield;
+  padding: 12px 14px;
+  border: 1px solid rgba(20, 20, 20, 0.1);
+  border-radius: 14px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+  font-size: 1.08rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.field input[type="number"]:focus {
+  border-color: rgba(90, 122, 92, 0.36);
+  box-shadow: 0 0 0 4px rgba(143, 171, 142, 0.1);
+}
+
+.field input[type="range"] {
+  margin-top: 4px;
+  accent-color: var(--sage-dark);
+}
+
+.valueChip {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(143, 171, 142, 0.1);
+  color: var(--sage-dark);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.errorSummary,
+.errorText {
+  color: #8a2f2f;
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.errorSummary {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(138, 47, 47, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 245, 242, 0.8);
+}
+
+.downloadRow {
+  display: grid;
+  gap: 10px;
+  margin: 22px 0 0;
+  padding: 16px;
+  border: 1px solid rgba(90, 122, 92, 0.12);
+  border-radius: 22px;
+  background: rgba(231, 239, 229, 0.6);
+}
+
+.downloadNote {
+  display: block;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.resultsInvalid {
+  opacity: 0.55;
+}
+
+.resultsTop {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.bigStat {
+  padding: 20px;
+  border: 1px solid rgba(20, 20, 20, 0.06);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.68));
+}
+
+.bigStat strong {
+  display: block;
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: clamp(2.5rem, 4vw, 3.8rem);
+  font-weight: 600;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+}
+
+.bigStat span {
+  display: block;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.28;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.metricCard {
+  padding: 16px;
+  border: 1px solid rgba(20, 20, 20, 0.06);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.metricCard strong {
+  display: block;
+  margin-bottom: 6px;
+  overflow-wrap: anywhere;
+  color: var(--text);
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+
+.metricNote {
+  font-size: 0.98rem;
+  line-height: 1.3;
+}
+
+.chartStack {
+  display: grid;
+  gap: 16px;
+}
+
+.chartCard {
+  padding: 18px;
+  border: 1px solid rgba(20, 20, 20, 0.06);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.chartHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.chartHead h3 {
+  color: var(--text);
+  font-size: 1.42rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.chartValue {
+  color: var(--sage-dark);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.chartItem + .chartItem {
+  margin-top: 10px;
+}
+
+.barTrack {
+  height: 16px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(20, 20, 20, 0.06);
+}
+
+.barFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--sage-light), var(--sage-dark));
+  transition: width 0.35s ease;
+}
+
+.chartRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.98rem;
+}
+
+.reasonsGrid,
+.advantageGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.advantageShell,
+.ctaShell {
+  color: white;
+  background: linear-gradient(135deg, #101110 0%, #191d1a 100%);
+  box-shadow: 0 36px 100px rgba(8, 8, 8, 0.22);
+}
+
+.ctaShell {
+  background:
+    radial-gradient(circle at 84% 18%, rgba(184, 204, 183, 0.22), transparent 26%),
+    linear-gradient(135deg, #111 0%, #1a1f1a 100%);
+}
+
+.advantageShell h2,
+.advantageShell h3,
+.advantageShell p,
+.advantageShell strong,
+.advantageShell .metricNote,
+.ctaShell h2,
+.ctaShell p {
+  color: white;
+}
+
+.advantageShell p,
+.advantageShell .metricNote,
+.ctaShell p,
+.darkNote span {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.advantageCard {
+  min-height: 100%;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.advantageCard h3 {
+  margin-bottom: 10px;
+  font-size: 1.86rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.ctaGrid {
+  display: grid;
+  grid-template-columns: 1.04fr 0.96fr;
+  gap: 24px;
+  align-items: end;
+}
+
+.ctaHighlight {
+  max-width: 13ch;
+  margin: 18px 0 22px;
+  font-size: clamp(2.1rem, 4vw, 3.4rem);
+  font-weight: 600;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+}
+
+.darkNote {
+  max-width: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+
+.darkNote strong {
+  color: white;
+}
+
+.pdfReport {
+  position: absolute;
+  top: 0;
+  left: -99999px;
+  z-index: 0;
+  width: 816px;
+  min-height: 1056px;
+  padding: 38px;
+  border-radius: 0;
+  background: #ffffff;
+  box-shadow: none;
+  color: #141414;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  opacity: 1;
+  pointer-events: none;
+  visibility: visible;
+}
+
+.pdfTitleBrand {
+  margin-bottom: 10px;
+}
+
+.pdfTitleMain {
+  color: #141414;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.pdfEyebrow {
+  margin-bottom: 8px;
+  color: #5a7a5c;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.pdfTitle {
+  max-width: 640px;
+  margin: 0 0 8px;
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 0.94;
+  letter-spacing: -0.045em;
+}
+
+.pdfCopy {
+  max-width: 680px;
+  margin-bottom: 16px;
+  color: #5f625f;
+  font-size: 15px;
+  line-height: 1.22;
+}
+
+.pdfBigGrid,
+.pdfSummaryGrid,
+.pdfMetricGrid {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.pdfBigGrid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.pdfSummaryGrid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.companyInputGrid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.pdfMetricGrid {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.pdfBigCard {
+  min-height: 82px;
+  padding: 16px 18px;
+  border-radius: 16px;
+}
+
+.loss {
+  color: white;
+  background: #9f2f2f;
+}
+
+.gain {
+  color: #141414;
+  background: #8fab8e;
+}
+
+.pdfBigValue {
+  margin-bottom: 6px;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+
+.pdfBigLabel {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+.gain .pdfBigLabel {
+  color: rgba(20, 20, 20, 0.72);
+}
+
+.pdfChart {
+  margin-bottom: 12px;
+  padding: 15px 18px;
+  border: 1px solid rgba(20, 20, 20, 0.08);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.pdfChart h2 {
+  margin: 0 0 12px;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.pdfSummary,
+.pdfMetric {
+  min-height: 58px;
+  padding: 12px 14px;
+  border: 1px solid rgba(20, 20, 20, 0.08);
+  border-radius: 12px;
+}
+
+.pdfSummary strong,
+.pdfMetricValue {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.pdfSummary span,
+.pdfMetricLabel,
+.pdfChartLabel,
+.pdfChartValue {
+  color: #5f625f;
+  font-size: 11px;
+  line-height: 1.15;
+}
+
+.pdfChartRow {
+  display: grid;
+  grid-template-columns: 150px 1fr 70px;
+  gap: 12px;
+  align-items: center;
+  margin: 8px 0;
+}
+
+.pdfBarTrack {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(20, 20, 20, 0.08);
+}
+
+.pdfBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #b8ccb7, #5a7a5c);
+}
+
+.pdfChartValue {
+  color: #141414;
+  font-weight: 600;
+  text-align: right;
+}
+
+.pdfCta {
+  margin-top: 10px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #111 0%, #1a1f1a 100%);
+  color: white;
+}
+
+.pdfCta h2 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+}
+
+.pdfCta p {
+  max-width: 590px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 13px;
+  line-height: 1.22;
+}
+
+.pdfFooterNote {
+  margin-top: 12px;
+  color: #5f625f;
+  font-size: 9.5px;
+  line-height: 1.25;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinReverse {
+  from {
+    transform: rotate(360deg);
+  }
+
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@media (max-width: 1180px) {
+  .heroGrid,
+  .splitHead,
+  .calculatorGrid,
+  .ctaGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroVisual {
+    display: none;
+  }
+
+  .fieldGrid,
+  .resultsTop,
+  .metricGrid,
+  .advantageGrid,
+  .reasonsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .container {
+    width: min(var(--max), calc(100% - 24px));
+  }
+
+  .section {
+    padding: var(--public-section-space-mobile) 0;
+  }
+
+  .sectionTight {
+    padding-top: 0;
+  }
+
+  .hero {
+    padding: 34px 0 30px;
+  }
+
+  .heroTitle {
+    margin-bottom: 0;
+    line-height: 1;
+  }
+
+  .heroCopy p {
+    padding-top: 36px;
+  }
+
+  .calculatorShell,
+  .whyShell,
+  .advantageShell,
+  .ctaShell {
+    padding: 22px;
+  }
+
+  .fieldGrid,
+  .resultsTop,
+  .metricGrid,
+  .advantageGrid,
+  .reasonsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .roiPage {
+    --public-major-section-gap-mobile: 84px;
+  }
+
+  .heroTitle {
+    font-size: clamp(3rem, 15vw, 4.8rem);
+  }
+
+  .splitHead h2,
+  .ctaHighlight {
+    font-size: clamp(2.2rem, 11vw, 3.4rem);
+  }
+
+  .btnRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .roiPage p,
+  .roiPage label,
+  .roiPage input,
+  .valueChip,
+  .metricNote,
+  .chartLabel,
+  .chartValue {
+    font-size: 1.08rem;
+    line-height: 1.42;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit1,
+  .orbit2,
+  .orbit3 {
+    animation: none;
+  }
+
+  .btn,
+  .barFill {
+    transition: none;
+  }
+}

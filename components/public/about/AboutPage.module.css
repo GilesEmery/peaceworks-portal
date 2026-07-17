@@ -1,0 +1,496 @@
+.aboutPage {
+  --public-radius-sm: 20px;
+  --public-major-section-gap: 136px;
+  --public-section-space: calc(var(--public-major-section-gap) / 2);
+  --public-major-section-gap-mobile: 96px;
+  --public-section-space-mobile: calc(var(--public-major-section-gap-mobile) / 2);
+  position: relative;
+  overflow: hidden;
+}
+
+.aboutPage::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.35) 0.6px, transparent 0.7px);
+  background-size: 10px 10px;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  width: min(var(--max), calc(100% - 40px));
+  margin: 0 auto;
+}
+
+.aboutPage h1,
+.aboutPage h2,
+.aboutPage h3,
+.aboutPage p {
+  margin: 0;
+}
+
+.aboutPage p {
+  color: var(--muted);
+  font-size: 1.18rem;
+  line-height: 1.5;
+  letter-spacing: 0.005em;
+}
+
+.display {
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+  color: var(--sage-dark);
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  content: "";
+  width: 34px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.hero {
+  position: relative;
+  display: grid;
+  min-height: calc(100svh - 96px);
+  align-items: center;
+  padding: 42px 0 34px;
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: 1.04fr 0.96fr;
+  gap: 38px;
+  align-items: center;
+}
+
+.heroTitle {
+  max-width: 8.4ch;
+  margin-bottom: 22px;
+  font-size: clamp(3.8rem, 8vw, 7rem);
+}
+
+.heroCopy p {
+  max-width: 760px;
+}
+
+.btnRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  margin-top: 28px;
+}
+
+.btn {
+  display: inline-flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    color 0.22s ease,
+    transform 0.22s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn:focus-visible,
+.afterword a:focus-visible {
+  outline: 3px solid rgba(184, 204, 183, 0.42);
+  outline-offset: 3px;
+}
+
+.btnPrimary {
+  color: #fff;
+  background: linear-gradient(135deg, #111 0%, #1a1f1a 100%);
+  box-shadow: 0 14px 28px rgba(17, 17, 17, 0.18);
+}
+
+.btnSecondary {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(20, 20, 20, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.heroVisual {
+  position: relative;
+  display: grid;
+  min-height: 560px;
+  place-items: center;
+}
+
+.heroGlow {
+  position: absolute;
+  width: 720px;
+  height: 720px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(184, 204, 183, 0.34) 0%,
+    rgba(143, 171, 142, 0.14) 38%,
+    transparent 70%
+  );
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+.orbits {
+  position: relative;
+  display: grid;
+  width: min(76vw, 540px);
+  aspect-ratio: 1 / 1;
+  place-items: center;
+}
+
+.orbit {
+  position: absolute;
+  border: 1px solid rgba(143, 171, 142, 0.28);
+  border-radius: 50%;
+}
+
+.orbit::before,
+.orbit::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sage-light), var(--sage-dark));
+  box-shadow: 0 0 20px rgba(143, 171, 142, 0.36);
+}
+
+.orbit1 {
+  width: 100%;
+  height: 100%;
+  animation: spin 40s linear infinite;
+}
+
+.orbit1::before {
+  top: 50%;
+  left: -5px;
+  transform: translateY(-50%);
+}
+
+.orbit1::after {
+  top: 14%;
+  right: 15%;
+}
+
+.orbit2 {
+  width: 76%;
+  height: 76%;
+  border-color: rgba(143, 171, 142, 0.4);
+  animation: spinReverse 28s linear infinite;
+}
+
+.orbit2::before {
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.orbit2::after {
+  top: 60%;
+  right: -5px;
+}
+
+.orbit3 {
+  width: 54%;
+  height: 54%;
+  border-color: rgba(90, 122, 92, 0.46);
+  animation: spin 18s linear infinite;
+}
+
+.orbit3::before {
+  bottom: 10%;
+  left: 14%;
+}
+
+.orbit3::after {
+  top: 12%;
+  right: 12%;
+}
+
+.logoWrap {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 52%;
+  aspect-ratio: 1 / 1;
+  place-items: center;
+}
+
+.logoWrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 24px 42px rgba(17, 17, 17, 0.12));
+}
+
+.section {
+  position: relative;
+  padding: var(--public-section-space) 0;
+}
+
+.sectionTight {
+  padding-top: 0;
+}
+
+.questionsShell,
+.contactShell {
+  position: relative;
+  overflow: hidden;
+  padding: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 34px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.62));
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(16px);
+}
+
+.questionsShell::before,
+.contactShell::before {
+  content: "";
+  position: absolute;
+  top: -120px;
+  right: -120px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(184, 204, 183, 0.32), transparent 70%);
+  pointer-events: none;
+}
+
+.splitHead {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.06fr 0.94fr;
+  gap: 32px;
+  align-items: end;
+  margin-bottom: 28px;
+}
+
+.splitHead h2 {
+  color: var(--text);
+  font-size: clamp(2.7rem, 5.4vw, 4.8rem);
+  font-weight: 500;
+  line-height: 0.96;
+  letter-spacing: -0.03em;
+}
+
+.questionGrid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.questionCard,
+.contactCard,
+.infoPanel,
+.infoCard {
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: var(--shadow);
+}
+
+.questionCard strong,
+.infoCard strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 1.4rem;
+  font-weight: 600;
+  line-height: 1.06;
+}
+
+.questionCard p,
+.infoCard p {
+  font-size: 1.08rem;
+  line-height: 1.4;
+}
+
+.contactGrid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.02fr 0.98fr;
+  gap: 22px;
+  align-items: start;
+}
+
+.panelTitle {
+  margin-bottom: 12px;
+  color: var(--text);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.infoStack {
+  display: grid;
+  gap: 14px;
+}
+
+.afterword {
+  padding: 0 0 64px;
+}
+
+.afterwordInner {
+  display: grid;
+  gap: 10px;
+}
+
+.afterword a {
+  color: var(--sage-dark);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinReverse {
+  from {
+    transform: rotate(360deg);
+  }
+
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@media (max-width: 1180px) {
+  .heroGrid,
+  .splitHead,
+  .contactGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .questionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .heroVisual {
+    display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .container {
+    width: min(var(--max), calc(100% - 24px));
+  }
+
+  .section {
+    padding: var(--public-section-space-mobile) 0;
+  }
+
+  .sectionTight {
+    padding-top: 0;
+  }
+
+  .hero {
+    min-height: auto;
+    padding: 34px 0 30px;
+  }
+
+  .heroTitle {
+    margin-bottom: 0;
+    line-height: 1;
+  }
+
+  .heroCopy p {
+    padding-top: 36px;
+  }
+
+  .questionsShell,
+  .contactShell {
+    padding: 22px;
+  }
+
+  .questionGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .aboutPage {
+    --public-major-section-gap-mobile: 84px;
+  }
+
+  .heroTitle {
+    font-size: clamp(3rem, 15vw, 4.8rem);
+  }
+
+  .splitHead h2 {
+    font-size: clamp(2.2rem, 11vw, 3.4rem);
+  }
+
+  .btnRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .aboutPage p {
+    font-size: 1.08rem;
+    line-height: 1.42;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit1,
+  .orbit2,
+  .orbit3 {
+    animation: none;
+  }
+
+  .btn {
+    transition: none;
+  }
+}
