@@ -1312,7 +1312,7 @@ function CirclesSection({
             <strong>{circle.name}</strong>
             <p>
               {circle.memberCount} active member
-              {circle.memberCount === 1 ? "" : "s"} · {circle.coaches.length} inferred
+              {circle.memberCount === 1 ? "" : "s"} · {circle.coaches.length} active
               coach{circle.coaches.length === 1 ? "" : "es"}
             </p>
           </article>
@@ -1344,15 +1344,17 @@ function CircleManagementPanel({ payload }: { payload: AdminUsersPayload }) {
   const [memberIds, setMemberIds] = useState<string[]>(
     selectedCircle?.memberIds || []
   );
+  const [coachIds, setCoachIds] = useState<string[]>(
+    selectedCircle?.coachIds || []
+  );
   const [saveState, setSaveState] = useState<"idle" | "saving" | "success" | "error">(
     "idle"
   );
   const [message, setMessage] = useState("");
-  const inferredCoachProfiles = payload.users.filter(
+  const availableCircleCoaches = payload.users.filter(
     (user) =>
-      memberIds.includes(user.id) &&
       user.roles.includes("coach") &&
-      user.coachIds.length > 0
+      (user.accountStatus === "active" || coachIds.includes(user.id))
   );
 
   function selectCircle(circleId: string) {
@@ -1360,6 +1362,7 @@ function CircleManagementPanel({ payload }: { payload: AdminUsersPayload }) {
 
     setSelectedCircleId(circleId);
     setMemberIds(nextCircle?.memberIds || []);
+    setCoachIds(nextCircle?.coachIds || []);
     setSaveState("idle");
     setMessage("");
   }
@@ -1400,6 +1403,7 @@ function CircleManagementPanel({ payload }: { payload: AdminUsersPayload }) {
       },
       body: JSON.stringify({
         memberIds,
+        coachIds,
       }),
     });
 
@@ -1420,7 +1424,7 @@ function CircleManagementPanel({ payload }: { payload: AdminUsersPayload }) {
           ? {
               ...circle,
               memberIds,
-              coachIds: inferCircleCoachIds(memberIds, payload.users),
+              coachIds,
             }
           : circle
       )
@@ -1431,6 +1435,7 @@ function CircleManagementPanel({ payload }: { payload: AdminUsersPayload }) {
 
   function resetCircle() {
     setMemberIds(selectedCircle?.memberIds || []);
+    setCoachIds(selectedCircle?.coachIds || []);
     setSaveState("idle");
     setMessage("");
   }
@@ -1440,10 +1445,10 @@ function CircleManagementPanel({ payload }: { payload: AdminUsersPayload }) {
       <div className="admin-circle-manager-head">
         <div>
           <span className="card-label">Circle Management</span>
-          <h3>Manage Circle members</h3>
+          <h3>Manage Circle members and coaches</h3>
           <p>
-            Coaching coverage is inferred from active Circle members who have
-            the coach role and an active coach assignment.
+            Circle participation and Circle coaching are managed as separate
+            relationships.
           </p>
         </div>
 
@@ -1495,28 +1500,27 @@ function CircleManagementPanel({ payload }: { payload: AdminUsersPayload }) {
 
             <section className="admin-checkbox-section">
               <div>
-                <h3>Inferred Coach Coverage</h3>
+                <h3>Circle Coaches</h3>
                 <p>
-                  These coach-role Circle members have an active coach
-                  assignment. Self-assignment counts as valid coverage.
+                  Active coach-role profiles assigned to coach this Circle.
+                  Coaches do not need a Circle membership.
                 </p>
               </div>
 
               <div className="admin-checkbox-list">
-                {inferredCoachProfiles.length === 0 ? (
-                  <div className="admin-empty">No inferred coach coverage.</div>
+                {availableCircleCoaches.length === 0 ? (
+                  <div className="admin-empty">No Circle coaches are available.</div>
                 ) : (
-                  inferredCoachProfiles.map((coach) => (
-                    <div
-                      className="admin-checkbox-row readonly"
+                  availableCircleCoaches.map((coach) => (
+                    <CircleCheckboxRow
                       key={coach.id}
-                    >
-                      <span aria-hidden="true" />
-                      <span>
-                        <strong>{formatManagedUserName(coach)}</strong>
-                        <small>{formatCircleUserDescription(coach)}</small>
-                      </span>
-                    </div>
+                      label={formatManagedUserName(coach)}
+                      description={formatCircleUserDescription(coach)}
+                      checked={coachIds.includes(coach.id)}
+                      onChange={() =>
+                        toggleSelection(coachIds, coach.id, setCoachIds)
+                      }
+                    />
                   ))
                 )}
               </div>
@@ -1644,7 +1648,7 @@ function CoachingSection({
           ["Members covered through a Circle coach", operations.diagnostics.membersCoveredThroughCircleCoach],
           ["Members without either coaching coverage", operations.diagnostics.membersWithoutCoachingCoverage],
           ["Circles without active coach", operations.diagnostics.circlesWithoutActiveCoach],
-          ["Coach self-assigned without active Circle", operations.diagnostics.selfAssignedCoachesWithoutCircle],
+          ["Coaches without an active coaching relationship", operations.diagnostics.coachesWithoutActiveRelationship],
         ]}
       />
 
@@ -4224,7 +4228,7 @@ function ReportsSection({
           ["circle_member role without active Circle", operations.diagnostics.circleRoleNoMembership],
           ["Active Circle membership without circle_member role", operations.diagnostics.membershipNoCircleRole],
           ["Incomplete profiles", operations.diagnostics.incompleteProfiles],
-          ["Self-assigned coaches without active Circle", operations.diagnostics.selfAssignedCoachesWithoutCircle],
+          ["Coaches without an active coaching relationship", operations.diagnostics.coachesWithoutActiveRelationship],
           ["Circle members without coaching coverage", operations.diagnostics.membersWithoutCoachingCoverage],
           ["Circles without active coach", operations.diagnostics.circlesWithoutActiveCoach],
         ]}
@@ -4467,7 +4471,7 @@ type AdminDiagnostics = {
   membersCoveredThroughCircleCoach: AdminManagedProfile[];
   membersWithoutCoachingCoverage: AdminManagedProfile[];
   circlesWithoutActiveCoach: AdminCircleDiagnostic[];
-  selfAssignedCoachesWithoutCircle: AdminManagedProfile[];
+  coachesWithoutActiveRelationship: AdminManagedProfile[];
   noActiveCircles: AdminCircleDiagnostic[];
 };
 
@@ -4636,7 +4640,7 @@ function buildOperations(
       diagnostics.noActiveCircles.length,
     coachingAlertCount:
       diagnostics.membersWithoutCoachingCoverage.length +
-      diagnostics.selfAssignedCoachesWithoutCircle.length,
+      diagnostics.coachesWithoutActiveRelationship.length,
   };
 }
 
@@ -4812,11 +4816,16 @@ function buildDiagnostics(
         name: circle.name,
         detail: circle.status || "No status",
       })),
-    selfAssignedCoachesWithoutCircle: coaches.filter(
-      (coach) =>
-        coach.coachIds.includes(coach.id) &&
-        !coach.circleIds.some((circleId) => activeCircleIds.has(circleId))
-    ),
+    coachesWithoutActiveRelationship: coaches.filter((coach) => {
+      const coachesActiveCircle = activeCircles.some((circle) =>
+        circle.coachIds.includes(coach.id)
+      );
+      const hasDirectMember = users.some(
+        (user) => user.id !== coach.id && user.coachIds.includes(coach.id)
+      );
+
+      return !coachesActiveCircle && !hasDirectMember;
+    }),
     noActiveCircles:
       activeCircles.length === 0
         ? [
@@ -4882,9 +4891,9 @@ function buildAlerts(diagnostics: AdminDiagnostics): AdminAlert[] {
       section: "circles",
     },
     {
-      key: "coaches-without-assignments",
-      label: "Self-assigned coaches without active Circle",
-      count: diagnostics.selfAssignedCoachesWithoutCircle.length,
+      key: "coaches-without-relationships",
+      label: "Coaches without an active coaching relationship",
+      count: diagnostics.coachesWithoutActiveRelationship.length,
       section: "coaches",
     },
     {
@@ -4975,20 +4984,6 @@ function hasCircleCoachCoverage(
       circle && circle.coachIds.some((coachId) => activeCoachIds.has(coachId))
     );
   });
-}
-
-function inferCircleCoachIds(
-  memberIds: string[],
-  users: AdminManagedProfile[]
-) {
-  return users
-    .filter(
-      (user) =>
-        memberIds.includes(user.id) &&
-        user.roles.includes("coach") &&
-        user.coachIds.length > 0
-    )
-    .map((user) => user.id);
 }
 
 async function getAccessToken() {

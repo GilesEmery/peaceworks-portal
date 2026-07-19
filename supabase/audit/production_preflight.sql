@@ -44,6 +44,27 @@ select
 from public.coach_assignments
 where coach_id = member_id;
 
+-- Healthy result after Update 2: zero duplicate active-primary groups.
+select count(*) as members_with_multiple_active_primary_coaches
+from (
+  select member_id
+  from public.coach_assignments
+  where status = 'active'
+    and ended_at is null
+    and is_primary = true
+  group by member_id
+  having count(*) > 1
+) duplicate_primary_groups;
+
+-- Expected during the compatibility window: the no-self constraint exists but
+-- is not yet validated. It can be validated only after the known row retires.
+select
+  conname as constraint_name,
+  convalidated as is_validated
+from pg_constraint
+where conrelid = 'public.coach_assignments'::regclass
+  and conname = 'coach_assignments_no_self_assignment_check';
+
 -- Healthy result: both counts are zero.
 with coach_profiles as (
   select pr.profile_id

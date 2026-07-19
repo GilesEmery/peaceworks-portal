@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 type AdminCircleUpdateBody = {
   memberIds?: unknown;
+  coachIds?: unknown;
 };
 
 export async function PATCH(
@@ -46,11 +47,11 @@ export async function PATCH(
     );
   }
 
-  if (!Array.isArray(body.memberIds)) {
+  if (!Array.isArray(body.memberIds) || !Array.isArray(body.coachIds)) {
     return Response.json(
       {
         ok: false,
-        message: "Circle members must be an array.",
+        message: "Circle members and coaches must be arrays.",
       },
       { status: 400 }
     );
@@ -59,6 +60,7 @@ export async function PATCH(
   try {
     const result = await updateAdminCircle(circleId, {
       memberIds: body.memberIds.filter(isString),
+      coachIds: body.coachIds.filter(isString),
     });
 
     if (!result.ok) {

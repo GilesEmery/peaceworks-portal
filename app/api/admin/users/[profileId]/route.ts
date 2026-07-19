@@ -16,6 +16,7 @@ type AdminUserUpdateBody = {
   roleNames?: unknown;
   circleIds?: unknown;
   coachIds?: unknown;
+  primaryCoachId?: unknown;
   adminRemovalConfirmation?: unknown;
 };
 
@@ -78,6 +79,9 @@ export async function PATCH(
       roleNames: body.roleNames.filter(isString) as AdminRoleName[],
       circleIds: body.circleIds.filter(isString),
       coachIds: body.coachIds.filter(isString),
+      primaryCoachId: isString(body.primaryCoachId)
+        ? body.primaryCoachId
+        : null,
       adminRemovalConfirmation: isString(body.adminRemovalConfirmation)
         ? body.adminRemovalConfirmation
         : "",

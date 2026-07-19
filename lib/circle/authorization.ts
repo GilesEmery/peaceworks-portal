@@ -241,6 +241,7 @@ async function hasActiveCircleMembership(profileId: string) {
     .select("id")
     .eq("profile_id", profileId)
     .eq("status", "active")
+    .is("ended_at", null)
     .limit(1);
 
   if (error) {

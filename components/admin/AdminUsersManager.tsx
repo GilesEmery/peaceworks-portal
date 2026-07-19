@@ -30,6 +30,7 @@ type UserSelections = {
   roleNames: AdminRoleName[];
   circleIds: string[];
   coachIds: string[];
+  primaryCoachId: string | null;
 };
 
 export default function AdminUsersManager({
@@ -231,6 +232,12 @@ export default function AdminUsersManager({
       return {
         ...current,
         [field]: nextValues,
+        primaryCoachId:
+          field === "coachIds" &&
+          current.primaryCoachId === value &&
+          !nextValues.includes(value)
+            ? null
+            : current.primaryCoachId,
       };
     });
     setSaveState("idle");
@@ -612,6 +619,38 @@ export default function AdminUsersManager({
                       />
                     ))}
                   </CheckboxSection>
+
+                  <label className="admin-field">
+                    <span>Primary direct coach</span>
+                    <select
+                      value={selections.primaryCoachId || ""}
+                      onChange={(event) => {
+                        setSelections((current) => ({
+                          ...current,
+                          primaryCoachId: event.target.value || null,
+                        }));
+                        setSaveState("idle");
+                        setMessage("");
+                      }}
+                    >
+                      <option value="">No primary coach</option>
+                      {availableCoaches(payload, selections.coachIds)
+                        .filter(
+                          (coach) =>
+                            selections.coachIds.includes(coach.id) &&
+                            coach.id !== selectedUser.id
+                        )
+                        .map((coach) => (
+                          <option key={coach.id} value={coach.id}>
+                            {coach.name}
+                          </option>
+                        ))}
+                    </select>
+                    <small>
+                      Optional. Clear the current primary before choosing a
+                      different coach.
+                    </small>
+                  </label>
 
                   <AccountActionsSection
                     user={selectedUser}
@@ -1308,6 +1347,7 @@ function getSelections(
     roleNames: user?.roles || [],
     circleIds: user?.circleIds || [],
     coachIds: user?.coachIds || [],
+    primaryCoachId: user?.primaryCoachId || null,
   };
 }
 

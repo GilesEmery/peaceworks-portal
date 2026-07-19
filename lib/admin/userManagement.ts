@@ -26,6 +26,7 @@ export type AdminManagedProfile = {
   roles: AdminRoleName[];
   circleIds: string[];
   coachIds: string[];
+  primaryCoachId: string | null;
   accountStatus: AdminAccountStatus;
   statusChangedAt: string | null;
   deactivatedAt: string | null;
@@ -114,12 +115,21 @@ type CircleMembershipRow = {
   ended_at: string | null;
 };
 
+type CircleCoachRow = {
+  id: string;
+  circle_id: string;
+  coach_id: string;
+  status: string | null;
+  ended_at: string | null;
+};
+
 type CoachAssignmentRow = {
   id: string;
   coach_id: string;
   member_id: string;
   status: string | null;
   ended_at: string | null;
+  is_primary: boolean;
 };
 
 type AdminUserSummary = {
@@ -155,6 +165,7 @@ export async function fetchAdminUsersData(
     profileRolesResponse,
     circlesResponse,
     membershipsResponse,
+    circleCoachesResponse,
     assignmentsResponse,
   ] = await Promise.all([
     fetchAllAuthUsers(),
@@ -169,8 +180,11 @@ export async function fetchAdminUsersData(
       .from("circle_memberships")
       .select("id, circle_id, profile_id, status, ended_at"),
     supabase
+      .from("circle_coaches")
+      .select("id, circle_id, coach_id, status, ended_at"),
+    supabase
       .from("coach_assignments")
-      .select("id, coach_id, member_id, status, ended_at"),
+      .select("id, coach_id, member_id, status, ended_at, is_primary"),
   ]);
 
   const responses = [
@@ -178,6 +192,7 @@ export async function fetchAdminUsersData(
     profileRolesResponse,
     circlesResponse,
     membershipsResponse,
+    circleCoachesResponse,
     assignmentsResponse,
   ];
 
@@ -193,6 +208,7 @@ export async function fetchAdminUsersData(
     profileRoles: (profileRolesResponse.data || []) as ProfileRoleRow[],
     circles: (circlesResponse.data || []) as CircleRow[],
     memberships: (membershipsResponse.data || []) as CircleMembershipRow[],
+    circleCoaches: (circleCoachesResponse.data || []) as CircleCoachRow[],
     assignments: (assignmentsResponse.data || []) as CoachAssignmentRow[],
     currentAdminId,
   });
@@ -265,6 +281,7 @@ export async function updateAdminManagedUser(
     roleNames: AdminRoleName[];
     circleIds: string[];
     coachIds: string[];
+    primaryCoachId: string | null;
     adminRemovalConfirmation?: string;
   }
 ) {
@@ -279,6 +296,8 @@ export async function updateAdminManagedUser(
     currentRolesResponse,
     currentMembershipsResponse,
     currentAssignmentsResponse,
+    currentCircleCoachRelationshipsResponse,
+    currentOutgoingCoachAssignmentsResponse,
   ] = await Promise.all([
     supabase.from("profiles").select("id").eq("id", profileId).maybeSingle(),
     supabase.from("roles").select("id, name, label"),
@@ -291,8 +310,16 @@ export async function updateAdminManagedUser(
       .eq("profile_id", profileId),
     supabase
       .from("coach_assignments")
-      .select("id, coach_id, member_id, status, ended_at")
+      .select("id, coach_id, member_id, status, ended_at, is_primary")
       .eq("member_id", profileId),
+    supabase
+      .from("circle_coaches")
+      .select("id, circle_id, coach_id, status, ended_at")
+      .eq("coach_id", profileId),
+    supabase
+      .from("coach_assignments")
+      .select("id, coach_id, member_id, status, ended_at, is_primary")
+      .eq("coach_id", profileId),
   ]);
 
   const responses = [
@@ -303,6 +330,8 @@ export async function updateAdminManagedUser(
     currentRolesResponse,
     currentMembershipsResponse,
     currentAssignmentsResponse,
+    currentCircleCoachRelationshipsResponse,
+    currentOutgoingCoachAssignmentsResponse,
   ];
 
   if (responses.some((response) => response.error)) {
@@ -365,6 +394,29 @@ export async function updateAdminManagedUser(
     };
   }
 
+  if (!requestedRoles.includes("coach")) {
+    const hasActiveCircleCoachRelationship = (
+      (currentCircleCoachRelationshipsResponse.data || []) as CircleCoachRow[]
+    ).some(isActiveRelationship);
+    const hasActiveDirectMemberAssignment = (
+      (currentOutgoingCoachAssignmentsResponse.data || []) as CoachAssignmentRow[]
+    ).some(
+      (assignment) =>
+        isActiveRelationship(assignment) &&
+        assignment.coach_id !== assignment.member_id
+    );
+
+    if (hasActiveCircleCoachRelationship || hasActiveDirectMemberAssignment) {
+      return {
+        ok: false as const,
+        status: 409,
+        code: "active_coaching_relationships_exist",
+        message:
+          "End this profile's active Circle and direct coaching relationships before removing the coach role.",
+      };
+    }
+  }
+
   const adminRoleId = roleByName.get("admin")?.id || "";
   const currentlyHasAdminRole = Boolean(
     adminRoleId && currentRoles.some((role) => role.role_id === adminRoleId)
@@ -404,8 +456,19 @@ export async function updateAdminManagedUser(
   const currentActiveCoachIds = (
     (currentAssignmentsResponse.data || []) as CoachAssignmentRow[]
   )
-    .filter(isActiveRelationship)
+    .filter(
+      (assignment) =>
+        isActiveRelationship(assignment) &&
+        assignment.coach_id !== assignment.member_id
+    )
     .map((assignment) => assignment.coach_id);
+  const currentActiveAssignments = (
+    (currentAssignmentsResponse.data || []) as CoachAssignmentRow[]
+  ).filter(
+    (assignment) =>
+      isActiveRelationship(assignment) &&
+      assignment.coach_id !== assignment.member_id
+  );
   const prospectiveCoachIds = requestedRoles.includes("coach") ? [profileId] : [];
   const validCoachIds = await getActiveCoachIds(
     coachRole?.id || "",
@@ -420,6 +483,55 @@ export async function updateAdminManagedUser(
       ok: false as const,
       status: 400,
       message: "One selected coach is no longer available.",
+    };
+  }
+
+  if (
+    requestedCoachIds.includes(profileId)
+  ) {
+    return {
+      ok: false as const,
+      status: 400,
+      code: "self_assignment_not_allowed",
+      message: "A coach cannot be directly assigned to themselves.",
+    };
+  }
+
+  const primaryCoachId = values.primaryCoachId?.trim() || null;
+
+  if (primaryCoachId === profileId) {
+    return {
+      ok: false as const,
+      status: 400,
+      code: "self_primary_coach_not_allowed",
+      message: "A person cannot be their own primary coach.",
+    };
+  }
+
+  if (primaryCoachId && !requestedCoachIds.includes(primaryCoachId)) {
+    return {
+      ok: false as const,
+      status: 400,
+      code: "primary_coach_must_be_assigned",
+      message: "The primary coach must also be an active assigned coach.",
+    };
+  }
+
+  const currentPrimaryCoachId =
+    currentActiveAssignments.find((assignment) => assignment.is_primary)?.coach_id ||
+    null;
+
+  if (
+    currentPrimaryCoachId &&
+    primaryCoachId &&
+    currentPrimaryCoachId !== primaryCoachId
+  ) {
+    return {
+      ok: false as const,
+      status: 409,
+      code: "primary_coach_conflict",
+      message:
+        "Clear the current primary coach before selecting a different primary coach.",
     };
   }
 
@@ -447,6 +559,7 @@ export async function updateAdminManagedUser(
   await updateCoachAssignments({
     profileId,
     requestedCoachIds,
+    primaryCoachId,
     currentAssignments:
       (currentAssignmentsResponse.data || []) as CoachAssignmentRow[],
     timestamp,
@@ -698,15 +811,53 @@ async function endProfileRelationships({
     throw new Error("Unable to end active Circle memberships.");
   }
 
+  const circleCoachesResponse = await supabase
+    .from("circle_coaches")
+    .update({
+      status: "inactive",
+      ended_at: timestamp,
+    })
+    .eq("coach_id", profileId)
+    .eq("status", "active")
+    .is("ended_at", null);
+
+  if (circleCoachesResponse.error) {
+    console.error(
+      "Admin Supabase mutation failed: archive Circle coach relationships",
+      circleCoachesResponse.error
+    );
+    throw new Error("Unable to end active Circle coach relationships.");
+  }
+
+  const activeAssignmentsResponse = await supabase
+    .from("coach_assignments")
+    .select("id, coach_id, member_id")
+    .or(`member_id.eq.${profileId},coach_id.eq.${profileId}`)
+    .eq("status", "active")
+    .is("ended_at", null);
+
+  if (activeAssignmentsResponse.error) {
+    console.error(
+      "Admin Supabase query failed: load coach assignments for archival",
+      activeAssignmentsResponse.error
+    );
+    throw new Error("Unable to end active coach assignments.");
+  }
+
+  const assignmentIds = (activeAssignmentsResponse.data || [])
+    .filter((assignment) => assignment.coach_id !== assignment.member_id)
+    .map((assignment) => assignment.id);
+
+  if (assignmentIds.length === 0) return;
+
   const assignmentsResponse = await supabase
     .from("coach_assignments")
     .update({
       status: "inactive",
       ended_at: timestamp,
+      is_primary: false,
     })
-    .or(`member_id.eq.${profileId},coach_id.eq.${profileId}`)
-    .eq("status", "active")
-    .is("ended_at", null);
+    .in("id", assignmentIds);
 
   if (assignmentsResponse.error) {
     console.error(
@@ -761,25 +912,44 @@ export async function updateAdminCircle(
   circleId: string,
   values: {
     memberIds: string[];
+    coachIds: string[];
   }
 ) {
   const supabase = createAdminSupabaseClient();
   const timestamp = new Date().toISOString();
 
-  const [circleResponse, profilesResponse, currentMembershipsResponse] =
+  const [
+    circleResponse,
+    profilesResponse,
+    coachRoleResponse,
+    coachProfilesResponse,
+    currentMembershipsResponse,
+    currentCircleCoachesResponse,
+  ] =
     await Promise.all([
       supabase.from("circles").select("id").eq("id", circleId).maybeSingle(),
-      supabase.from("profiles").select("id"),
+      supabase.from("profiles").select("id, account_status"),
+      supabase.from("roles").select("id").eq("name", "coach").maybeSingle(),
+      supabase
+        .from("profile_roles")
+        .select("profile_id, role_id"),
       supabase
         .from("circle_memberships")
         .select("id, circle_id, profile_id, status, ended_at")
+        .eq("circle_id", circleId),
+      supabase
+        .from("circle_coaches")
+        .select("id, circle_id, coach_id, status, ended_at")
         .eq("circle_id", circleId),
     ]);
 
   const responses = [
     circleResponse,
     profilesResponse,
+    coachRoleResponse,
+    coachProfilesResponse,
     currentMembershipsResponse,
+    currentCircleCoachesResponse,
   ];
 
   if (responses.some((response) => response.error)) {
@@ -813,6 +983,34 @@ export async function updateAdminCircle(
     };
   }
 
+  const coachRole = coachRoleResponse.data as { id: string } | null;
+  const activeProfileIds = new Set(
+    ((profilesResponse.data || []) as Array<{
+      id: string;
+      account_status: string | null;
+    }>)
+      .filter((profile) => normalizeAccountStatus(profile.account_status) === "active")
+      .map((profile) => profile.id)
+  );
+  const coachProfileIds = new Set(
+    ((coachProfilesResponse.data || []) as ProfileRoleRow[])
+      .filter((row) => row.role_id === coachRole?.id)
+      .map((row) => row.profile_id)
+  );
+  const requestedCoachIds = unique(values.coachIds);
+  const invalidCoachId = requestedCoachIds.find(
+    (profileId) =>
+      !activeProfileIds.has(profileId) || !coachProfileIds.has(profileId)
+  );
+
+  if (invalidCoachId) {
+    return {
+      ok: false as const,
+      status: 400,
+      message: "One selected Circle coach is not an active coach-role profile.",
+    };
+  }
+
   await updateCircleMembersForCircle({
     circleId,
     requestedMemberIds,
@@ -821,9 +1019,17 @@ export async function updateAdminCircle(
     timestamp,
   });
 
+  await updateCircleCoachesForCircle({
+    circleId,
+    requestedCoachIds,
+    currentCircleCoaches:
+      (currentCircleCoachesResponse.data || []) as CircleCoachRow[],
+    timestamp,
+  });
+
   return {
     ok: true as const,
-    message: "Circle roster was updated.",
+    message: "Circle members and coaches were updated.",
   };
 }
 
@@ -834,6 +1040,7 @@ function buildAdminUsersPayload({
   profileRoles,
   circles,
   memberships,
+  circleCoaches,
   assignments,
   currentAdminId,
 }: {
@@ -843,6 +1050,7 @@ function buildAdminUsersPayload({
   profileRoles: ProfileRoleRow[];
   circles: CircleRow[];
   memberships: CircleMembershipRow[];
+  circleCoaches: CircleCoachRow[];
   assignments: CoachAssignmentRow[];
   currentAdminId: string;
 }): AdminUsersPayload {
@@ -854,11 +1062,20 @@ function buildAdminUsersPayload({
     (row) => row.profile_id
   );
   const activeAssignmentsByMemberId = groupBy(
-    assignments.filter(isActiveRelationship),
+    // Legacy self-assignments are compatibility data, not direct coaching.
+    assignments.filter(
+      (assignment) =>
+        isActiveRelationship(assignment) &&
+        assignment.coach_id !== assignment.member_id
+    ),
     (row) => row.member_id
   );
   const activeMembershipsByCircleId = groupBy(
     memberships.filter(isActiveRelationship),
+    (row) => row.circle_id
+  );
+  const activeCircleCoachesByCircleId = groupBy(
+    circleCoaches.filter(isActiveRelationship),
     (row) => row.circle_id
   );
   const coachProfileIds = new Set(
@@ -866,16 +1083,11 @@ function buildAdminUsersPayload({
       .filter((row) => roleById.get(row.role_id)?.name === "coach")
       .map((row) => row.profile_id)
   );
-  const membersWithActiveSelfAssignments = new Set(
-    assignments
-      .filter(
-        (assignment) =>
-          isActiveRelationship(assignment) &&
-          assignment.coach_id === assignment.member_id
-      )
-      .map((assignment) => assignment.member_id)
+  const activeProfileIds = new Set(
+    profiles
+      .filter((profile) => normalizeAccountStatus(profile.account_status) === "active")
+      .map((profile) => profile.id)
   );
-
   const managedProfiles = profiles.map((profile) => {
     const profileRoles = (rolesByProfileId.get(profile.id) || [])
       .map((row) => roleById.get(row.role_id)?.name)
@@ -896,6 +1108,10 @@ function buildAdminUsersPayload({
       coachIds: (activeAssignmentsByMemberId.get(profile.id) || []).map(
         (assignment) => assignment.coach_id
       ),
+      primaryCoachId:
+        (activeAssignmentsByMemberId.get(profile.id) || []).find(
+          (assignment) => assignment.is_primary
+        )?.coach_id || null,
       accountStatus: normalizeAccountStatus(profile.account_status),
       statusChangedAt: profile.status_changed_at,
       deactivatedAt: profile.deactivated_at,
@@ -931,12 +1147,11 @@ function buildAdminUsersPayload({
       memberIds: (activeMembershipsByCircleId.get(circle.id) || []).map(
         (membership) => membership.profile_id
       ),
-      coachIds: (activeMembershipsByCircleId.get(circle.id) || [])
-        .map((membership) => membership.profile_id)
+      coachIds: (activeCircleCoachesByCircleId.get(circle.id) || [])
+        .map((relationship) => relationship.coach_id)
         .filter(
           (profileId) =>
-            coachProfileIds.has(profileId) &&
-            membersWithActiveSelfAssignments.has(profileId)
+            coachProfileIds.has(profileId) && activeProfileIds.has(profileId)
         ),
     })),
     coaches: profiles
@@ -997,7 +1212,7 @@ async function updateCircleMembersForCircle({
     const { error } = await supabase
       .from("circle_memberships")
       .update({
-        status: "ended",
+        status: "completed",
         ended_at: timestamp,
       })
       .in("id", membershipIdsToEnd);
@@ -1005,6 +1220,62 @@ async function updateCircleMembersForCircle({
     if (error) {
       console.error("Admin Supabase mutation failed: end Circle members", error);
       throw new Error("Unable to end deselected Circle members.");
+    }
+  }
+}
+
+async function updateCircleCoachesForCircle({
+  circleId,
+  requestedCoachIds,
+  currentCircleCoaches,
+  timestamp,
+}: {
+  circleId: string;
+  requestedCoachIds: string[];
+  currentCircleCoaches: CircleCoachRow[];
+  timestamp: string;
+}) {
+  const supabase = createAdminSupabaseClient();
+  const activeRelationships = currentCircleCoaches.filter(isActiveRelationship);
+  const activeCoachIds = new Set(
+    activeRelationships.map((relationship) => relationship.coach_id)
+  );
+  const requestedCoachIdSet = new Set(requestedCoachIds);
+  const coachIdsToAdd = requestedCoachIds.filter(
+    (coachId) => !activeCoachIds.has(coachId)
+  );
+  const relationshipIdsToEnd = activeRelationships
+    .filter((relationship) => !requestedCoachIdSet.has(relationship.coach_id))
+    .map((relationship) => relationship.id);
+
+  if (coachIdsToAdd.length > 0) {
+    const { error } = await supabase.from("circle_coaches").insert(
+      coachIdsToAdd.map((coachId) => ({
+        circle_id: circleId,
+        coach_id: coachId,
+        status: "active",
+        assigned_at: timestamp,
+      }))
+    );
+
+    if (error) {
+      console.error("Admin Supabase mutation failed: add Circle coaches", error);
+      throw new Error("Unable to add selected Circle coaches.");
+    }
+  }
+
+  if (relationshipIdsToEnd.length > 0) {
+    const { error } = await supabase
+      .from("circle_coaches")
+      .update({
+        status: "completed",
+        ended_at: timestamp,
+      })
+      .in("id", relationshipIdsToEnd);
+
+    if (error) {
+      console.error("Admin Supabase mutation failed: end Circle coaches", error);
+      throw new Error("Unable to end deselected Circle coaches.");
     }
   }
 }
@@ -1104,7 +1375,7 @@ async function updateCircleMemberships({
     const { error } = await supabase
       .from("circle_memberships")
       .update({
-        status: "ended",
+        status: "completed",
         ended_at: timestamp,
       })
       .in("id", membershipIdsToEnd);
@@ -1119,24 +1390,31 @@ async function updateCircleMemberships({
 async function updateCoachAssignments({
   profileId,
   requestedCoachIds,
+  primaryCoachId,
   currentAssignments,
   timestamp,
 }: {
   profileId: string;
   requestedCoachIds: string[];
+  primaryCoachId: string | null;
   currentAssignments: CoachAssignmentRow[];
   timestamp: string;
 }) {
   const supabase = createAdminSupabaseClient();
   const activeAssignments = currentAssignments.filter(isActiveRelationship);
+  // Do not expose or mutate the known compatibility self-assignment. A later
+  // controlled migration will retire it after circle_coaches verification.
+  const managedActiveAssignments = activeAssignments.filter(
+    (assignment) => assignment.coach_id !== assignment.member_id
+  );
   const activeCoachIds = new Set(
-    activeAssignments.map((assignment) => assignment.coach_id)
+    managedActiveAssignments.map((assignment) => assignment.coach_id)
   );
   const requestedCoachIdSet = new Set(requestedCoachIds);
   const coachIdsToAdd = requestedCoachIds.filter(
     (coachId) => !activeCoachIds.has(coachId)
   );
-  const assignmentIdsToEnd = activeAssignments
+  const assignmentIdsToEnd = managedActiveAssignments
     .filter((assignment) => !requestedCoachIdSet.has(assignment.coach_id))
     .map((assignment) => assignment.id);
 
@@ -1147,6 +1425,7 @@ async function updateCoachAssignments({
         member_id: profileId,
         status: "active",
         assigned_at: timestamp,
+        is_primary: coachId === primaryCoachId,
       }))
     );
 
@@ -1156,12 +1435,36 @@ async function updateCoachAssignments({
     }
   }
 
+  const existingAssignmentPrimaryUpdates = managedActiveAssignments.filter(
+    (assignment) =>
+      requestedCoachIdSet.has(assignment.coach_id) &&
+      assignment.is_primary !== (assignment.coach_id === primaryCoachId)
+  );
+
+  for (const assignment of existingAssignmentPrimaryUpdates) {
+    const { error } = await supabase
+      .from("coach_assignments")
+      .update({
+        is_primary: assignment.coach_id === primaryCoachId,
+      })
+      .eq("id", assignment.id);
+
+    if (error) {
+      console.error(
+        "Admin Supabase mutation failed: update primary coach",
+        error
+      );
+      throw new Error("Unable to update the primary coach.");
+    }
+  }
+
   if (assignmentIdsToEnd.length > 0) {
     const { error } = await supabase
       .from("coach_assignments")
       .update({
-        status: "ended",
+        status: "completed",
         ended_at: timestamp,
+        is_primary: false,
       })
       .in("id", assignmentIdsToEnd);
 

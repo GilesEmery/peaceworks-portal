@@ -412,6 +412,7 @@ type CoachContext = {
   growthStatuses: Map<string, CoachGrowthStatus>;
   authorizedCircles: CoachCircleSummary[];
   authorizedCircleIds: Set<string>;
+  circleCoachMemberIds: Set<string>;
   authorizedMemberIds: Set<string>;
 };
 
@@ -1042,8 +1043,30 @@ async function loadCoachContext(
   const authorizedCircleIds = new Set(
     authorizedSourceCircles.map((circle) => circle.id)
   );
+  const activeProfileIds = new Set(
+    usersPayload.users
+      .filter((profile) => profile.accountStatus === "active")
+      .map((profile) => profile.id)
+  );
+  const circleCoachMemberIds = new Set(
+    authorizedSourceCircles
+      .flatMap((circle) => circle.memberIds)
+      .filter((profileId) => activeProfileIds.has(profileId))
+  );
+  const directMemberIds = auth.isAdmin
+    ? usersPayload.users
+        .filter((profile) => profile.accountStatus === "active")
+        .map((profile) => profile.id)
+    : usersPayload.users
+        .filter(
+          (profile) =>
+            profile.accountStatus === "active" &&
+            profile.id !== auth.user.id &&
+            profile.coachIds.includes(auth.user.id)
+        )
+        .map((profile) => profile.id);
   const authorizedMemberIds = new Set(
-    authorizedSourceCircles.flatMap((circle) => circle.memberIds)
+    [...circleCoachMemberIds, ...directMemberIds]
   );
   const growthStatuses = await fetchGrowthStatuses(Array.from(authorizedMemberIds));
   const authorizedCircles = authorizedSourceCircles.map((circle) =>
@@ -1062,6 +1085,7 @@ async function loadCoachContext(
     growthStatuses,
     authorizedCircles,
     authorizedCircleIds,
+    circleCoachMemberIds,
     authorizedMemberIds,
   };
 }
@@ -1589,7 +1613,7 @@ function canReadProfileNote(
     return Boolean(profile?.coachIds.includes(auth.user.id));
   }
 
-  return context.authorizedMemberIds.has(profileId);
+  return context.circleCoachMemberIds.has(profileId);
 }
 
 function canEditNote(
@@ -1763,6 +1787,13 @@ function cleanProfileNoteInput(
     if (!profile?.coachIds.includes(auth.user.id)) {
       return validationResult("Assigned-coach visibility is not available.");
     }
+  }
+
+  if (
+    visibility === "circle_coaches" &&
+    !context.circleCoachMemberIds.has(profileId)
+  ) {
+    return validationResult("Circle-coach visibility is not available.");
   }
 
   return { ok: true as const, noteType, body, visibility };
