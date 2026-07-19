@@ -214,3 +214,92 @@ from pg_policies
 where schemaname = 'storage'
   and tablename = 'objects'
 order by policyname;
+
+-- Update 3 healthy result: every missing-link and kind-mismatch count is zero.
+select
+  (select count(*) from public.monthly_questions where content_item_id is null)
+    as monthly_questions_without_content_items,
+  (select count(*) from public.resources where content_item_id is null)
+    as resources_without_content_items,
+  (select count(*) from public.trainings where content_item_id is null)
+    as trainings_without_content_items,
+  (select count(*)
+   from public.monthly_questions q
+   join public.content_items ci on ci.id = q.content_item_id
+   where ci.content_kind <> 'monthly_question')
+    as monthly_question_kind_mismatches,
+  (select count(*)
+   from public.resources r
+   join public.content_items ci on ci.id = r.content_item_id
+   where ci.content_kind <> 'resource')
+    as resource_kind_mismatches,
+  (select count(*)
+   from public.trainings t
+   join public.content_items ci on ci.id = t.content_item_id
+   where ci.content_kind <> 'training')
+    as training_kind_mismatches;
+
+-- Update 3 healthy result: both counts are zero.
+with source_links as (
+  select content_item_id from public.monthly_questions
+  union all
+  select content_item_id from public.resources
+  union all
+  select content_item_id from public.trainings
+)
+select
+  (select count(*)
+   from public.content_items ci
+   where not exists (
+     select 1 from source_links sl where sl.content_item_id = ci.id
+   )) as unreferenced_content_items,
+  (select count(*)
+   from (
+     select content_item_id
+     from source_links
+     group by content_item_id
+     having count(*) > 1
+   ) duplicate_links) as content_items_used_by_multiple_sources;
+
+-- Update 3 healthy result: both counts are zero.
+with source_map as (
+  select 'monthly_question'::text as content_type, id, content_item_id
+  from public.monthly_questions
+  union all
+  select 'resource', id, content_item_id
+  from public.resources
+  union all
+  select 'training', id, content_item_id
+  from public.trainings
+)
+select
+  count(*) filter (where ca.content_item_id is null)
+    as assignments_without_content_items,
+  count(*) filter (
+    where ca.content_item_id is not null
+      and (
+        sm.content_item_id is null
+        or sm.content_item_id <> ca.content_item_id
+      )
+  ) as assignment_legacy_registry_mismatches
+from public.content_assignments ca
+left join source_map sm
+  on sm.content_type = ca.content_type
+ and sm.id = ca.content_id;
+
+-- Informational counts. Compare registry and source counts by kind; no fixed
+-- production row counts are encoded.
+select content_kind, count(*) as registry_count
+from public.content_items
+group by content_kind
+order by content_kind;
+
+select 'monthly_question' as content_kind, count(*) as source_count
+from public.monthly_questions
+union all
+select 'resource', count(*)
+from public.resources
+union all
+select 'training', count(*)
+from public.trainings
+order by content_kind;

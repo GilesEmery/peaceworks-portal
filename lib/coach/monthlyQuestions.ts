@@ -98,6 +98,7 @@ export type MemberMonthlyQuestion = {
 
 type MonthlyQuestionRow = {
   id: string;
+  content_item_id?: string;
   title: string | null;
   opening_reflection: string | null;
   question_text: string | null;
@@ -128,6 +129,7 @@ type MonthlyQuestionAssignmentRow = {
 
 type ContentAssignmentRow = {
   id: string;
+  content_item_id?: string | null;
   content_type: string | null;
   content_id: string | null;
   audience_type: string | null;

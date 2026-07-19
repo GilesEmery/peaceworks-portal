@@ -60,6 +60,7 @@ export type CoachResourceAssignmentInput = {
 
 type ResourceRow = {
   id: string;
+  content_item_id?: string;
   title: string | null;
   description: string | null;
   resource_type: string | null;
@@ -76,6 +77,7 @@ type ResourceRow = {
 
 type ContentAssignmentRow = {
   id: string;
+  content_item_id?: string | null;
   content_type: string | null;
   content_id: string | null;
   audience_type: string | null;

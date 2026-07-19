@@ -1,7 +1,8 @@
 import { createAdminSupabaseClient } from "./authorization";
+import type { ContentItemKind } from "../content/registry";
 
 export type AdminContentStatus = "draft" | "published" | "archived";
-export type AdminContentType = "monthly_question" | "resource" | "training";
+export type AdminContentType = ContentItemKind;
 export type AdminAudienceType =
   | "coach_library"
   | "all_members"
@@ -285,6 +286,7 @@ export type CommunicationValues = {
 
 type MonthlyQuestionRow = {
   id: string;
+  content_item_id?: string;
   title: string | null;
   opening_reflection: string | null;
   question_text: string | null;
@@ -300,6 +302,7 @@ type MonthlyQuestionRow = {
 
 type ContentResourceRow = {
   id: string;
+  content_item_id?: string;
   title: string | null;
   description: string | null;
   resource_type: string | null;
@@ -324,6 +327,7 @@ type ContentResourceRow = {
 
 type TrainingRow = {
   id: string;
+  content_item_id?: string;
   title: string | null;
   description: string | null;
   cover_image_url: string | null;
@@ -402,6 +406,7 @@ type CommunicationNewsletterSectionRow = {
 
 type ContentAssignmentRow = {
   id: string;
+  content_item_id?: string | null;
   content_type: string | null;
   content_id: string | null;
   audience_type: string | null;
