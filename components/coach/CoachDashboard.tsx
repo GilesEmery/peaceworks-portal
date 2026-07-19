@@ -13,7 +13,7 @@ import {
   Search,
   Target,
   Trash2,
-  Users,
+  UserRound,
   type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -2081,7 +2081,7 @@ function CircleWorkspace({
   }> = [
     {
       id: "members",
-      icon: Users,
+      icon: UserRound,
       title: "Members",
       description: "View and support the people in this Circle.",
       detail: `${members.length} active members`,

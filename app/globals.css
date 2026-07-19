@@ -3003,6 +3003,10 @@ a {
   transform: translateY(-1px);
 }
 
+.site-nav a.profile-login-link {
+  padding: 4px 14px 4px 5px;
+}
+
 .profile-initials {
   width: 34px;
   height: 34px;

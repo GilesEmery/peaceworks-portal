@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { UserRound } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -293,10 +294,15 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
             </div>
           ) : (
             <Link
-              className={isActivePath(pathname, routes.login) ? "active" : ""}
+              className={`profile-menu-button profile-login-link${
+                isActivePath(pathname, routes.login) ? " active" : ""
+              }`}
               href={routes.login}
             >
-              Portal Login
+              <span className="profile-initials" aria-hidden="true">
+                <UserRound size={18} strokeWidth={2.25} aria-hidden="true" />
+              </span>
+              <span className="profile-name">Login</span>
             </Link>
           )}
         </nav>
@@ -471,7 +477,7 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
                       href={routes.login}
                       onClick={handleMobileLinkClick}
                     >
-                      Portal Login
+                      Login
                     </Link>
                   )}
                 </div>

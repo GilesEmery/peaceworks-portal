@@ -19,6 +19,7 @@ import {
   Search,
   Settings,
   Trash2,
+  UserRound,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -4651,7 +4652,7 @@ function buildFeatureTiles({
   return [
     {
       id: "people",
-      icon: Users,
+      icon: UserRound,
       title: "People & Access",
       description: "Manage profiles, roles, Circle placement, and coaching relationships.",
       metrics: [
