@@ -2059,15 +2059,58 @@ a {
 
 .dashboard-journey-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 22px;
+  align-items: stretch;
 }
 
-.dashboard-journey-grid > :only-child {
-  grid-column: 1 / -1;
+.dashboard-section-toggle,
+.dashboard-section-heading {
+  width: fit-content;
+}
+
+.dashboard-section-toggle {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dashboard-section-toggle:focus-visible {
+  border-radius: 6px;
+  outline: 3px solid rgba(58, 91, 64, 0.4);
+  outline-offset: 6px;
+}
+
+.dashboard-section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-section-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.dashboard-section-chevron {
+  color: var(--sage-dark);
+  font-family: var(--font-body);
+  font-size: 1.35rem;
+  transition: transform 180ms ease;
+}
+
+.dashboard-section-chevron.is-expanded {
+  transform: rotate(180deg);
 }
 
 .dashboard-journey-card {
+  height: 100%;
   min-height: 300px;
   display: flex;
   flex-direction: column;
@@ -2078,15 +2121,22 @@ a {
 }
 
 .dashboard-journey-card h3 {
-  font-size: clamp(1.65rem, 2.4vw, 2.4rem);
-  line-height: 1.04;
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  line-height: 1.08;
   margin-bottom: 14px;
 }
 
 .dashboard-journey-card p {
-  max-width: 720px;
   font-size: 1.05rem;
   line-height: 1.55;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.dashboard-question-card p {
+  -webkit-line-clamp: 6;
 }
 
 .dashboard-assessment-card {
@@ -2151,11 +2201,7 @@ a {
   }
 
   .dashboard-journey-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-journey-grid > :only-child {
-    grid-column: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -2167,6 +2213,10 @@ a {
   .dashboard-journey-card {
     min-height: 0;
     padding: 22px;
+  }
+
+  .dashboard-journey-grid {
+    grid-template-columns: 1fr;
   }
 
   .dashboard-tile-media {

@@ -7,6 +7,7 @@ import { supabase } from "../../lib/supabase";
 import SiteHeader from "../layout/SiteHeader";
 import SiteFooter from "../layout/SiteFooter";
 import ResultModal from "../assessment/ResultModal";
+import ExpandableDashboardSection from "./ExpandableDashboardSection";
 
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
 import { generatePeacePdf } from "../../lib/generatePeacePdf";
@@ -271,9 +272,18 @@ export default function MyDashboard() {
           </DashboardSection>
 
           {dashboard.sections.monthlyQuestions.length > 0 && (
-            <DashboardSection eyebrow="Monthly Question" title="Pause and Reflect">
-              {dashboard.sections.monthlyQuestions.map((question) => (
-                <article className="portal-card dashboard-journey-card" key={question.contentItemId}>
+            <ExpandableDashboardSection
+              sectionId="monthly-questions"
+              eyebrow="Monthly Question"
+              title="Pause and Reflect"
+              items={dashboard.sections.monthlyQuestions}
+              expandLabel="Show all Monthly Questions"
+              collapseLabel="Collapse Monthly Questions"
+              renderItem={(question) => (
+                <article
+                  className="portal-card dashboard-journey-card dashboard-question-card"
+                  key={question.contentItemId}
+                >
                   <div>
                     <span className="card-label">
                       {question.theme || question.category || "Monthly Question"}
@@ -297,13 +307,19 @@ export default function MyDashboard() {
                     Reflect on This Question
                   </button>
                 </article>
-              ))}
-            </DashboardSection>
+              )}
+            />
           )}
 
           {dashboard.sections.trainings.length > 0 && (
-            <DashboardSection eyebrow="Training" title="Continue Learning">
-              {dashboard.sections.trainings.map((training) => (
+            <ExpandableDashboardSection
+              sectionId="trainings"
+              eyebrow="Training"
+              title="Continue Learning"
+              items={dashboard.sections.trainings}
+              expandLabel="Show all Trainings"
+              collapseLabel="Collapse Trainings"
+              renderItem={(training) => (
                 <article className="portal-card dashboard-journey-card" key={training.contentItemId}>
                   {training.coverUrl && (
                     <div
@@ -330,13 +346,17 @@ export default function MyDashboard() {
                     View Training
                   </button>
                 </article>
-              ))}
-            </DashboardSection>
+              )}
+            />
           )}
 
           {dashboard.sections.resources.length > 0 && (
-            <DashboardSection eyebrow="Resources" title="Tools for Your Journey">
-              {dashboard.sections.resources.map((resource) => (
+            <ExpandableDashboardSection
+              sectionId="resources"
+              eyebrow="Resources"
+              title="Tools for Your Journey"
+              items={dashboard.sections.resources}
+              renderItem={(resource) => (
                 <article className="portal-card dashboard-journey-card" key={resource.contentItemId}>
                   {(resource.coverUrl || resource.thumbnailUrl) && (
                     <div
@@ -376,8 +396,8 @@ export default function MyDashboard() {
                     </button>
                   )}
                 </article>
-              ))}
-            </DashboardSection>
+              )}
+            />
           )}
         </div>
       </section>
