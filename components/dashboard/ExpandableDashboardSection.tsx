@@ -36,11 +36,13 @@ export default function ExpandableDashboardSection<T>({
       <span className="dashboard-section-title-row">
         <span className="dashboard-section-title">{title}</span>
         {expandable && (
-          <span
-            className={`dashboard-section-chevron${expanded ? " is-expanded" : ""}`}
-            aria-hidden="true"
-          >
-            ↓
+          <span className="dashboard-section-control" aria-hidden="true">
+            <span>{expanded ? "Show Less" : "More"}</span>
+            <span
+              className={`dashboard-section-chevron${expanded ? " is-expanded" : ""}`}
+            >
+              →
+            </span>
           </span>
         )}
       </span>
@@ -65,7 +67,13 @@ export default function ExpandableDashboardSection<T>({
           <div className="dashboard-section-heading">{heading}</div>
         )}
       </div>
-      <div className="dashboard-journey-grid" id={gridId}>
+      <div
+        className={`dashboard-journey-grid dashboard-journey-grid-${Math.min(
+          visibleItems.length,
+          3
+        )}`}
+        id={gridId}
+      >
         {visibleItems.map(renderItem)}
       </div>
     </section>

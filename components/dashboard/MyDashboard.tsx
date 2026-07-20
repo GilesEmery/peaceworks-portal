@@ -34,7 +34,6 @@ export default function MyDashboard() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [userEmail, setUserEmail] = useState("");
   const [dashboard, setDashboard] = useState<MemberDashboardResponse | null>(null);
   const [loadError, setLoadError] = useState("");
   const [latestResult, setLatestResult] =
@@ -66,8 +65,6 @@ export default function MyDashboard() {
         router.push(routes.login);
         return;
       }
-
-      setUserEmail(session.user.email || "");
 
       try {
         const response = await fetch("/api/member/dashboard", {
@@ -192,6 +189,52 @@ export default function MyDashboard() {
     );
   }
 
+  const isCircleMember = dashboard.member.roles.includes("circle_member");
+  const monthlyQuestionSection =
+    dashboard.sections.monthlyQuestions.length > 0 ? (
+      <ExpandableDashboardSection
+        sectionId="monthly-questions"
+        eyebrow="Monthly Question"
+        title={
+          isCircleMember
+            ? "Circle Member Monthly Question"
+            : "Monthly Question"
+        }
+        items={dashboard.sections.monthlyQuestions}
+        expandLabel="Show all Monthly Questions"
+        collapseLabel="Collapse Monthly Questions"
+        renderItem={(question) => (
+          <article
+            className="portal-card dashboard-journey-card dashboard-question-card"
+            key={question.contentItemId}
+          >
+            <div>
+              <span className="card-label">
+                {question.theme || question.category || "Monthly Question"}
+              </span>
+              <h3>{question.question}</h3>
+              {question.coachIntroduction && (
+                <p className="dashboard-coach-introduction">
+                  {question.coachIntroduction}
+                </p>
+              )}
+              {question.circle && <small>{question.circle.name}</small>}
+            </div>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() =>
+                router.push(`/my-dashboard/monthly-questions/${question.id}`)
+              }
+              aria-label={`Reflect on ${question.title || "this Monthly Question"}`}
+            >
+              Reflect on This Question
+            </button>
+          </article>
+        )}
+      />
+    ) : null;
+
   return (
     <main className="portal-page">
       <SiteHeader />
@@ -200,14 +243,11 @@ export default function MyDashboard() {
         <div className="container">
           <div className="dashboard-hero compact-dashboard-hero">
             <div>
-              <div className="eyebrow">The Peace Index</div>
-              <h1 className="dashboard-title">Your PeaceWorks Dashboard</h1>
-              <p className="dashboard-sub">
-                Signed in as {userEmail}. View your Peace Assessment, revisit
-                your results, and continue your PeaceWorks journey.
-              </p>
+              <h1 className="dashboard-title">Your PeaceWorks Journey</h1>
             </div>
           </div>
+
+          {isCircleMember && monthlyQuestionSection}
 
           <DashboardSection eyebrow="Peace Assessment" title="Your Peace Profile">
             {latestResult && dashboard.assessment ? (
@@ -271,45 +311,7 @@ export default function MyDashboard() {
             )}
           </DashboardSection>
 
-          {dashboard.sections.monthlyQuestions.length > 0 && (
-            <ExpandableDashboardSection
-              sectionId="monthly-questions"
-              eyebrow="Monthly Question"
-              title="Pause and Reflect"
-              items={dashboard.sections.monthlyQuestions}
-              expandLabel="Show all Monthly Questions"
-              collapseLabel="Collapse Monthly Questions"
-              renderItem={(question) => (
-                <article
-                  className="portal-card dashboard-journey-card dashboard-question-card"
-                  key={question.contentItemId}
-                >
-                  <div>
-                    <span className="card-label">
-                      {question.theme || question.category || "Monthly Question"}
-                    </span>
-                    <h3>{question.question}</h3>
-                    {question.coachIntroduction && (
-                      <p className="dashboard-coach-introduction">
-                        {question.coachIntroduction}
-                      </p>
-                    )}
-                    {question.circle && <small>{question.circle.name}</small>}
-                  </div>
-                  <button
-                    className="btn btn-primary"
-                    type="button"
-                    onClick={() =>
-                      router.push(`/my-dashboard/monthly-questions/${question.id}`)
-                    }
-                    aria-label={`Reflect on ${question.title || "this Monthly Question"}`}
-                  >
-                    Reflect on This Question
-                  </button>
-                </article>
-              )}
-            />
-          )}
+          {!isCircleMember && monthlyQuestionSection}
 
           {dashboard.sections.trainings.length > 0 && (
             <ExpandableDashboardSection
@@ -432,7 +434,9 @@ function DashboardSection({
           <h2>{title}</h2>
         </div>
       </div>
-      <div className="dashboard-journey-grid">{children}</div>
+      <div className="dashboard-journey-grid dashboard-journey-grid-1">
+        {children}
+      </div>
     </section>
   );
 }
