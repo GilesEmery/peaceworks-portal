@@ -303,3 +303,104 @@ union all
 select 'training', count(*)
 from public.trainings
 order by content_kind;
+
+-- Update 4 healthy result: every count is zero.
+with source_map as (
+  select 'monthly_question'::text as content_kind, id, content_item_id
+  from public.monthly_questions
+  union all
+  select 'resource', id, content_item_id
+  from public.resources
+  union all
+  select 'training', id, content_item_id
+  from public.trainings
+)
+select
+  count(*) filter (where ca.content_item_id is null)
+    as null_assignment_content_item_ids,
+  count(*) filter (
+    where ci.id is null
+      or ci.content_kind <> ca.content_type
+      or sm.content_item_id is null
+      or sm.content_item_id <> ca.content_item_id
+  ) as legacy_registry_mismatches,
+  count(*) filter (
+    where case
+      when ca.audience_type = 'selected_circle'
+        then ca.circle_id is null or ca.profile_id is not null
+      when ca.audience_type in ('selected_member', 'selected_coach')
+        then ca.profile_id is null or ca.circle_id is not null
+      else ca.circle_id is not null or ca.profile_id is not null
+    end
+  ) as invalid_assignment_target_shapes,
+  count(*) filter (
+    where ca.visible_from is not null
+      and ca.visible_until is not null
+      and ca.visible_until < ca.visible_from
+  ) as invalid_assignment_visibility_windows,
+  count(*) filter (
+    where ci.content_kind not in ('monthly_question', 'resource', 'training')
+  ) as unsupported_registry_kinds
+from public.content_assignments ca
+left join public.content_items ci on ci.id = ca.content_item_id
+left join source_map sm
+  on sm.content_kind = ca.content_type
+ and sm.id = ca.content_id;
+
+-- Update 4 healthy result: all three counts are zero.
+select
+  (
+    select count(*)
+    from (
+      select 1
+      from public.content_assignments
+      where assignment_status = 'active'
+        and circle_id is null
+        and profile_id is null
+      group by content_item_id, audience_type, placement
+      having count(*) > 1
+    ) duplicate_groups
+  ) as duplicate_active_global_assignments,
+  (
+    select count(*)
+    from (
+      select 1
+      from public.content_assignments
+      where assignment_status = 'active'
+        and audience_type = 'selected_circle'
+      group by content_item_id, audience_type, circle_id, placement
+      having count(*) > 1
+    ) duplicate_groups
+  ) as duplicate_active_circle_assignments,
+  (
+    select count(*)
+    from (
+      select 1
+      from public.content_assignments
+      where assignment_status = 'active'
+        and audience_type in ('selected_member', 'selected_coach')
+      group by content_item_id, audience_type, profile_id, placement
+      having count(*) > 1
+    ) duplicate_groups
+  ) as duplicate_active_profile_assignments;
+
+-- Compatibility diagnostic: canonical selected-Circle Monthly Questions
+-- currently expect a specialized row for coach_introduction metadata.
+-- Healthy result during Update 4: zero.
+select count(*) as canonical_monthly_questions_without_specialized_metadata
+from public.content_assignments ca
+join public.content_items ci
+  on ci.id = ca.content_item_id
+ and ci.content_kind = 'monthly_question'
+join public.monthly_questions q
+  on q.content_item_id = ca.content_item_id
+where ca.assignment_status = 'active'
+  and ca.audience_type = 'selected_circle'
+  and ca.placement = 'circle_dashboard'
+  and not exists (
+    select 1
+    from public.monthly_question_circle_assignments m
+    where m.monthly_question_id = q.id
+      and m.circle_id = ca.circle_id
+      and m.assignment_status <> 'archived'
+  );

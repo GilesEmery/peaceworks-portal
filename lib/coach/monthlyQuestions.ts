@@ -10,6 +10,15 @@ import {
   type AdminUsersPayload,
 } from "../admin/userManagement";
 import {
+  archiveCanonicalCircleMonthlyQuestion,
+  canonicalAssignmentSelect,
+  deleteCanonicalCircleMonthlyQuestion,
+  resolveCanonicalAssignmentRows,
+  upsertMonthlyQuestionAssignmentMetadata,
+  upsertCanonicalCircleMonthlyQuestion,
+} from "../content/assignments";
+import type { ResolvedCanonicalAssignment } from "../content/assignments";
+import {
   type CoachAuthResult,
   type CoachPersonSummary,
 } from "./dashboard";
@@ -98,7 +107,7 @@ export type MemberMonthlyQuestion = {
 
 type MonthlyQuestionRow = {
   id: string;
-  content_item_id?: string;
+  content_item_id: string;
   title: string | null;
   opening_reflection: string | null;
   question_text: string | null;
@@ -127,22 +136,7 @@ type MonthlyQuestionAssignmentRow = {
   coach_introduction?: string | null;
 };
 
-type ContentAssignmentRow = {
-  id: string;
-  content_item_id?: string | null;
-  content_type: string | null;
-  content_id: string | null;
-  audience_type: string | null;
-  circle_id: string | null;
-  profile_id: string | null;
-  placement: string | null;
-  assignment_status: string | null;
-  visible_from: string | null;
-  visible_until: string | null;
-  assigned_by: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-};
+type ContentAssignmentRow = ResolvedCanonicalAssignment;
 
 type MonthlyQuestionContext = {
   usersPayload: AdminUsersPayload;
@@ -161,12 +155,18 @@ export async function fetchCoachMonthlyQuestions(
   auth: Extract<CoachAuthResult, { ok: true }>
 ): Promise<CoachMonthlyQuestionsPayload> {
   const context = await loadMonthlyQuestionContext(auth);
-  const { rows, assignments, assignmentRows, contentAssignmentRows } =
+  const { rows, assignmentRows, contentAssignmentRows } =
     await fetchMonthlyQuestionRows();
   const coachLibraryQuestionIds = getCoachLibraryQuestionIds(contentAssignmentRows);
   const hasAdminAvailabilityAssignments = contentAssignmentRows.some(
-    (assignment) => assignment.content_type === "monthly_question"
+    (assignment) => assignment.content_kind === "monthly_question"
   );
+  const allAssignmentRows = mergeMonthlyQuestionAssignmentRows(
+    assignmentRows,
+    contentAssignmentRows,
+    context
+  );
+  const assignments = buildAssignmentMap(allAssignmentRows);
   const questions = rows
     .filter((row) => {
       if (parseStatus(row.status) !== "published") return false;
@@ -175,11 +175,6 @@ export async function fetchCoachMonthlyQuestions(
     })
     .map((row) => mapCoachMonthlyQuestion(row, assignments, auth, context))
     .sort(sortQuestions);
-  const allAssignmentRows = mergeMonthlyQuestionAssignmentRows(
-    assignmentRows,
-    contentAssignmentRows,
-    context
-  );
   const assignmentItems = mapCoachMonthlyQuestionAssignments(
     rows,
     allAssignmentRows,
@@ -472,25 +467,29 @@ export async function assignCoachMonthlyQuestion(
   if (circleIds.length === 0) return validationResult("Select at least one Circle.");
   if (invalidCircleId) return validationResult("One selected Circle is not available to you.");
 
-  const supabase = createAdminSupabaseClient();
   const timestamp = new Date().toISOString();
-  const { error } = await supabase
-    .from("monthly_question_circle_assignments")
-    .upsert(
-      circleIds.map((circleId) => ({
-        monthly_question_id: question.id,
-        circle_id: circleId,
-        assigned_by: auth.user.id,
-        assigned_at: timestamp,
-        assignment_status: "active",
-        visible_from: timestamp,
-        archived_at: null,
-        coach_introduction: cleanText(values.coachIntroduction, 1200) || null,
-      })),
-      { onConflict: "monthly_question_id,circle_id" }
+  try {
+    await Promise.all(
+      circleIds.map((circleId) =>
+        upsertCanonicalCircleMonthlyQuestion({
+          contentItemId: question.content_item_id,
+          circleId,
+          assignedBy: auth.user.id,
+          visibleFrom: timestamp,
+        })
+      )
     );
 
-  if (error) return monthlyQuestionDatabaseFailure("monthly_question_assignment_save_failed", error);
+    await upsertMonthlyQuestionAssignmentMetadata({
+      questionId: question.id,
+      circleIds,
+      assignedBy: auth.user.id,
+      visibleFrom: timestamp,
+      coachIntroduction: cleanText(values.coachIntroduction, 1200) || null,
+    });
+  } catch (error) {
+    return monthlyQuestionDatabaseFailure("monthly_question_assignment_save_failed", error);
+  }
 
   return { ok: true as const, message: "Monthly Question assigned to Circle." };
 }
@@ -505,6 +504,15 @@ export async function archiveCoachMonthlyQuestionAssignment(
 
   const assignment = await fetchAssignmentRow(assignmentId, circleId);
   if (!assignment) return notFoundResult();
+
+  const question = await fetchMonthlyQuestionRow(assignment.monthly_question_id);
+  if (!question) return notFoundResult();
+
+  try {
+    await archiveCanonicalCircleMonthlyQuestion(question.content_item_id, circleId);
+  } catch (error) {
+    return monthlyQuestionDatabaseFailure("monthly_question_assignment_archive_failed", error);
+  }
 
   const supabase = createAdminSupabaseClient();
   const { error } = await supabase
@@ -531,6 +539,15 @@ export async function removeCoachMonthlyQuestionAssignment(
 
   const assignment = await fetchAssignmentRow(assignmentId, circleId);
   if (!assignment) return notFoundResult();
+
+  const question = await fetchMonthlyQuestionRow(assignment.monthly_question_id);
+  if (!question) return notFoundResult();
+
+  try {
+    await deleteCanonicalCircleMonthlyQuestion(question.content_item_id, circleId);
+  } catch (error) {
+    return monthlyQuestionDatabaseFailure("monthly_question_assignment_remove_failed", error);
+  }
 
   const supabase = createAdminSupabaseClient();
   const { error } = await supabase
@@ -571,8 +588,13 @@ export async function fetchMemberMonthlyQuestions(request: Request) {
     return { ok: true as const, questions: [] as MemberMonthlyQuestion[] };
   }
 
-  const { rows, assignmentRows } = await fetchMonthlyQuestionRows();
-  const assignmentRowsByQuestion = buildAssignmentRowsMap(assignmentRows);
+  const { rows, assignmentRows, contentAssignmentRows } =
+    await fetchMonthlyQuestionRows();
+  const canonicalAssignmentRows = mergeMonthlyQuestionAssignmentRows(
+    assignmentRows,
+    contentAssignmentRows
+  );
+  const assignmentRowsByQuestion = buildAssignmentRowsMap(canonicalAssignmentRows);
   const visible = rows
     .filter((row) => {
       const status = parseStatus(row.status);
@@ -602,11 +624,9 @@ export async function fetchMemberMonthlyQuestions(request: Request) {
 }
 
 const monthlyQuestionSelect =
-  "id, title, opening_reflection, question_text, guidance, discussion_prompts, status, category, theme, published_at, created_by, updated_by, created_at, updated_at";
+  "id, content_item_id, title, opening_reflection, question_text, guidance, discussion_prompts, status, category, theme, published_at, created_by, updated_by, created_at, updated_at";
 const monthlyQuestionAssignmentSelect =
   "id, monthly_question_id, circle_id, assigned_by, assigned_at, created_at, assignment_status, visible_from, archived_at, coach_introduction";
-const contentAssignmentSelect =
-  "id, content_type, content_id, audience_type, circle_id, profile_id, placement, assignment_status, visible_from, visible_until, assigned_by, created_at, updated_at";
 
 async function loadMonthlyQuestionContext(
   auth: Extract<CoachAuthResult, { ok: true }>
@@ -638,13 +658,12 @@ async function fetchMonthlyQuestionRows() {
       .select(monthlyQuestionAssignmentSelect),
     supabase
       .from("content_assignments")
-      .select(contentAssignmentSelect)
-      .eq("content_type", "monthly_question")
+      .select(canonicalAssignmentSelect)
+      .eq("content_item.content_kind", "monthly_question")
       .eq("assignment_status", "active"),
   ]);
   let assignmentData: unknown[] | null = assignmentsResponse.data;
   let assignmentError = assignmentsResponse.error;
-  let contentAssignmentData: unknown[] | null = contentAssignmentsResponse.data;
   const contentAssignmentError = contentAssignmentsResponse.error;
 
   if (questionsResponse.error) {
@@ -668,23 +687,23 @@ async function fetchMonthlyQuestionRows() {
   }
 
   if (contentAssignmentError) {
-    if (isMissingTableError(contentAssignmentError, "content_assignments")) {
-      contentAssignmentData = [];
-    } else {
-      throw monthlyQuestionSchemaError(
-        "Content assignments are not configured.",
-        contentAssignmentError
-      );
-    }
+    throw monthlyQuestionSchemaError(
+      "Content assignments are not configured.",
+      contentAssignmentError
+    );
   }
 
   const assignmentRows = (assignmentData || []) as MonthlyQuestionAssignmentRow[];
+  const contentAssignmentRows = await resolveCanonicalAssignmentRows(
+    (contentAssignmentsResponse.data || []) as unknown as Parameters<
+      typeof resolveCanonicalAssignmentRows
+    >[0]
+  );
 
   return {
     rows: (questionsResponse.data || []) as MonthlyQuestionRow[],
     assignmentRows,
-    contentAssignmentRows: (contentAssignmentData || []) as ContentAssignmentRow[],
-    assignments: buildAssignmentMap(assignmentRows),
+    contentAssignmentRows,
   };
 }
 
@@ -693,50 +712,48 @@ function getCoachLibraryQuestionIds(rows: ContentAssignmentRow[]) {
     rows
       .filter(
         (row) =>
-          row.content_type === "monthly_question" &&
-          row.content_id &&
+          row.content_kind === "monthly_question" &&
           row.assignment_status !== "archived" &&
           (row.audience_type === "coach_library" || row.audience_type === "all_coaches") &&
           row.placement === "coach_dashboard_library"
       )
-      .map((row) => row.content_id as string)
+      .map((row) => row.source_id)
   );
 }
 
 function mergeMonthlyQuestionAssignmentRows(
   rows: MonthlyQuestionAssignmentRow[],
   contentAssignments: ContentAssignmentRow[],
-  context: MonthlyQuestionContext
+  context?: MonthlyQuestionContext
 ) {
-  const existing = new Set(
-    rows.map((row) => `${row.monthly_question_id}:${row.circle_id}`)
+  const specializedByTarget = new Map(
+    rows.map((row) => [`${row.monthly_question_id}:${row.circle_id}`, row])
   );
-  const syntheticRows = contentAssignments
+  return contentAssignments
     .filter(
       (row) =>
-        row.content_type === "monthly_question" &&
-        row.content_id &&
+        row.content_kind === "monthly_question" &&
         row.circle_id &&
         row.assignment_status !== "archived" &&
         row.audience_type === "selected_circle" &&
         row.placement === "circle_dashboard" &&
-        context.authorizedCircleIds.has(row.circle_id)
+        (!context || context.authorizedCircleIds.has(row.circle_id))
     )
-    .filter((row) => !existing.has(`${row.content_id}:${row.circle_id}`))
-    .map((row) => ({
-      id: row.id,
-      monthly_question_id: row.content_id as string,
-      circle_id: row.circle_id as string,
-      assigned_by: row.assigned_by,
-      assigned_at: row.created_at,
-      created_at: row.created_at,
-      assignment_status: row.assignment_status,
-      visible_from: row.visible_from,
-      archived_at: null,
-      coach_introduction: "",
-    }));
-
-  return [...rows, ...syntheticRows];
+    .map((row) => {
+      const specialized = specializedByTarget.get(`${row.source_id}:${row.circle_id}`);
+      return {
+        id: specialized?.id || row.id,
+        monthly_question_id: row.source_id,
+        circle_id: row.circle_id as string,
+        assigned_by: row.assigned_by,
+        assigned_at: row.created_at,
+        created_at: row.created_at,
+        assignment_status: row.assignment_status,
+        visible_from: row.visible_from,
+        archived_at: null,
+        coach_introduction: specialized?.coach_introduction || "",
+      };
+    });
 }
 
 async function fetchMonthlyQuestionRow(questionId: string) {
@@ -756,16 +773,40 @@ async function fetchAssignmentMap(questionIds: string[]) {
   if (questionIds.length === 0) return new Map<string, string[]>();
 
   const supabase = createAdminSupabaseClient();
-  const { data, error } = await supabase
-    .from("monthly_question_circle_assignments")
-    .select(monthlyQuestionAssignmentSelect)
-    .in("monthly_question_id", questionIds);
+  const { data: questions, error: questionError } = await supabase
+    .from("monthly_questions")
+    .select("id,content_item_id")
+    .in("id", questionIds);
 
-  if (error) {
-    throw monthlyQuestionSchemaError("Monthly question assignments are not configured.", error);
+  if (questionError) {
+    throw monthlyQuestionSchemaError("Monthly questions are not configured.", questionError);
   }
 
-  return buildAssignmentMap((data || []) as MonthlyQuestionAssignmentRow[]);
+  const contentItemIds = (questions || []).map((row) => row.content_item_id);
+  if (contentItemIds.length === 0) return new Map<string, string[]>();
+
+  const { data, error } = await supabase
+    .from("content_assignments")
+    .select(canonicalAssignmentSelect)
+    .in("content_item_id", contentItemIds)
+    .eq("audience_type", "selected_circle")
+    .eq("placement", "circle_dashboard")
+    .eq("assignment_status", "active");
+
+  if (error) {
+    throw monthlyQuestionSchemaError("Content assignments are not configured.", error);
+  }
+
+  const rows = await resolveCanonicalAssignmentRows(
+    (data || []) as unknown as Parameters<typeof resolveCanonicalAssignmentRows>[0]
+  );
+  const map = new Map<string, string[]>();
+  rows.forEach((row) => {
+    if (!row.circle_id) return;
+    const existing = map.get(row.source_id) || [];
+    map.set(row.source_id, [...existing, row.circle_id]);
+  });
+  return map;
 }
 
 async function fetchAssignmentRow(assignmentId: string, circleId: string) {
@@ -789,6 +830,33 @@ async function syncMonthlyQuestionAssignments(
   circleIds: string[],
   assignedBy: string
 ) {
+  const question = await fetchMonthlyQuestionRow(questionId);
+  if (!question) return notFoundResult();
+
+  const currentAssignments = await fetchAssignmentMap([questionId]);
+  const currentCircleIds = new Set(currentAssignments.get(questionId) || []);
+  const nextCircleIds = new Set(circleIds);
+
+  try {
+    await Promise.all([
+      ...Array.from(currentCircleIds)
+        .filter((circleId) => !nextCircleIds.has(circleId))
+        .map((circleId) =>
+          deleteCanonicalCircleMonthlyQuestion(question.content_item_id, circleId)
+        ),
+      ...circleIds.map((circleId) =>
+        upsertCanonicalCircleMonthlyQuestion({
+          contentItemId: question.content_item_id,
+          circleId,
+          assignedBy,
+          visibleFrom: new Date().toISOString(),
+        })
+      ),
+    ]);
+  } catch (error) {
+    return monthlyQuestionDatabaseFailure("monthly_question_assignment_sync_failed", error);
+  }
+
   const supabase = createAdminSupabaseClient();
   const { error: deleteError } = await supabase
     .from("monthly_question_circle_assignments")
@@ -801,18 +869,18 @@ async function syncMonthlyQuestionAssignments(
 
   if (circleIds.length === 0) return { ok: true as const };
 
-  const { error: insertError } = await supabase
-    .from("monthly_question_circle_assignments")
-    .insert(
-      circleIds.map((circleId) => ({
-        monthly_question_id: questionId,
-        circle_id: circleId,
-        assigned_by: assignedBy,
-      }))
+  try {
+    await upsertMonthlyQuestionAssignmentMetadata({
+      questionId,
+      circleIds,
+      assignedBy,
+      visibleFrom: new Date().toISOString(),
+    });
+  } catch (error) {
+    return monthlyQuestionDatabaseFailure(
+      "monthly_question_assignment_insert_failed",
+      error
     );
-
-  if (insertError) {
-    return monthlyQuestionDatabaseFailure("monthly_question_assignment_insert_failed", insertError);
   }
 
   return { ok: true as const };
@@ -1148,15 +1216,6 @@ function isMissingAssignmentStateError(error: unknown) {
     values.includes("visible_from") ||
     values.includes("archived_at") ||
     values.includes("coach_introduction")
-  );
-}
-
-function isMissingTableError(error: unknown, tableName: string) {
-  const detail = safeErrorDetail(error).toLowerCase();
-
-  return (
-    detail.includes(tableName.toLowerCase()) &&
-    (detail.includes("does not exist") || detail.includes("not found"))
   );
 }
 

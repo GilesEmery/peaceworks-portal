@@ -4,6 +4,12 @@ import {
   type AdminManagedProfile,
   type AdminUsersPayload,
 } from "../admin/userManagement";
+import {
+  canonicalAssignmentSelect,
+  createCanonicalAssignments,
+  resolveCanonicalAssignmentRows,
+} from "../content/assignments";
+import type { ResolvedCanonicalAssignment } from "../content/assignments";
 import type { CoachAuthResult, CoachPersonSummary } from "./dashboard";
 
 export type CoachResource = {
@@ -60,7 +66,7 @@ export type CoachResourceAssignmentInput = {
 
 type ResourceRow = {
   id: string;
-  content_item_id?: string;
+  content_item_id: string;
   title: string | null;
   description: string | null;
   resource_type: string | null;
@@ -75,22 +81,7 @@ type ResourceRow = {
   published_at: string | null;
 };
 
-type ContentAssignmentRow = {
-  id: string;
-  content_item_id?: string | null;
-  content_type: string | null;
-  content_id: string | null;
-  audience_type: string | null;
-  circle_id: string | null;
-  profile_id: string | null;
-  placement: string | null;
-  assignment_status: string | null;
-  visible_from: string | null;
-  visible_until: string | null;
-  assigned_by: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-};
+type ContentAssignmentRow = ResolvedCanonicalAssignment;
 
 type ResourceContext = {
   usersPayload: AdminUsersPayload;
@@ -99,9 +90,7 @@ type ResourceContext = {
 };
 
 const resourceSelect =
-  "id,title,description,resource_type,provider,external_url,storage_path,thumbnail_url,cover_image_path,category,tags,status,published_at";
-const assignmentSelect =
-  "id,content_type,content_id,audience_type,circle_id,profile_id,placement,assignment_status,visible_from,visible_until,assigned_by,created_at,updated_at";
+  "id,content_item_id,title,description,resource_type,provider,external_url,storage_path,thumbnail_url,cover_image_path,category,tags,status,published_at";
 const resourceStorageBucket = "peaceworks-resources";
 
 export async function fetchCoachResourcesForCircle(
@@ -117,8 +106,7 @@ export async function fetchCoachResourcesForCircle(
   const resourcesById = new Map(publishedResources.map((resource) => [resource.id, resource]));
   const activeAssignments = assignments.filter(
     (assignment) =>
-      assignment.content_type === "resource" &&
-      assignment.content_id &&
+      assignment.content_kind === "resource" &&
       assignment.assignment_status !== "archived"
   );
   const libraryResourceIds = new Set(
@@ -129,7 +117,7 @@ export async function fetchCoachResourcesForCircle(
             assignment.audience_type === "all_coaches") &&
           assignment.placement === "coach_dashboard_library"
       )
-      .map((assignment) => assignment.content_id as string)
+      .map((assignment) => assignment.source_id)
   );
   const hasResourceAvailability = activeAssignments.length > 0;
   const assignedResources = await Promise.all(
@@ -182,45 +170,36 @@ export async function assignCoachResourceToCircle(
 
   if (!cleaned.ok) return cleaned;
 
-  const supabase = createAdminSupabaseClient();
   const timestamp = new Date().toISOString();
-  const rows =
+  const assignments =
     cleaned.audienceType === "circle"
       ? [
           {
-            content_type: "resource",
-            content_id: resource.id,
-            audience_type: "selected_circle",
-            circle_id: circleId,
-            profile_id: null,
+            audienceType: "selected_circle" as const,
+            circleId,
             placement: "resources_area",
-            assignment_status: "active",
-            assigned_by: auth.user.id,
-            visible_from: timestamp,
+            visibleFrom: timestamp,
           },
         ]
       : cleaned.memberIds.map((memberId) => ({
-          content_type: "resource",
-          content_id: resource.id,
-          audience_type: "selected_member",
-          circle_id: null,
-          profile_id: memberId,
+          audienceType: "selected_member" as const,
+          profileId: memberId,
           placement: "resources_area",
-          assignment_status: "active",
-          assigned_by: auth.user.id,
-          visible_from: timestamp,
+          visibleFrom: timestamp,
         }));
 
-  const existingKeys = await fetchExistingAssignmentKeys(resource.id, rows);
-  const rowsToInsert = rows.filter((row) => !existingKeys.has(getTargetKey(row)));
-
-  if (rowsToInsert.length === 0) {
-    return validationResult("This resource assignment already exists.");
+  try {
+    await createCanonicalAssignments({
+      contentItemId: resource.content_item_id,
+      assignedBy: auth.user.id,
+      assignments,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("already exists")) {
+      return validationResult("This resource assignment already exists.");
+    }
+    return databaseFailure("resource_assignment_save_failed", error);
   }
-
-  const { error } = await supabase.from("content_assignments").insert(rowsToInsert);
-
-  if (error) return databaseFailure("resource_assignment_save_failed", error);
 
   return { ok: true as const, message: "Resource assigned." };
 }
@@ -255,8 +234,8 @@ async function fetchResourceRows() {
     supabase.from("resources").select(resourceSelect),
     supabase
       .from("content_assignments")
-      .select(assignmentSelect)
-      .eq("content_type", "resource"),
+      .select(canonicalAssignmentSelect)
+      .eq("content_item.content_kind", "resource"),
   ]);
 
   if (resourcesResponse.error) {
@@ -269,7 +248,11 @@ async function fetchResourceRows() {
 
   return {
     resources: (resourcesResponse.data || []) as ResourceRow[],
-    assignments: (assignmentsResponse.data || []) as ContentAssignmentRow[],
+    assignments: await resolveCanonicalAssignmentRows(
+      (assignmentsResponse.data || []) as unknown as Parameters<
+        typeof resolveCanonicalAssignmentRows
+      >[0]
+    ),
   };
 }
 
@@ -318,7 +301,7 @@ async function mapResourceAssignment(
   context: ResourceContext,
   auth: Extract<CoachAuthResult, { ok: true }>
 ) {
-  const source = assignment.content_id ? resourcesById.get(assignment.content_id) : null;
+  const source = resourcesById.get(assignment.source_id);
 
   if (!source) return null;
 
@@ -403,38 +386,6 @@ function cleanResourceAssignmentInput(
   }
 
   return { ok: true as const, audienceType, memberIds };
-}
-
-async function fetchExistingAssignmentKeys(
-  resourceId: string,
-  rows: Array<{ audience_type: string; circle_id: string | null; profile_id: string | null; placement: string }>
-) {
-  const supabase = createAdminSupabaseClient();
-  const { data, error } = await supabase
-    .from("content_assignments")
-    .select("audience_type,circle_id,profile_id,placement")
-    .eq("content_type", "resource")
-    .eq("content_id", resourceId)
-    .eq("assignment_status", "active");
-
-  if (error) throw schemaError("Resource assignments are not configured.", error);
-
-  const desired = new Set(rows.map(getTargetKey));
-
-  return new Set(
-    ((data || []) as Array<{ audience_type: string; circle_id: string | null; profile_id: string | null; placement: string }> )
-      .filter((row) => desired.has(getTargetKey(row)))
-      .map(getTargetKey)
-  );
-}
-
-function getTargetKey(row: {
-  audience_type: string;
-  circle_id: string | null;
-  profile_id: string | null;
-  placement: string;
-}) {
-  return `${row.audience_type}:${row.circle_id || ""}:${row.profile_id || ""}:${row.placement}`;
 }
 
 function toPersonSummary(profile: AdminManagedProfile | null): CoachPersonSummary {

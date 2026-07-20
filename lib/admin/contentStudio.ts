@@ -1,4 +1,13 @@
 import { createAdminSupabaseClient } from "./authorization";
+import {
+  archiveCanonicalAssignment,
+  canonicalAssignmentSelect,
+  createCanonicalAssignments,
+  deleteCanonicalAssignment,
+  resolveCanonicalAssignmentRows,
+  upsertMonthlyQuestionAssignmentMetadata,
+} from "../content/assignments";
+import type { ResolvedCanonicalAssignment } from "../content/assignments";
 import type { ContentItemKind } from "../content/registry";
 
 export type AdminContentStatus = "draft" | "published" | "archived";
@@ -286,7 +295,7 @@ export type CommunicationValues = {
 
 type MonthlyQuestionRow = {
   id: string;
-  content_item_id?: string;
+  content_item_id: string;
   title: string | null;
   opening_reflection: string | null;
   question_text: string | null;
@@ -302,7 +311,7 @@ type MonthlyQuestionRow = {
 
 type ContentResourceRow = {
   id: string;
-  content_item_id?: string;
+  content_item_id: string;
   title: string | null;
   description: string | null;
   resource_type: string | null;
@@ -327,7 +336,7 @@ type ContentResourceRow = {
 
 type TrainingRow = {
   id: string;
-  content_item_id?: string;
+  content_item_id: string;
   title: string | null;
   description: string | null;
   cover_image_url: string | null;
@@ -404,25 +413,10 @@ type CommunicationNewsletterSectionRow = {
   sort_order: number | null;
 };
 
-type ContentAssignmentRow = {
-  id: string;
-  content_item_id?: string | null;
-  content_type: string | null;
-  content_id: string | null;
-  audience_type: string | null;
-  circle_id: string | null;
-  profile_id: string | null;
-  placement: string | null;
-  assignment_status: string | null;
-  visible_from: string | null;
-  visible_until: string | null;
-  assigned_by: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-};
+type ContentAssignmentRow = ResolvedCanonicalAssignment;
 
 const monthlyQuestionSelect =
-  "id,title,opening_reflection,question_text,guidance,discussion_prompts,status,category,theme,published_at,created_at,updated_at";
+  "id,content_item_id,title,opening_reflection,question_text,guidance,discussion_prompts,status,category,theme,published_at,created_at,updated_at";
 
 export async function fetchAdminContentStudio(): Promise<AdminContentStudioPayload> {
   const [monthlyQuestions, resources, trainings, communications, communicationSenders, assignments] = await Promise.all([
@@ -450,52 +444,63 @@ export async function createAdminContentAssignments(
   input: ContentAssignmentInput
 ) {
   const cleaned = await cleanContentAssignmentInput(input);
-  const supabase = createAdminSupabaseClient();
-  const rows = buildContentAssignmentRows(adminUserId, cleaned);
-  const existingAssignmentKeys = await fetchExistingAssignmentKeys(cleaned);
-  const rowsToInsert = rows.filter(
-    (row) => !existingAssignmentKeys.has(getAssignmentTargetKey(row.circle_id, row.profile_id))
-  );
+  const assignments =
+    cleaned.audienceType === "selected_circle"
+      ? cleaned.circleIds.map((circleId) => ({
+          audienceType: cleaned.audienceType,
+          circleId,
+          placement: cleaned.placement,
+          visibleFrom: cleaned.visibleFrom,
+          visibleUntil: cleaned.visibleUntil,
+        }))
+      : cleaned.audienceType === "selected_member" ||
+          cleaned.audienceType === "selected_coach"
+        ? cleaned.profileIds.map((profileId) => ({
+            audienceType: cleaned.audienceType,
+            profileId,
+            placement: cleaned.placement,
+            visibleFrom: cleaned.visibleFrom,
+            visibleUntil: cleaned.visibleUntil,
+          }))
+        : [
+            {
+              audienceType: cleaned.audienceType,
+              placement: cleaned.placement,
+              visibleFrom: cleaned.visibleFrom,
+              visibleUntil: cleaned.visibleUntil,
+            },
+          ];
 
-  if (rowsToInsert.length === 0) {
-    throw new Error("The selected assignment already exists.");
+  const rows = await createCanonicalAssignments({
+    contentItemId: cleaned.contentItemId,
+    assignedBy: adminUserId,
+    assignments,
+  });
+
+  if (
+    cleaned.contentType === "monthly_question" &&
+    cleaned.audienceType === "selected_circle" &&
+    cleaned.placement === "circle_dashboard"
+  ) {
+    await upsertMonthlyQuestionAssignmentMetadata({
+      questionId: cleaned.contentId,
+      circleIds: rows
+        .map((row) => row.circle_id)
+        .filter((circleId): circleId is string => Boolean(circleId)),
+      assignedBy: adminUserId,
+      visibleFrom: cleaned.visibleFrom || new Date().toISOString(),
+    });
   }
 
-  const { data, error } = await supabase
-    .from("content_assignments")
-    .insert(rowsToInsert)
-    .select(contentAssignmentSelect);
-
-  if (error) throw new Error(`Content assignment could not be saved: ${error.message}`);
-
-  return ((data || []) as ContentAssignmentRow[]).map(mapContentAssignment);
+  return rows.map(mapContentAssignment);
 }
 
 export async function archiveAdminContentAssignment(assignmentId: string) {
-  const supabase = createAdminSupabaseClient();
-  const { data, error } = await supabase
-    .from("content_assignments")
-    .update({
-      assignment_status: "archived",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", assignmentId)
-    .select(contentAssignmentSelect)
-    .single();
-
-  if (error) throw new Error(`Content assignment could not be archived: ${error.message}`);
-
-  return mapContentAssignment(data as ContentAssignmentRow);
+  return mapContentAssignment(await archiveCanonicalAssignment(assignmentId));
 }
 
 export async function deleteAdminContentAssignment(assignmentId: string) {
-  const supabase = createAdminSupabaseClient();
-  const { error } = await supabase
-    .from("content_assignments")
-    .delete()
-    .eq("id", assignmentId);
-
-  if (error) throw new Error(`Content assignment could not be removed: ${error.message}`);
+  await deleteCanonicalAssignment(assignmentId);
 }
 
 export async function createAdminMonthlyQuestion(
@@ -637,10 +642,20 @@ export async function duplicateAdminMonthlyQuestion(
 
 export async function deleteAdminMonthlyQuestion(questionId: string) {
   const supabase = createAdminSupabaseClient();
+  const { data: question, error: questionError } = await supabase
+    .from("monthly_questions")
+    .select("content_item_id")
+    .eq("id", questionId)
+    .maybeSingle();
+
+  if (questionError || !question) {
+    throw new Error(questionError?.message || "Monthly question was not found.");
+  }
+
   const { count, error: assignmentError } = await supabase
-    .from("monthly_question_circle_assignments")
+    .from("content_assignments")
     .select("id", { count: "exact", head: true })
-    .eq("monthly_question_id", questionId);
+    .eq("content_item_id", question.content_item_id);
 
   if (assignmentError) {
     throw new Error(`Monthly question assignment status could not be checked: ${assignmentError.message}`);
@@ -1236,19 +1251,16 @@ async function deleteStoragePathIfUnreferenced(storagePath: string, exceptResour
 }
 
 const resourceSelect =
-  "id,title,description,resource_type,provider,external_url,embed_url,storage_path,thumbnail_url,cover_image_path,body_content,source_communication_id,file_name,file_size,mime_type,category,tags,status,published_at,created_at,updated_at";
+  "id,content_item_id,title,description,resource_type,provider,external_url,embed_url,storage_path,thumbnail_url,cover_image_path,body_content,source_communication_id,file_name,file_size,mime_type,category,tags,status,published_at,created_at,updated_at";
 
 const trainingSelect =
-  "id,title,description,cover_image_url,category,estimated_duration,status,published_at,created_at,updated_at";
+  "id,content_item_id,title,description,cover_image_url,category,estimated_duration,status,published_at,created_at,updated_at";
 
 const resourceStorageBucket = "peaceworks-resources";
 const communicationStorageBucket = "peaceworks-communications";
 
 const communicationSelect =
   "id,format,title,subject,preview_text,summary,body_content,communication_type,channel,dashboard_presentation,audience_scope,sender_id,reply_to_email,visible_author_name,header_image_path,thumbnail_image_path,image_alt_text,category,tags,visible_from,visible_until,status,published_at,created_at,updated_at";
-
-const contentAssignmentSelect =
-  "id,content_type,content_id,audience_type,circle_id,profile_id,placement,assignment_status,visible_from,visible_until,assigned_by,created_at,updated_at";
 
 async function fetchMonthlyQuestions() {
   const supabase = createAdminSupabaseClient();
@@ -1309,12 +1321,15 @@ async function fetchContentAssignments() {
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("content_assignments")
-    .select(contentAssignmentSelect)
+    .select(canonicalAssignmentSelect)
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(`Content assignments could not be loaded: ${error.message}`);
 
-  return ((data || []) as ContentAssignmentRow[]).map(mapContentAssignment);
+  const rows = await resolveCanonicalAssignmentRows(
+    (data || []) as unknown as Parameters<typeof resolveCanonicalAssignmentRows>[0]
+  );
+  return rows.map(mapContentAssignment);
 }
 
 async function fetchMonthlyQuestionAssignmentCounts(questionIds: string[]) {
@@ -1326,10 +1341,28 @@ async function fetchMonthlyQuestionAssignmentCounts(questionIds: string[]) {
   }
 
   const supabase = createAdminSupabaseClient();
+  const { data: questions, error: questionError } = await supabase
+    .from("monthly_questions")
+    .select("id,content_item_id")
+    .in("id", questionIds);
+
+  if (questionError) {
+    console.warn("Monthly question registry links could not be loaded", questionError);
+    return { assignmentCounts, activeAssignmentCounts };
+  }
+
+  const questionIdByContentItemId = new Map(
+    (questions || []).map((row) => [row.content_item_id, row.id])
+  );
+  const contentItemIds = Array.from(questionIdByContentItemId.keys());
+  if (contentItemIds.length === 0) {
+    return { assignmentCounts, activeAssignmentCounts };
+  }
+
   const { data, error } = await supabase
-    .from("monthly_question_circle_assignments")
-    .select("monthly_question_id, assignment_status")
-    .in("monthly_question_id", questionIds);
+    .from("content_assignments")
+    .select("content_item_id,assignment_status")
+    .in("content_item_id", contentItemIds);
 
   if (error) {
     console.warn("Monthly question assignment counts could not be loaded", error);
@@ -1337,7 +1370,7 @@ async function fetchMonthlyQuestionAssignmentCounts(questionIds: string[]) {
   }
 
   (data || []).forEach((row) => {
-    const questionId = String(row.monthly_question_id || "");
+    const questionId = questionIdByContentItemId.get(row.content_item_id) || "";
     if (!questionId) return;
 
     assignmentCounts.set(questionId, (assignmentCounts.get(questionId) || 0) + 1);
@@ -1472,13 +1505,13 @@ async function mapCommunication(row: CommunicationRow): Promise<AdminCommunicati
 }
 
 function mapContentAssignment(row: ContentAssignmentRow): AdminContentAssignment {
-  const contentType = parseContentType(row.content_type);
+  const contentType = row.content_kind;
   const audienceType = parseAudienceType(row.audience_type);
 
   return {
     id: row.id,
     contentType,
-    contentId: row.content_id || "",
+    contentId: row.source_id,
     audienceType,
     circleId: row.circle_id || "",
     profileId: row.profile_id || "",
@@ -1656,7 +1689,7 @@ async function cleanContentAssignmentInput(input: ContentAssignmentInput) {
     throw new Error("Visible until must be after the start date.");
   }
 
-  await assertPublishedContent(contentType, input.contentId);
+  const contentItemId = await assertPublishedContent(contentType, input.contentId);
 
   const circleIds =
     audienceType === "selected_circle"
@@ -1670,6 +1703,7 @@ async function cleanContentAssignmentInput(input: ContentAssignmentInput) {
   return {
     contentType,
     contentId: input.contentId,
+    contentItemId,
     audienceType,
     placement,
     circleIds,
@@ -1689,81 +1723,6 @@ function cleanPlacement(
   if (valid.includes(value as AdminPlacement)) return value as AdminPlacement;
 
   throw new Error("Choose a valid destination for this content and audience.");
-}
-
-function buildContentAssignmentRows(
-  adminUserId: string,
-  input: Awaited<ReturnType<typeof cleanContentAssignmentInput>>
-) {
-  const base = {
-    content_type: input.contentType,
-    content_id: input.contentId,
-    audience_type: input.audienceType,
-    placement: input.placement,
-    assignment_status: "active",
-    assigned_by: adminUserId,
-    visible_from: input.visibleFrom,
-    visible_until: input.visibleUntil,
-    updated_at: new Date().toISOString(),
-  };
-
-  if (input.audienceType === "selected_circle") {
-    return input.circleIds.map((circleId) => ({
-      ...base,
-      circle_id: circleId,
-      profile_id: null,
-    }));
-  }
-
-  if (input.audienceType === "selected_member" || input.audienceType === "selected_coach") {
-    return input.profileIds.map((profileId) => ({
-      ...base,
-      circle_id: null,
-      profile_id: profileId,
-    }));
-  }
-
-  return [
-    {
-      ...base,
-      circle_id: null,
-      profile_id: null,
-    },
-  ];
-}
-
-async function fetchExistingAssignmentKeys(
-  input: Awaited<ReturnType<typeof cleanContentAssignmentInput>>
-) {
-  const supabase = createAdminSupabaseClient();
-  const { data, error } = await supabase
-    .from("content_assignments")
-    .select("circle_id,profile_id")
-    .eq("content_type", input.contentType)
-    .eq("content_id", input.contentId)
-    .eq("audience_type", input.audienceType)
-    .eq("placement", input.placement)
-    .eq("assignment_status", "active");
-
-  if (error) {
-    throw new Error(`Existing assignments could not be checked: ${error.message}`);
-  }
-
-  return new Set(
-    (data || []).map((row) =>
-      getAssignmentTargetKey(row.circle_id || null, row.profile_id || null)
-    )
-  );
-}
-
-function getAssignmentTargetKey(
-  circleId: string | null | undefined,
-  profileId: string | null | undefined
-) {
-  if (circleId) return `circle:${circleId}`;
-  if (profileId) return `profile:${profileId}`;
-
-  return "global";
 }
 
 function normalizeStringArray(value: unknown) {
@@ -2283,13 +2242,16 @@ async function assertPublishedContent(contentType: AdminContentType, contentId: 
         : "resources";
   const { data, error } = await supabase
     .from(table)
-    .select("id,status")
+    .select("id,status,content_item_id")
     .eq("id", contentId)
     .maybeSingle();
 
   if (error) throw new Error(`Content source could not be verified: ${error.message}`);
   if (!data) throw new Error("Content source was not found.");
   if (data.status !== "published") throw new Error("Only published content can be assigned.");
+  if (!data.content_item_id) throw new Error("Content source is not registered.");
+
+  return data.content_item_id;
 }
 
 async function validateCircleTargets(circleIds: string[]) {
