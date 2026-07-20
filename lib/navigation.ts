@@ -19,6 +19,7 @@ export const routes = {
   login: "/login",
   auth: "/auth",
   myDashboard: "/my-dashboard",
+  messages: "/messages",
   legacyDashboard: "/dashboard",
   account: "/account",
   settings: "/settings",

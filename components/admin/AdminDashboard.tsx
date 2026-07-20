@@ -3291,8 +3291,10 @@ function CommunicationsSection() {
                 label={label}
                 description={
                   channel === "email"
-                    ? "Email preview is available now. Sending is not active yet."
-                    : "Create a reusable distribution placement for this Communication."
+                    ? "Email delivery is not yet enabled. This selection is preserved for future delivery."
+                    : channel === "my_dashboard"
+                      ? "Site message will appear in the PeaceWorks portal when this Communication is published."
+                      : "Create a reusable distribution placement for this Communication."
                 }
                 checked={form.channels.includes(channel)}
                 onChange={() => toggleChannel(channel)}
@@ -4175,7 +4177,13 @@ async function updateContentStatus(
     return;
   }
 
-  onMessage({ type: "success", text: "Library item was updated." });
+  onMessage({
+    type: "success",
+    text:
+      url.includes("/communications/") && status === "published"
+        ? "Communication published. Selected site-message delivery is now available in the PeaceWorks portal. Email delivery was not sent."
+        : "Library item was updated.",
+  });
   await onRefresh();
 }
 
@@ -5104,7 +5112,9 @@ function getDefaultCommunicationChannels(format: CommunicationFormat) {
 
 function getCommunicationChannelOptions(format: CommunicationFormat): Array<[string, string]> {
   const email: Array<[string, string]> = [["email", "Email Preview"]];
-  const dashboard: Array<[string, string]> = [["my_dashboard", "My Dashboard"]];
+  const dashboard: Array<[string, string]> = [
+    ["my_dashboard", "PeaceWorks Site Message"],
+  ];
   const circle: Array<[string, string]> = [["circle_dashboards", "Selected Circle Dashboards"]];
   const coach: Array<[string, string]> = [["coach_dashboards", "Coach Dashboards"]];
 
@@ -5112,7 +5122,7 @@ function getCommunicationChannelOptions(format: CommunicationFormat): Array<[str
   if (format === "newsletter") return [...email, ...dashboard];
   if (format === "blog_article") return [...dashboard, ...circle, ...coach, ...email];
   if (format === "announcement") return [...dashboard, ...circle, ...coach, ...email];
-  if (format === "circle_update") return [...circle, ...email];
+  if (format === "circle_update") return [...circle, ...dashboard, ...email];
 
   return [...dashboard, ...circle, ...coach];
 }

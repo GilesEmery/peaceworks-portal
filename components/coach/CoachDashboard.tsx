@@ -9,6 +9,7 @@ import {
   ExternalLink,
   FileText,
   GraduationCap,
+  MessageCircle,
   Plus,
   Search,
   Target,
@@ -16,6 +17,7 @@ import {
   UserRound,
   type LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import ResultModal from "../assessment/ResultModal";
@@ -57,7 +59,8 @@ type CoachWorkspaceId =
   | "circle-notes"
   | "monthly-questions"
   | "resources"
-  | "trainings";
+  | "trainings"
+  | "messages";
 
 const coachWorkspaceIds: CoachWorkspaceId[] = [
   "members",
@@ -67,6 +70,7 @@ const coachWorkspaceIds: CoachWorkspaceId[] = [
   "monthly-questions",
   "resources",
   "trainings",
+  "messages",
 ];
 
 type CoachApiError = {
@@ -2188,6 +2192,13 @@ function CircleWorkspace({
       description: "Assign structured learning experiences to this Circle.",
       detail: "Ready for Circle learning",
     },
+    {
+      id: "messages",
+      icon: MessageCircle,
+      title: "Messages",
+      description: "Message this Circle, selected members, coaches, or PeaceWorks.",
+      detail: "Secure portal messaging",
+    },
   ];
 
   function openWorkspace(workspaceId: CoachWorkspaceId) {
@@ -2315,6 +2326,22 @@ function CircleWorkspace({
             <div className="coach-empty-state">
               No trainings have been assigned to this Circle yet.
             </div>
+          </section>
+        )}
+
+        {activeWorkspace === "messages" && (
+          <section className="coach-detail-panel">
+            <div className="coach-section-head">
+              <span className="card-label">Portal Messages</span>
+              <h3>Message your Circle</h3>
+            </div>
+            <p className="coach-ready-copy">
+              Recipient choices are limited to this Circle, your direct coaching
+              relationships, shared Circle coaches, and PeaceWorks.
+            </p>
+            <Link className="btn btn-primary" href={routes.messages}>
+              Open Messages
+            </Link>
           </section>
         )}
       </div>
@@ -3853,6 +3880,7 @@ function getWorkspaceLoadingMessage(workspaceId: CoachWorkspaceId | null) {
   if (workspaceId === "monthly-questions") return "Loading monthly questions...";
   if (workspaceId === "resources") return "Loading Circle resources...";
   if (workspaceId === "trainings") return "Loading Circle trainings...";
+  if (workspaceId === "messages") return "Loading Messages...";
   return "Loading selected Circle...";
 }
 

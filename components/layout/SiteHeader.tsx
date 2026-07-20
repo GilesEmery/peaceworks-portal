@@ -21,6 +21,7 @@ import {
 import { supabase } from "../../lib/supabase";
 import AssessmentsDropdown from "./AssessmentsDropdown";
 import IosInstallInstructions from "../pwa/IosInstallInstructions";
+import MessagesNavigationLink from "./MessagesNavigationLink";
 
 type SiteHeaderProps = {
   showSignOut?: boolean;
@@ -232,7 +233,9 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
             ))}
 
           {showSignOut && isAuthenticated ? (
-            <div className="profile-menu" ref={menuRef}>
+            <>
+              <MessagesNavigationLink />
+              <div className="profile-menu" ref={menuRef}>
               <button
                 className="profile-menu-button"
                 type="button"
@@ -291,7 +294,8 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
                   </button>
                 </div>
               )}
-            </div>
+              </div>
+            </>
           ) : (
             <Link
               className={`profile-menu-button profile-login-link${
@@ -425,6 +429,7 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
 
                   {showSignOut && isAuthenticated ? (
                     <>
+                      <MessagesNavigationLink mobile onClick={handleMobileLinkClick} />
                       <Link
                         className={isActivePath(pathname, routes.account) ? "active" : ""}
                         href={routes.account}

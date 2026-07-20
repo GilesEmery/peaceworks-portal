@@ -9,6 +9,7 @@ import {
 } from "../content/assignments";
 import type { ResolvedCanonicalAssignment } from "../content/assignments";
 import type { ContentItemKind } from "../content/registry";
+import { deliverCommunicationToPortal } from "../messaging/service";
 
 export type AdminContentStatus = "draft" | "published" | "archived";
 export type AdminContentType = ContentItemKind;
@@ -1109,7 +1110,15 @@ export async function setAdminCommunicationStatus(
 
   if (error) throw new Error(`Communication status could not be updated: ${error.message}`);
 
-  return mapCommunication(data as CommunicationRow);
+  const portalDelivery =
+    status === "published"
+      ? await deliverCommunicationToPortal(communicationId, adminUserId)
+      : null;
+
+  return {
+    ...mapCommunication(data as CommunicationRow),
+    portalDelivery,
+  };
 }
 
 export async function deleteAdminCommunication(communicationId: string) {

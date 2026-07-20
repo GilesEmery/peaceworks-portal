@@ -611,3 +611,142 @@ left join public.resources r
   on r.content_item_id = ci.id and ci.content_kind = 'resource'
 left join public.trainings t
   on t.content_item_id = ci.id and ci.content_kind = 'training';
+
+-- Secure portal messaging healthy result: every count is zero. Aggregate-only.
+select
+  count(*) filter (
+    where not exists (
+      select 1 from public.conversation_participants cp
+      where cp.conversation_id = c.id
+    )
+  ) as conversations_without_participants,
+  count(*) filter (
+    where char_length(btrim(c.title)) = 0
+  ) as conversations_with_blank_titles,
+  count(*) filter (
+    where char_length(c.title) > 150
+  ) as conversations_with_oversized_titles,
+  count(*) filter (
+    where c.conversation_type <> 'circle'
+      and char_length(btrim(c.title)) not between 1 and 150
+  ) as noncanonical_conversations_without_valid_topics,
+  count(*) filter (
+    where c.source_communication_id is not null
+      and char_length(btrim(c.title)) not between 1 and 150
+  ) as site_message_conversations_without_valid_topics,
+  count(*) filter (
+    where c.conversation_type = 'circle' and ci.id is null
+  ) as circle_conversations_without_circles
+from public.conversations c
+left join public.circles ci on ci.id = c.circle_id;
+
+select
+  count(*) filter (where p.id is null) as participants_without_profiles,
+  count(*) filter (
+    where cp.left_at is not null and cp.left_at < cp.joined_at
+  ) as participants_left_before_joined,
+  count(*) filter (
+    where cp.deleted_at is not null
+      and cp.archived_at is not null
+      and cp.deleted_at < cp.archived_at
+  ) as invalid_archive_delete_timestamps
+from public.conversation_participants cp
+left join public.profiles p on p.id = cp.profile_id;
+
+select count(*) as duplicate_conversation_participant_groups
+from (
+  select 1
+  from public.conversation_participants
+  group by conversation_id, profile_id
+  having count(*) > 1
+) duplicates;
+
+select
+  count(*) filter (where c.id is null) as messages_without_conversations,
+  count(*) filter (
+    where char_length(btrim(m.body)) = 0 or char_length(m.body) > 10000
+  ) as blank_or_oversized_messages
+from public.messages m
+left join public.conversations c on c.id = m.conversation_id;
+
+select count(*) as duplicate_active_circle_conversation_groups
+from (
+  select 1
+  from public.conversations
+  where conversation_type = 'circle' and status = 'active'
+  group by circle_id
+  having count(*) > 1
+) duplicates;
+
+select count(*) as duplicate_conversation_creation_retry_groups
+from (
+  select 1
+  from public.conversations
+  where creation_key is not null
+  group by created_by, creation_key
+  having count(*) > 1
+) duplicates;
+
+select count(*) as duplicate_source_communication_link_groups
+from (
+  select 1
+  from public.conversations
+  where source_communication_id is not null
+  group by source_communication_id
+  having count(*) > 1
+) duplicates;
+
+select count(*) as active_circle_participants_without_current_relationship
+from public.conversation_participants cp
+join public.conversations c on c.id = cp.conversation_id
+where c.conversation_type = 'circle'
+  and c.status = 'active'
+  and cp.left_at is null
+  and (
+    not exists (
+      select 1
+      from public.circles ci
+      where ci.id = c.circle_id and ci.status = 'active'
+    )
+    or (
+      not exists (
+        select 1
+        from public.circle_memberships cm
+        where cm.circle_id = c.circle_id
+          and cm.profile_id = cp.profile_id
+          and cm.status = 'active'
+          and cm.ended_at is null
+      )
+      and not exists (
+        select 1
+        from public.circle_coaches cc
+        where cc.circle_id = c.circle_id
+          and cc.coach_id = cp.profile_id
+          and cc.status = 'active'
+          and cc.ended_at is null
+      )
+    )
+  );
+
+with privileged_profiles as (
+  select distinct pr.profile_id
+  from public.profile_roles pr
+  join public.roles r on r.id = pr.role_id
+  where r.name in ('admin', 'coach', 'circle_member')
+),
+circle_profiles as (
+  select distinct profile_id
+  from public.circle_memberships
+  where status = 'active' and ended_at is null
+)
+select count(*) as regular_members_in_unauthorized_conversations
+from public.conversation_participants cp
+join public.conversations c on c.id = cp.conversation_id
+where cp.left_at is null
+  and c.conversation_type <> 'admin_support'
+  and not exists (
+    select 1 from privileged_profiles pp where pp.profile_id = cp.profile_id
+  )
+  and not exists (
+    select 1 from circle_profiles cmp where cmp.profile_id = cp.profile_id
+  );
