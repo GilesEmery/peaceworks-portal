@@ -8,7 +8,6 @@ import SiteHeader from "../layout/SiteHeader";
 import SiteFooter from "../layout/SiteFooter";
 import ResultModal from "../assessment/ResultModal";
 import ExpandableDashboardSection from "./ExpandableDashboardSection";
-import DashboardMessagesCard from "./DashboardMessagesCard";
 
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
 import { generatePeacePdf } from "../../lib/generatePeacePdf";
@@ -300,8 +299,6 @@ export default function MyDashboard() {
               <h1 className="dashboard-title">Your PeaceWorks Journey</h1>
             </div>
           </div>
-
-          <DashboardMessagesCard />
 
           {isCircleMember && monthlyQuestionSection}
 

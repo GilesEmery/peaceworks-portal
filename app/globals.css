@@ -2432,8 +2432,7 @@ a {
   gap: 12px;
 }
 
-.messages-conversation-list i,
-.dashboard-message-preview-list i {
+.messages-conversation-list i {
   width: 9px;
   height: 9px;
   flex: 0 0 auto;
@@ -2574,48 +2573,6 @@ a {
   display: none;
 }
 
-.dashboard-messages-card {
-  display: grid;
-  gap: 18px;
-  margin-bottom: 30px;
-  padding: 24px;
-}
-
-.dashboard-messages-card h2 {
-  margin: 4px 0 0;
-}
-
-.dashboard-message-preview-list {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.dashboard-message-preview-list button {
-  position: relative;
-  display: grid;
-  gap: 6px;
-  padding: 14px;
-  border: 1px solid rgba(58, 91, 64, 0.14);
-  border-radius: 12px;
-  color: var(--ink);
-  text-align: left;
-  background: rgba(143, 171, 142, 0.09);
-}
-
-.dashboard-message-preview-list span {
-  overflow: hidden;
-  color: var(--muted);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.dashboard-message-preview-list i {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-}
-
 @media (max-width: 760px) {
   .messages-layout {
     display: block;
@@ -2656,9 +2613,6 @@ a {
     justify-content: start;
   }
 
-  .dashboard-message-preview-list {
-    grid-template-columns: 1fr;
-  }
 }
 
 .dashboard-detail-question {
