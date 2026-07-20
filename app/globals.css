@@ -2159,6 +2159,21 @@ a {
   -webkit-line-clamp: 6;
 }
 
+.dashboard-reflection-status {
+  display: grid;
+  gap: 3px;
+  width: fit-content;
+  margin-top: 16px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  color: var(--sage-dark);
+  background: rgba(143, 171, 142, 0.14);
+}
+
+.dashboard-reflection-status strong {
+  font-size: 0.92rem;
+}
+
 .dashboard-assessment-card {
   min-height: 270px;
 }

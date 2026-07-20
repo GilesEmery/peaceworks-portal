@@ -9,6 +9,7 @@ import {
 } from "../content/assignments";
 import type { ResolvedCanonicalAssignment } from "../content/assignments";
 import type { ContentItemKind } from "../content/registry";
+import { parseMonthlyQuestionPeriod } from "../monthlyQuestionPeriod";
 
 export type AdminContentStatus = "draft" | "published" | "archived";
 export type AdminContentType = ContentItemKind;
@@ -55,6 +56,8 @@ export type AdminMonthlyQuestion = {
   status: AdminContentStatus;
   category: string;
   theme: string;
+  questionMonth: number | null;
+  questionYear: number | null;
   assignedCircleCount: number;
   currentUseCount: number;
   publishedAt: string | null;
@@ -230,6 +233,8 @@ export type MonthlyQuestionValues = {
   discussionPrompts: string[];
   category: string;
   theme: string;
+  questionMonth?: number | string | null;
+  questionYear?: number | string | null;
 };
 
 export type ResourceValues = {
@@ -304,6 +309,8 @@ type MonthlyQuestionRow = {
   status: string | null;
   category?: string | null;
   theme?: string | null;
+  question_month: number | null;
+  question_year: number | null;
   published_at: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -416,7 +423,7 @@ type CommunicationNewsletterSectionRow = {
 type ContentAssignmentRow = ResolvedCanonicalAssignment;
 
 const monthlyQuestionSelect =
-  "id,content_item_id,title,opening_reflection,question_text,guidance,discussion_prompts,status,category,theme,published_at,created_at,updated_at";
+  "id,content_item_id,title,opening_reflection,question_text,guidance,discussion_prompts,status,category,theme,question_month,question_year,published_at,created_at,updated_at";
 
 export async function fetchAdminContentStudio(): Promise<AdminContentStudioPayload> {
   const [monthlyQuestions, resources, trainings, communications, communicationSenders, assignments] = await Promise.all([
@@ -520,6 +527,8 @@ export async function createAdminMonthlyQuestion(
       discussion_prompts: cleaned.discussionPrompts,
       category: cleaned.category || null,
       theme: cleaned.theme || null,
+      question_month: cleaned.questionMonth,
+      question_year: cleaned.questionYear,
       status: "draft",
       created_by: adminUserId,
       updated_by: adminUserId,
@@ -540,6 +549,21 @@ export async function updateAdminMonthlyQuestion(
 ) {
   const cleaned = cleanMonthlyQuestion(values);
   const supabase = createAdminSupabaseClient();
+  const { data: existing, error: existingError } = await supabase
+    .from("monthly_questions")
+    .select("status")
+    .eq("id", questionId)
+    .maybeSingle();
+  if (existingError || !existing) {
+    throw new Error(existingError?.message || "Monthly question was not found.");
+  }
+  if (existing.status === "published") {
+    parseMonthlyQuestionPeriod(
+      cleaned.questionMonth,
+      cleaned.questionYear,
+      { required: true }
+    );
+  }
   const { data, error } = await supabase
     .from("monthly_questions")
     .update({
@@ -550,6 +574,8 @@ export async function updateAdminMonthlyQuestion(
       discussion_prompts: cleaned.discussionPrompts,
       category: cleaned.category || null,
       theme: cleaned.theme || null,
+      question_month: cleaned.questionMonth,
+      question_year: cleaned.questionYear,
       updated_by: adminUserId,
       updated_at: new Date().toISOString(),
     })
@@ -575,6 +601,21 @@ export async function setAdminMonthlyQuestionStatus(
   status: AdminContentStatus
 ) {
   const supabase = createAdminSupabaseClient();
+  if (status === "published") {
+    const { data: existing, error: existingError } = await supabase
+      .from("monthly_questions")
+      .select("question_month,question_year")
+      .eq("id", questionId)
+      .maybeSingle();
+    if (existingError || !existing) {
+      throw new Error(existingError?.message || "Monthly question was not found.");
+    }
+    parseMonthlyQuestionPeriod(
+      existing.question_month,
+      existing.question_year,
+      { required: true }
+    );
+  }
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("monthly_questions")
@@ -627,6 +668,8 @@ export async function duplicateAdminMonthlyQuestion(
       discussion_prompts: normalizeStringArray(row.discussion_prompts),
       category: row.category || null,
       theme: row.theme || null,
+      question_month: row.question_month,
+      question_year: row.question_year,
       status: "draft",
       created_by: adminUserId,
       updated_by: adminUserId,
@@ -1401,6 +1444,8 @@ function mapMonthlyQuestion(
     status: parseStatus(row.status),
     category: row.category || "",
     theme: row.theme || "",
+    questionMonth: row.question_month,
+    questionYear: row.question_year,
     assignedCircleCount: assignmentCounts.get(row.id) || 0,
     currentUseCount: activeAssignmentCounts.get(row.id) || 0,
     publishedAt: row.published_at,
@@ -1531,6 +1576,11 @@ function cleanMonthlyQuestion(values: MonthlyQuestionValues) {
 
   if (!title) throw new Error("A title is required.");
   if (!questionText) throw new Error("A monthly question is required.");
+  const period = parseMonthlyQuestionPeriod(
+    values.questionMonth,
+    values.questionYear,
+    { required: false }
+  );
 
   return {
     title,
@@ -1543,6 +1593,8 @@ function cleanMonthlyQuestion(values: MonthlyQuestionValues) {
       .slice(0, 10),
     category: trimText(values.category).slice(0, 120),
     theme: trimText(values.theme).slice(0, 120),
+    questionMonth: period.month,
+    questionYear: period.year,
   };
 }
 
@@ -1690,6 +1742,22 @@ async function cleanContentAssignmentInput(input: ContentAssignmentInput) {
   }
 
   const contentItemId = await assertPublishedContent(contentType, input.contentId);
+  if (contentType === "monthly_question") {
+    const supabase = createAdminSupabaseClient();
+    const { data: question, error } = await supabase
+      .from("monthly_questions")
+      .select("question_month,question_year")
+      .eq("id", input.contentId)
+      .maybeSingle();
+    if (error || !question) {
+      throw new Error(error?.message || "Monthly question was not found.");
+    }
+    parseMonthlyQuestionPeriod(
+      question.question_month,
+      question.question_year,
+      { required: true }
+    );
+  }
 
   const circleIds =
     audienceType === "selected_circle"

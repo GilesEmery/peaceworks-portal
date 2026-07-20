@@ -12,6 +12,7 @@ import {
   monthlyQuestionReflectionMaxLength,
   type MonthlyQuestionReflectionResponse,
 } from "../../lib/monthlyQuestionReflections";
+import { formatMonthlyQuestionPeriod } from "../../lib/monthlyQuestionPeriod";
 import { routes } from "../../lib/navigation";
 import { supabase } from "../../lib/supabase";
 import SiteFooter from "../layout/SiteFooter";
@@ -211,6 +212,10 @@ function MonthlyQuestionDetail({
   }, [accessToken, question.assignmentId]);
 
   const dirty = body !== savedBody;
+  const period = formatMonthlyQuestionPeriod(
+    question.questionMonth,
+    question.questionYear
+  );
 
   async function saveReflection() {
     if (status === "saving" || body.length > monthlyQuestionReflectionMaxLength) {
@@ -260,9 +265,8 @@ function MonthlyQuestionDetail({
   return (
     <article className="portal-card dashboard-detail-card">
       <span className="card-label">
-        {isCircleMember
-          ? "Circle Member Monthly Question"
-          : "Monthly Question"}
+        {period ? `${period} · ` : ""}
+        {isCircleMember ? "Circle Member Monthly Question" : "Monthly Question"}
       </span>
       <h1>{question.title || "This Month's Question"}</h1>
       {(question.theme || question.category) && (

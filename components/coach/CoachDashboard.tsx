@@ -39,6 +39,7 @@ import type {
   CoachMonthlyQuestion,
   CoachMonthlyQuestionsPayload,
 } from "../../lib/coach/monthlyQuestions";
+import { formatMonthlyQuestionPeriod } from "../../lib/monthlyQuestionPeriod";
 import type {
   CoachResource,
   CoachResourceAssignment,
@@ -1436,7 +1437,16 @@ function MonthlyQuestionTile({
     <article className={`coach-monthly-question-tile ${question.status}`}>
       <div>
         <span>Published</span>
-        <small>{question.category || question.theme || question.author.name || "PeaceWorks"}</small>
+        <small>
+          {formatMonthlyQuestionPeriod(
+            question.questionMonth,
+            question.questionYear
+          ) ||
+            question.category ||
+            question.theme ||
+            question.author.name ||
+            "PeaceWorks"}
+        </small>
       </div>
       <strong>{question.title || shorten(question.questionText, 78)}</strong>
       {question.openingReflection && <p>{shorten(question.openingReflection, 140)}</p>}
@@ -1620,6 +1630,17 @@ function MonthlyQuestionReadOnlyContent({
 }) {
   return (
     <div className="monthly-question-member-card">
+      {formatMonthlyQuestionPeriod(
+        question.questionMonth,
+        question.questionYear
+      ) && (
+        <span className="card-label">
+          {formatMonthlyQuestionPeriod(
+            question.questionMonth,
+            question.questionYear
+          )}
+        </span>
+      )}
       {question.openingReflection && <p>{question.openingReflection}</p>}
       <blockquote>{question.questionText}</blockquote>
       {question.guidance && <p>{question.guidance}</p>}
@@ -2804,9 +2825,15 @@ function MonthlyQuestionReflectionsPanel({
         {reflections.map((reflection) => (
           <article className="coach-reflection-card" key={reflection.id}>
             <span className="card-label">
-              {reflection.theme ||
-                reflection.category ||
-                "Monthly Question"}
+              {formatMonthlyQuestionPeriod(
+                reflection.questionMonth,
+                reflection.questionYear
+              )
+                ? `${formatMonthlyQuestionPeriod(
+                    reflection.questionMonth,
+                    reflection.questionYear
+                  )} Monthly Question`
+                : "Monthly Question"}
             </span>
             <h5>{reflection.title}</h5>
             <p className="coach-reflection-question">{reflection.question}</p>

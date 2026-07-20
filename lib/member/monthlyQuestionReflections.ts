@@ -197,7 +197,9 @@ export async function fetchCoachMonthlyQuestionReflections(input: {
   const [questionsResponse, circlesResponse] = await Promise.all([
     supabase
       .from("monthly_questions")
-      .select("id,title,theme,category,question_text")
+      .select(
+        "id,title,theme,category,question_text,question_month,question_year"
+      )
       .in("id", questionIds),
     circleIds.length
       ? supabase.from("circles").select("id,name").in("id", circleIds)
@@ -228,6 +230,8 @@ export async function fetchCoachMonthlyQuestionReflections(input: {
         title: question.title || "Monthly Question",
         theme: question.theme || "",
         category: question.category || "",
+        questionMonth: question.question_month ?? null,
+        questionYear: question.question_year ?? null,
         circle: assignment.circle_id
           ? {
               id: assignment.circle_id,

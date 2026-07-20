@@ -471,3 +471,37 @@ from (
   group by profile_id, content_assignment_id
   having count(*) > 1
 ) duplicate_groups;
+
+-- Update 8 healthy result after legacy repair: every count is zero. This
+-- returns period metadata only and never selects question or reflection text.
+select
+  count(*) filter (
+    where question_month is not null and question_year is null
+  ) as month_without_year,
+  count(*) filter (
+    where question_month is null and question_year is not null
+  ) as year_without_month,
+  count(*) filter (
+    where question_month is not null
+      and question_month not between 1 and 12
+  ) as invalid_question_months,
+  count(*) filter (
+    where question_year is not null
+      and question_year not between 2020 and 2100
+  ) as invalid_question_years,
+  count(*) filter (
+    where status = 'published'
+      and (question_month is null or question_year is null)
+  ) as published_questions_without_period
+from public.monthly_questions;
+
+-- Update 8 healthy result after legacy repair: zero.
+select count(*) as active_assigned_questions_without_period
+from public.content_assignments ca
+join public.content_items ci
+  on ci.id = ca.content_item_id
+ and ci.content_kind = 'monthly_question'
+join public.monthly_questions mq
+  on mq.content_item_id = ca.content_item_id
+where ca.assignment_status = 'active'
+  and (mq.question_month is null or mq.question_year is null);

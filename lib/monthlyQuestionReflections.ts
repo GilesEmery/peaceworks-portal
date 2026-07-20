@@ -34,6 +34,8 @@ export type CoachMonthlyQuestionReflection = {
   title: string;
   theme: string;
   category: string;
+  questionMonth: number | null;
+  questionYear: number | null;
   circle: { id: string; name: string } | null;
   audienceType: string;
   body: string;

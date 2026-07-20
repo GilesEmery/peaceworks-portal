@@ -33,6 +33,10 @@ export type DashboardMonthlyQuestion = {
   discussionPrompts: string[];
   guidance: string;
   category: string;
+  questionMonth: number | null;
+  questionYear: number | null;
+  hasReflection: boolean;
+  reflectionUpdatedAt: string | null;
   visibleFrom: string | null;
   visibleUntil: string | null;
   placement: string;
@@ -303,7 +307,8 @@ export async function fetchMemberDashboard(
   );
   const sections = await resolveDashboardContent(
     matchingAssignments,
-    new Map(circles.map((circle) => [circle.id, circle.name]))
+    new Map(circles.map((circle) => [circle.id, circle.name])),
+    memberId
   );
   const roles = (rolesResponse.data || []).map((role) => role.name);
   const assessment = assessmentResponse.data;
@@ -420,7 +425,8 @@ function compareAssignments(
 
 async function resolveDashboardContent(
   assignments: ResolvedCanonicalAssignment[],
-  circleNames: Map<string, string>
+  circleNames: Map<string, string>,
+  memberId: string
 ): Promise<MemberDashboardResponse["sections"]> {
   const supabase = createAdminSupabaseClient();
   const byKind = {
@@ -435,13 +441,18 @@ async function resolveDashboardContent(
     ),
   };
 
-  const [questionsResponse, resourcesResponse, trainingsResponse] =
+  const [
+    questionsResponse,
+    resourcesResponse,
+    trainingsResponse,
+    reflectionsResponse,
+  ] =
     await Promise.all([
       byKind.monthly_question.length
         ? supabase
             .from("monthly_questions")
             .select(
-              "id,content_item_id,title,theme,question_text,opening_reflection,discussion_prompts,guidance,category,status"
+              "id,content_item_id,title,theme,question_text,opening_reflection,discussion_prompts,guidance,category,question_month,question_year,status"
             )
             .in(
               "content_item_id",
@@ -473,17 +484,34 @@ async function resolveDashboardContent(
             )
             .eq("status", "published")
         : Promise.resolve({ data: [], error: null }),
+      byKind.monthly_question.length
+        ? supabase
+            .from("monthly_question_reflections")
+            .select("content_assignment_id,updated_at")
+            .eq("profile_id", memberId)
+            .in(
+              "content_assignment_id",
+              byKind.monthly_question.map((assignment) => assignment.id)
+            )
+        : Promise.resolve({ data: [], error: null }),
     ]);
 
   const sourceError = [
     questionsResponse.error,
     resourcesResponse.error,
     trainingsResponse.error,
+    reflectionsResponse.error,
   ].find(Boolean);
   if (sourceError) throw new Error(`Dashboard content query failed: ${sourceError.message}`);
 
   const questionByContentItem = new Map(
     (questionsResponse.data || []).map((row) => [row.content_item_id, row])
+  );
+  const reflectionByAssignmentId = new Map(
+    (reflectionsResponse.data || []).map((row) => [
+      row.content_assignment_id,
+      row.updated_at,
+    ])
   );
   const circleQuestionAssignments = byKind.monthly_question.filter(
     (assignment) =>
@@ -526,6 +554,11 @@ async function resolveDashboardContent(
         discussionPrompts: normalizeStrings(row.discussion_prompts),
         guidance: row.guidance || "",
         category: row.category || "",
+        questionMonth: row.question_month ?? null,
+        questionYear: row.question_year ?? null,
+        hasReflection: reflectionByAssignmentId.has(assignment.id),
+        reflectionUpdatedAt:
+          reflectionByAssignmentId.get(assignment.id) || null,
         visibleFrom: assignment.visible_from,
         visibleUntil: assignment.visible_until,
         placement: assignment.placement || "",

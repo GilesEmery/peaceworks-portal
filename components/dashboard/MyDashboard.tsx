@@ -18,6 +18,7 @@ import {
 } from "../../data/peaceReport";
 import { routes } from "../../lib/navigation";
 import type { MemberDashboardResponse } from "../../lib/member/dashboard";
+import { formatMonthlyQuestionPeriod } from "../../lib/monthlyQuestionPeriod";
 
 type DashboardAssessmentResult = {
   scores: PeaceAssessmentResult["scores"];
@@ -210,7 +211,10 @@ export default function MyDashboard() {
           >
             <div>
               <span className="card-label">
-                {question.theme || question.category || "Monthly Question"}
+                {formatMonthlyQuestionTileLabel(
+                  question.questionMonth,
+                  question.questionYear
+                )}
               </span>
               <h3>{question.question}</h3>
               {question.coachIntroduction && (
@@ -219,6 +223,16 @@ export default function MyDashboard() {
                 </p>
               )}
               {question.circle && <small>{question.circle.name}</small>}
+              {question.hasReflection && (
+                <div className="dashboard-reflection-status">
+                  <strong>Reflection started</strong>
+                  {question.reflectionUpdatedAt && (
+                    <small>
+                      Last saved {formatDate(question.reflectionUpdatedAt)}
+                    </small>
+                  )}
+                </div>
+              )}
             </div>
             <button
               className="btn btn-primary"
@@ -230,9 +244,9 @@ export default function MyDashboard() {
               }
               aria-label={`Reflect on ${question.title || "this Monthly Question"}`}
             >
-              {isCircleMember
-                ? "Reflect and Take Notes"
-                : "Reflect on This Question"}
+              {question.hasReflection
+                ? "Continue Your Reflection"
+                : "Reflect and Take Notes"}
             </button>
           </article>
         )}
@@ -457,6 +471,14 @@ function formatDate(value: string) {
 
 function formatLabel(value: string) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatMonthlyQuestionTileLabel(
+  month: number | null,
+  year: number | null
+) {
+  const period = formatMonthlyQuestionPeriod(month, year);
+  return period ? `${period.toUpperCase()} · MONTHLY QUESTION` : "MONTHLY QUESTION";
 }
 
 function getSecondaryIdentityType(
