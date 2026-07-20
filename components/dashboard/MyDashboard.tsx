@@ -9,6 +9,7 @@ import SiteFooter from "../layout/SiteFooter";
 import ResultModal from "../assessment/ResultModal";
 
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
+import { generatePeacePdf } from "../../lib/generatePeacePdf";
 import { peaceAssessmentProfiles } from "../../data/peaceAssessmentProfiles";
 import {
   buildPeaceReportProfile,
@@ -38,6 +39,7 @@ export default function MyDashboard() {
   const [latestResult, setLatestResult] =
     useState<DashboardAssessmentResult | null>(null);
   const [modalResult, setModalResult] = useState<PeaceAssessmentResult | null>(null);
+  const [printPending, setPrintPending] = useState(false);
 
   const latestExpandedProfile = latestResult
     ? buildPeaceReportProfile({
@@ -122,6 +124,18 @@ export default function MyDashboard() {
     loadDashboard();
   }, [router]);
 
+  useEffect(() => {
+    if (!modalResult || !printPending) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      void generatePeacePdf(
+        `Peace-Assessment-${(latestMainType || "Results").replaceAll(" ", "-")}.pdf`
+      ).finally(() => setPrintPending(false));
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [latestMainType, modalResult, printPending]);
+
   function openResultModal() {
     if (!latestResult) return;
 
@@ -143,6 +157,12 @@ export default function MyDashboard() {
       basePattern: latestResult.basePattern,
       profileContent,
     });
+  }
+
+  function printResult() {
+    if (!latestResult) return;
+    setPrintPending(true);
+    openResultModal();
   }
 
   if (loading) {
@@ -188,120 +208,177 @@ export default function MyDashboard() {
             </div>
           </div>
 
-          <div className="dashboard-wide-grid">
-            <article className="portal-card dashboard-wide-card">
-              <div>
-                <span className="card-label">Assessment</span>
-                <h3>Take the Peace Assessment</h3>
-                <p>
-                  Take the Peace Assessment to discover what tends to steal
-                  your peace, how you respond under pressure, and what practices
-                  can help you grow.
-                </p>
-              </div>
-
-              <button
-                className="btn btn-primary"
-                type="button"
-                onClick={() => router.push(routes.peaceAssessment)}
-              >
-                Take Peace Assessment
-              </button>
-            </article>
-
-            <article className="portal-card dashboard-wide-card">
-              <div>
-                <span className="card-label">Latest Result</span>
-                <h3>Your Peace Assessment Results</h3>
-
-                {latestResult ? (
-                  <>
-                    <div className="dashboard-profile-identity">
-                      <strong>{latestMainType}</strong>
-                      <span>
-                        {latestExpandedProfile?.title ||
-                          latestResult.peaceProfile}
-                      </span>
-                    </div>
-
-                    <div className="dashboard-result-tags">
-                      <span>
-                        {latestExpandedProfile?.profileCode ||
-                          latestResult.basePattern}
-                      </span>
-                      <span>{latestResult.capacityStage} Capacity</span>
-                    </div>
-                  </>
-                ) : (
+          <DashboardSection eyebrow="Peace Assessment" title="Your Peace Profile">
+            {latestResult && dashboard.assessment ? (
+              <article className="portal-card dashboard-journey-card dashboard-assessment-card">
+                <div>
+                  <span className="card-label">Your Peace Profile</span>
+                  <div className="dashboard-profile-identity">
+                    <strong>{latestMainType}</strong>
+                    <span>
+                      {latestExpandedProfile?.title || latestResult.peaceProfile}
+                    </span>
+                  </div>
                   <p>
-                    Once you complete the Peace Assessment, your latest result
-                    will appear here.
+                    {latestResult.secondaryIdentityType
+                      ? `Your secondary identity is ${latestResult.secondaryIdentityType}. `
+                      : ""}
+                    Revisit the patterns and practices that support your peace.
                   </p>
-                )}
-              </div>
+                  {dashboard.assessment.completedAt && (
+                    <small>
+                      Completed {formatDate(dashboard.assessment.completedAt)}
+                    </small>
+                  )}
+                </div>
+                <div className="dashboard-card-actions">
+                  <button className="btn btn-primary" type="button" onClick={openResultModal}>
+                    View Full Results
+                  </button>
+                  <button className="btn btn-secondary" type="button" onClick={printResult}>
+                    Print
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    type="button"
+                    onClick={() => router.push(routes.peaceAssessment)}
+                  >
+                    Retake Assessment
+                  </button>
+                </div>
+              </article>
+            ) : (
+              <article className="portal-card dashboard-journey-card dashboard-assessment-card">
+                <div>
+                  <span className="card-label">Peace Assessment</span>
+                  <h3>Discover your Peace Profile</h3>
+                  <p>
+                    See what tends to steal your peace, how you respond under
+                    pressure, and which practices can help you grow.
+                  </p>
+                </div>
+                <div className="dashboard-card-actions">
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    onClick={() => router.push(routes.peaceAssessment)}
+                  >
+                    Take the Assessment
+                  </button>
+                </div>
+              </article>
+            )}
+          </DashboardSection>
 
-              <button
-                className="btn btn-secondary"
-                type="button"
-                onClick={
-                  latestResult
-                    ? openResultModal
-                    : () => router.push(routes.peaceAssessment)
-                }
-              >
-                {latestResult ? "View Full Result" : "Start Peace Assessment"}
-              </button>
-            </article>
-          </div>
+          {dashboard.sections.monthlyQuestions.length > 0 && (
+            <DashboardSection eyebrow="Monthly Question" title="Pause and Reflect">
+              {dashboard.sections.monthlyQuestions.map((question) => (
+                <article className="portal-card dashboard-journey-card" key={question.contentItemId}>
+                  <div>
+                    <span className="card-label">
+                      {question.theme || question.category || "Monthly Question"}
+                    </span>
+                    <h3>{question.question}</h3>
+                    {question.coachIntroduction && (
+                      <p className="dashboard-coach-introduction">
+                        {question.coachIntroduction}
+                      </p>
+                    )}
+                    {question.circle && <small>{question.circle.name}</small>}
+                  </div>
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    onClick={() =>
+                      router.push(`/my-dashboard/monthly-questions/${question.id}`)
+                    }
+                    aria-label={`Reflect on ${question.title || "this Monthly Question"}`}
+                  >
+                    Reflect on This Question
+                  </button>
+                </article>
+              ))}
+            </DashboardSection>
+          )}
 
-          <div className="dashboard-divider" />
+          {dashboard.sections.trainings.length > 0 && (
+            <DashboardSection eyebrow="Training" title="Continue Learning">
+              {dashboard.sections.trainings.map((training) => (
+                <article className="portal-card dashboard-journey-card" key={training.contentItemId}>
+                  {training.coverUrl && (
+                    <div
+                      className="dashboard-tile-media"
+                      style={{ backgroundImage: `url("${training.coverUrl}")` }}
+                      role="img"
+                      aria-label={`${training.title} cover`}
+                    />
+                  )}
+                  <div>
+                    <span className="card-label">{training.category || "Training"}</span>
+                    <h3>{training.title}</h3>
+                    {training.description && <p>{training.description}</p>}
+                    {training.duration && <small>{training.duration}</small>}
+                  </div>
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    onClick={() =>
+                      router.push(`/my-dashboard/trainings/${training.id}`)
+                    }
+                    aria-label={`View training: ${training.title}`}
+                  >
+                    View Training
+                  </button>
+                </article>
+              ))}
+            </DashboardSection>
+          )}
 
-          <div className="section-head journey-head">
-            <div>
-              <div className="eyebrow">PeaceWorks Pathways</div>
-              <h2>Your PeaceWorks Journey</h2>
-            </div>
-          </div>
-
-          <div className="dashboard-wide-grid">
-            <article className="portal-card dashboard-wide-card">
-              <div>
-                <span className="card-label">Circle Members</span>
-                <h3>Your Circle</h3>
-                <p>
-                  Enter your Circle space for your journey pathway, courses,
-                  assessments, notes, graphs, and shared PeaceWorks resources.
-                </p>
-              </div>
-
-              <button
-                className="btn btn-primary"
-                type="button"
-                onClick={() => router.push(routes.circle)}
-              >
-                Enter Your Circle
-              </button>
-            </article>
-
-            <article className="portal-card dashboard-wide-card">
-              <div>
-                <span className="card-label">Coaches</span>
-                <h3>Coach Portal</h3>
-                <p>
-                  Access coaching pathways, Circle support tools, participant
-                  insights, notes, resources, and future reporting.
-                </p>
-              </div>
-
-              <button
-                className="btn btn-secondary"
-                type="button"
-                onClick={() => router.push(routes.coach)}
-              >
-                View Coach Portal
-              </button>
-            </article>
-          </div>
+          {dashboard.sections.resources.length > 0 && (
+            <DashboardSection eyebrow="Resources" title="Tools for Your Journey">
+              {dashboard.sections.resources.map((resource) => (
+                <article className="portal-card dashboard-journey-card" key={resource.contentItemId}>
+                  {(resource.coverUrl || resource.thumbnailUrl) && (
+                    <div
+                      className="dashboard-tile-media"
+                      style={{
+                        backgroundImage: `url("${resource.coverUrl || resource.thumbnailUrl}")`,
+                      }}
+                      role="img"
+                      aria-label={`${resource.title} cover`}
+                    />
+                  )}
+                  <div>
+                    <span className="card-label">{formatLabel(resource.resourceType)}</span>
+                    <h3>{resource.title}</h3>
+                    {resource.description && <p>{resource.description}</p>}
+                    {resource.tags.length > 0 && (
+                      <div className="dashboard-result-tags">
+                        {resource.tags.slice(0, 3).map((tag) => (
+                          <span key={tag}>{tag}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {resource.url ? (
+                    <a
+                      className="btn btn-primary"
+                      href={resource.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Open resource: ${resource.title}`}
+                    >
+                      Open Resource
+                    </a>
+                  ) : (
+                    <button className="btn btn-secondary" type="button" disabled>
+                      Resource Unavailable
+                    </button>
+                  )}
+                </article>
+              ))}
+            </DashboardSection>
+          )}
         </div>
       </section>
 
@@ -316,6 +393,42 @@ export default function MyDashboard() {
       )}
     </main>
   );
+}
+
+function DashboardSection({
+  eyebrow,
+  title,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="dashboard-journey-section">
+      <div className="section-head journey-head">
+        <div>
+          <div className="eyebrow">{eyebrow}</div>
+          <h2>{title}</h2>
+        </div>
+      </div>
+      <div className="dashboard-journey-grid">{children}</div>
+    </section>
+  );
+}
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function formatLabel(value: string) {
+  return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function getSecondaryIdentityType(
