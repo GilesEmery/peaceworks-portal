@@ -15,16 +15,17 @@ import {
   getPeaceMainType,
 } from "../../data/peaceReport";
 import { routes } from "../../lib/navigation";
+import type { MemberDashboardResponse } from "../../lib/member/dashboard";
 
 type DashboardAssessmentResult = {
   scores: PeaceAssessmentResult["scores"];
-  identity_type: PeaceAssessmentResult["identityType"];
-  secondary_identity_type?: PeaceAssessmentResult["identityType"] | null;
-  response_type: PeaceAssessmentResult["responseType"];
-  processing_style: PeaceAssessmentResult["processingStyle"];
-  capacity_stage: PeaceAssessmentResult["capacityStage"];
-  peace_profile: string;
-  base_pattern: string;
+  identityType: PeaceAssessmentResult["identityType"];
+  secondaryIdentityType?: PeaceAssessmentResult["identityType"] | null;
+  responseType: PeaceAssessmentResult["responseType"];
+  processingStyle: PeaceAssessmentResult["processingStyle"];
+  capacityStage: PeaceAssessmentResult["capacityStage"];
+  peaceProfile: string;
+  basePattern: string;
 };
 
 export default function MyDashboard() {
@@ -32,22 +33,24 @@ export default function MyDashboard() {
 
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState("");
+  const [dashboard, setDashboard] = useState<MemberDashboardResponse | null>(null);
+  const [loadError, setLoadError] = useState("");
   const [latestResult, setLatestResult] =
     useState<DashboardAssessmentResult | null>(null);
   const [modalResult, setModalResult] = useState<PeaceAssessmentResult | null>(null);
 
   const latestExpandedProfile = latestResult
     ? buildPeaceReportProfile({
-        identityAnchor: latestResult.identity_type,
+        identityAnchor: latestResult.identityType,
         secondaryPeaceStrategy:
-          latestResult.secondary_identity_type ||
-          getSecondaryIdentityType(latestResult.scores, latestResult.identity_type),
-        pressureResponse: latestResult.response_type,
-        processingStyle: latestResult.processing_style,
+          latestResult.secondaryIdentityType ||
+          getSecondaryIdentityType(latestResult.scores, latestResult.identityType),
+        pressureResponse: latestResult.responseType,
+        processingStyle: latestResult.processingStyle,
       })
     : null;
   const latestMainType = latestResult
-    ? getPeaceMainType(latestResult.identity_type, latestResult.response_type)
+    ? getPeaceMainType(latestResult.identityType, latestResult.responseType)
     : "";
 
   useEffect(() => {
@@ -63,17 +66,57 @@ export default function MyDashboard() {
 
       setUserEmail(session.user.email || "");
 
-      const { data } = await supabase
-        .from("peace_assessment_results")
-        .select("*")
-        .eq("user_id", session.user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
+      try {
+        const response = await fetch("/api/member/dashboard", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as
+          | MemberDashboardResponse
+          | { ok: false; message?: string };
 
-      if (data) setLatestResult(data as DashboardAssessmentResult);
+        if (response.status === 401) {
+          router.push(routes.login);
+          return;
+        }
+        if (!response.ok || !payload.ok) {
+          throw new Error(
+            "message" in payload && payload.message
+              ? payload.message
+              : "Your dashboard could not be loaded."
+          );
+        }
 
-      setLoading(false);
+        setDashboard(payload);
+        if (payload.assessment) {
+          setLatestResult({
+            scores: payload.assessment.scores as PeaceAssessmentResult["scores"],
+            identityType:
+              payload.assessment.identityType as PeaceAssessmentResult["identityType"],
+            secondaryIdentityType:
+              payload.assessment
+                .secondaryIdentityType as PeaceAssessmentResult["identityType"] | null,
+            responseType:
+              payload.assessment.responseType as PeaceAssessmentResult["responseType"],
+            processingStyle:
+              payload.assessment
+                .processingStyle as PeaceAssessmentResult["processingStyle"],
+            capacityStage:
+              payload.assessment.capacityStage as PeaceAssessmentResult["capacityStage"],
+            peaceProfile: payload.assessment.peaceProfile,
+            basePattern: payload.assessment.basePattern,
+          });
+        }
+      } catch (error) {
+        console.error("Member dashboard load failed", error);
+        setLoadError(
+          error instanceof Error
+            ? error.message
+            : "Your dashboard could not be loaded."
+        );
+      } finally {
+        setLoading(false);
+      }
     }
 
     loadDashboard();
@@ -83,21 +126,21 @@ export default function MyDashboard() {
     if (!latestResult) return;
 
     const secondaryIdentityType =
-      latestResult.secondary_identity_type ||
-      getSecondaryIdentityType(latestResult.scores, latestResult.identity_type);
+      latestResult.secondaryIdentityType ||
+      getSecondaryIdentityType(latestResult.scores, latestResult.identityType);
 
-    const profileKey = `${latestResult.identity_type}|${latestResult.response_type}|${latestResult.processing_style}`;
+    const profileKey = `${latestResult.identityType}|${latestResult.responseType}|${latestResult.processingStyle}`;
     const profileContent = peaceAssessmentProfiles[profileKey];
 
     setModalResult({
       scores: latestResult.scores,
-      identityType: latestResult.identity_type,
+      identityType: latestResult.identityType,
       secondaryIdentityType,
-      responseType: latestResult.response_type,
-      processingStyle: latestResult.processing_style,
-      capacityStage: latestResult.capacity_stage,
-      peaceProfile: latestExpandedProfile?.title || latestResult.peace_profile,
-      basePattern: latestResult.base_pattern,
+      responseType: latestResult.responseType,
+      processingStyle: latestResult.processingStyle,
+      capacityStage: latestResult.capacityStage,
+      peaceProfile: latestExpandedProfile?.title || latestResult.peaceProfile,
+      basePattern: latestResult.basePattern,
       profileContent,
     });
   }
@@ -108,6 +151,20 @@ export default function MyDashboard() {
         <SiteHeader />
         <section className="portal-hero">
           <div className="container">Loading dashboard...</div>
+        </section>
+        <SiteFooter />
+      </main>
+    );
+  }
+
+  if (loadError || !dashboard) {
+    return (
+      <main className="portal-page">
+        <SiteHeader />
+        <section className="portal-hero">
+          <div className="container">
+            {loadError || "Your dashboard could not be loaded."}
+          </div>
         </section>
         <SiteFooter />
       </main>
@@ -163,16 +220,16 @@ export default function MyDashboard() {
                       <strong>{latestMainType}</strong>
                       <span>
                         {latestExpandedProfile?.title ||
-                          latestResult.peace_profile}
+                          latestResult.peaceProfile}
                       </span>
                     </div>
 
                     <div className="dashboard-result-tags">
                       <span>
                         {latestExpandedProfile?.profileCode ||
-                          latestResult.base_pattern}
+                          latestResult.basePattern}
                       </span>
-                      <span>{latestResult.capacity_stage} Capacity</span>
+                      <span>{latestResult.capacityStage} Capacity</span>
                     </div>
                   </>
                 ) : (

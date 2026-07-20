@@ -1,0 +1,649 @@
+import "server-only";
+
+import { createAdminSupabaseClient } from "../admin/authorization";
+import {
+  canonicalAssignmentSelect,
+  resolveCanonicalAssignmentRows,
+  type ResolvedCanonicalAssignment,
+} from "../content/assignments";
+import type { MemberAuthResult } from "./authorization";
+
+export type DashboardCoach = {
+  id: string;
+  displayName: string;
+  avatarPath: string;
+};
+
+export type DashboardCircle = {
+  id: string;
+  name: string;
+  description: string;
+  joinedAt: string | null;
+  coaches: DashboardCoach[];
+};
+
+export type DashboardMonthlyQuestion = {
+  id: string;
+  contentItemId: string;
+  title: string;
+  theme: string;
+  question: string;
+  openingReflection: string;
+  discussionPrompts: string[];
+  guidance: string;
+  category: string;
+  visibleFrom: string | null;
+  visibleUntil: string | null;
+  placement: string;
+  circle: { id: string; name: string } | null;
+  coachIntroduction: string | null;
+};
+
+export type DashboardResource = {
+  id: string;
+  contentItemId: string;
+  title: string;
+  description: string;
+  resourceType: string;
+  url: string | null;
+  thumbnailUrl: string | null;
+  coverUrl: string | null;
+  tags: string[];
+  visibleFrom: string | null;
+  visibleUntil: string | null;
+  placement: string;
+};
+
+export type DashboardTraining = {
+  id: string;
+  contentItemId: string;
+  title: string;
+  description: string;
+  category: string;
+  duration: string;
+  coverUrl: string | null;
+  visibleFrom: string | null;
+  visibleUntil: string | null;
+  placement: string;
+};
+
+export type MemberDashboardResponse = {
+  ok: true;
+  member: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    displayName: string;
+    organization: string;
+    jobTitle: string;
+    avatarPath: string;
+    roles: string[];
+  };
+  assessment: {
+    hasCompletedAssessment: true;
+    latestResultId: string;
+    completedAt: string | null;
+    peaceProfile: string;
+    basePattern: string;
+    identityType: string;
+    secondaryIdentityType: string | null;
+    responseType: string;
+    processingStyle: string;
+    capacityStage: string;
+    scores: Record<string, number>;
+  } | null;
+  circles: DashboardCircle[];
+  directCoaches: Array<
+    DashboardCoach & {
+      isPrimary: boolean;
+      assignedAt: string | null;
+    }
+  >;
+  eligibility: {
+    hasActiveCircle: boolean;
+    isCoach: boolean;
+    canAccessCircle: boolean;
+    canAccessCoach: boolean;
+  };
+  sections: {
+    monthlyQuestions: DashboardMonthlyQuestion[];
+    resources: DashboardResource[];
+    trainings: DashboardTraining[];
+  };
+};
+
+type ProfileRow = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  organization: string | null;
+  job_title: string | null;
+  avatar_path: string | null;
+};
+
+const audienceRank: Record<string, number> = {
+  selected_member: 4,
+  selected_circle: 3,
+  all_circle_members: 2,
+  all_members: 1,
+};
+
+export async function fetchMemberDashboard(
+  auth: Extract<MemberAuthResult, { ok: true }>
+): Promise<MemberDashboardResponse> {
+  const supabase = createAdminSupabaseClient();
+  const memberId = auth.user.id;
+  const now = new Date().toISOString();
+
+  const [
+    profileResponse,
+    profileRolesResponse,
+    membershipsResponse,
+    directAssignmentsResponse,
+    assessmentResponse,
+    assignmentsResponse,
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id,first_name,last_name,organization,job_title,avatar_path")
+      .eq("id", memberId)
+      .single(),
+    supabase.from("profile_roles").select("role_id").eq("profile_id", memberId),
+    supabase
+      .from("circle_memberships")
+      .select("circle_id,joined_at")
+      .eq("profile_id", memberId)
+      .eq("status", "active")
+      .is("ended_at", null),
+    supabase
+      .from("coach_assignments")
+      .select("coach_id,is_primary,assigned_at")
+      .eq("member_id", memberId)
+      .eq("status", "active")
+      .is("ended_at", null),
+    supabase
+      .from("peace_assessment_results")
+      .select(
+        "id,created_at,peace_profile,base_pattern,identity_type,secondary_identity_type,response_type,processing_style,capacity_stage,scores"
+      )
+      .eq("user_id", memberId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("content_assignments")
+      .select(canonicalAssignmentSelect)
+      .eq("assignment_status", "active")
+      .in("audience_type", [
+        "all_members",
+        "all_circle_members",
+        "selected_member",
+        "selected_circle",
+      ]),
+  ]);
+
+  const firstError = [
+    profileResponse.error,
+    profileRolesResponse.error,
+    membershipsResponse.error,
+    directAssignmentsResponse.error,
+    assessmentResponse.error,
+    assignmentsResponse.error,
+  ].find(Boolean);
+  if (firstError) throw new Error(`Member dashboard query failed: ${firstError.message}`);
+
+  const profile = profileResponse.data as ProfileRow;
+  const roleIds = (profileRolesResponse.data || []).map((row) => row.role_id);
+  const circleIds = (membershipsResponse.data || []).map((row) => row.circle_id);
+  const directCoachIds = (directAssignmentsResponse.data || []).map(
+    (row) => row.coach_id
+  );
+
+  const [rolesResponse, circlesResponse, circleCoachesResponse] = await Promise.all([
+    roleIds.length
+      ? supabase.from("roles").select("id,name").in("id", roleIds)
+      : Promise.resolve({ data: [], error: null }),
+    circleIds.length
+      ? supabase
+          .from("circles")
+          .select("id,name,description")
+          .in("id", circleIds)
+          .eq("status", "active")
+      : Promise.resolve({ data: [], error: null }),
+    circleIds.length
+      ? supabase
+          .from("circle_coaches")
+          .select("circle_id,coach_id")
+          .in("circle_id", circleIds)
+          .eq("status", "active")
+          .is("ended_at", null)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  const relationshipError = [
+    rolesResponse.error,
+    circlesResponse.error,
+    circleCoachesResponse.error,
+  ].find(Boolean);
+  if (relationshipError) {
+    throw new Error(`Member relationship query failed: ${relationshipError.message}`);
+  }
+
+  const circleCoachIds = (circleCoachesResponse.data || []).map(
+    (row) => row.coach_id
+  );
+  const coachIds = Array.from(new Set([...directCoachIds, ...circleCoachIds]));
+  const { data: coachProfiles, error: coachProfileError } = coachIds.length
+    ? await supabase
+        .from("profiles")
+        .select("id,first_name,last_name,avatar_path")
+        .in("id", coachIds)
+        .eq("account_status", "active")
+    : { data: [], error: null };
+  if (coachProfileError) {
+    throw new Error(`Dashboard coach profiles failed: ${coachProfileError.message}`);
+  }
+
+  const coachById = new Map(
+    (coachProfiles || []).map((coach) => [
+      coach.id,
+      {
+        id: coach.id,
+        displayName: displayName(coach.first_name, coach.last_name),
+        avatarPath: coach.avatar_path || "",
+      },
+    ])
+  );
+  const circleById = new Map(
+    (circlesResponse.data || []).map((circle) => [circle.id, circle])
+  );
+  const membershipByCircleId = new Map(
+    (membershipsResponse.data || []).map((membership) => [
+      membership.circle_id,
+      membership,
+    ])
+  );
+  const circleCoachIdsByCircle = new Map<string, string[]>();
+  (circleCoachesResponse.data || []).forEach((relationship) => {
+    const existing = circleCoachIdsByCircle.get(relationship.circle_id) || [];
+    circleCoachIdsByCircle.set(relationship.circle_id, [
+      ...existing,
+      relationship.coach_id,
+    ]);
+  });
+
+  const circles: DashboardCircle[] = circleIds
+    .map((circleId) => {
+      const circle = circleById.get(circleId);
+      if (!circle) return null;
+      return {
+        id: circle.id,
+        name: circle.name || "",
+        description: circle.description || "",
+        joinedAt: membershipByCircleId.get(circleId)?.joined_at || null,
+        coaches: (circleCoachIdsByCircle.get(circleId) || [])
+          .map((coachId) => coachById.get(coachId))
+          .filter((coach): coach is DashboardCoach => Boolean(coach)),
+      };
+    })
+    .filter((circle): circle is DashboardCircle => Boolean(circle));
+
+  const resolvedAssignments = await resolveCanonicalAssignmentRows(
+    (assignmentsResponse.data || []) as unknown as Parameters<
+      typeof resolveCanonicalAssignmentRows
+    >[0]
+  );
+  const matchingAssignments = deduplicateAssignments(
+    resolvedAssignments.filter(
+      (assignment) =>
+        isCurrentlyVisible(assignment, now) &&
+        matchesMemberAudience(assignment, memberId, new Set(circleIds))
+    )
+  );
+  const sections = await resolveDashboardContent(
+    matchingAssignments,
+    new Map(circles.map((circle) => [circle.id, circle.name]))
+  );
+  const roles = (rolesResponse.data || []).map((role) => role.name);
+  const assessment = assessmentResponse.data;
+
+  return {
+    ok: true,
+    member: {
+      id: profile.id,
+      firstName: profile.first_name || "",
+      lastName: profile.last_name || "",
+      displayName: displayName(profile.first_name, profile.last_name),
+      organization: profile.organization || "",
+      jobTitle: profile.job_title || "",
+      avatarPath: profile.avatar_path || "",
+      roles,
+    },
+    assessment: assessment
+      ? {
+          hasCompletedAssessment: true,
+          latestResultId: assessment.id,
+          completedAt: assessment.created_at,
+          peaceProfile: assessment.peace_profile || "",
+          basePattern: assessment.base_pattern || "",
+          identityType: assessment.identity_type || "",
+          secondaryIdentityType: assessment.secondary_identity_type || null,
+          responseType: assessment.response_type || "",
+          processingStyle: assessment.processing_style || "",
+          capacityStage: assessment.capacity_stage || "",
+          scores: normalizeScores(assessment.scores),
+        }
+      : null,
+    circles,
+    directCoaches: (directAssignmentsResponse.data || [])
+      .map((relationship) => {
+        const coach = coachById.get(relationship.coach_id);
+        return coach
+          ? {
+              ...coach,
+              isPrimary: Boolean(relationship.is_primary),
+              assignedAt: relationship.assigned_at || null,
+            }
+          : null;
+      })
+      .filter(
+        (
+          coach
+        ): coach is DashboardCoach & {
+          isPrimary: boolean;
+          assignedAt: string | null;
+        } => Boolean(coach)
+      ),
+    eligibility: {
+      hasActiveCircle: circles.length > 0,
+      isCoach: roles.includes("coach"),
+      canAccessCircle: circles.length > 0,
+      canAccessCoach: roles.includes("coach"),
+    },
+    sections,
+  };
+}
+
+function matchesMemberAudience(
+  assignment: ResolvedCanonicalAssignment,
+  memberId: string,
+  activeCircleIds: Set<string>
+) {
+  if (assignment.audience_type === "all_members") return true;
+  if (assignment.audience_type === "all_circle_members") {
+    return activeCircleIds.size > 0;
+  }
+  if (assignment.audience_type === "selected_member") {
+    return assignment.profile_id === memberId;
+  }
+  if (assignment.audience_type === "selected_circle") {
+    return Boolean(
+      assignment.circle_id && activeCircleIds.has(assignment.circle_id)
+    );
+  }
+  return false;
+}
+
+function isCurrentlyVisible(
+  assignment: ResolvedCanonicalAssignment,
+  now: string
+) {
+  if (assignment.visible_from && assignment.visible_from > now) return false;
+  if (assignment.visible_until && assignment.visible_until < now) return false;
+  return true;
+}
+
+function deduplicateAssignments(assignments: ResolvedCanonicalAssignment[]) {
+  const selected = new Map<string, ResolvedCanonicalAssignment>();
+  assignments.forEach((assignment) => {
+    const current = selected.get(assignment.content_item_id);
+    if (!current || compareAssignments(assignment, current) < 0) {
+      selected.set(assignment.content_item_id, assignment);
+    }
+  });
+  return Array.from(selected.values());
+}
+
+function compareAssignments(
+  first: ResolvedCanonicalAssignment,
+  second: ResolvedCanonicalAssignment
+) {
+  const rankDifference =
+    (audienceRank[second.audience_type || ""] || 0) -
+    (audienceRank[first.audience_type || ""] || 0);
+  if (rankDifference !== 0) return rankDifference;
+  return String(second.visible_from || second.created_at || "").localeCompare(
+    String(first.visible_from || first.created_at || "")
+  );
+}
+
+async function resolveDashboardContent(
+  assignments: ResolvedCanonicalAssignment[],
+  circleNames: Map<string, string>
+): Promise<MemberDashboardResponse["sections"]> {
+  const supabase = createAdminSupabaseClient();
+  const byKind = {
+    monthly_question: assignments.filter(
+      (assignment) => assignment.content_kind === "monthly_question"
+    ),
+    resource: assignments.filter(
+      (assignment) => assignment.content_kind === "resource"
+    ),
+    training: assignments.filter(
+      (assignment) => assignment.content_kind === "training"
+    ),
+  };
+
+  const [questionsResponse, resourcesResponse, trainingsResponse] =
+    await Promise.all([
+      byKind.monthly_question.length
+        ? supabase
+            .from("monthly_questions")
+            .select(
+              "id,content_item_id,title,theme,question_text,opening_reflection,discussion_prompts,guidance,category,status"
+            )
+            .in(
+              "content_item_id",
+              byKind.monthly_question.map((assignment) => assignment.content_item_id)
+            )
+            .eq("status", "published")
+        : Promise.resolve({ data: [], error: null }),
+      byKind.resource.length
+        ? supabase
+            .from("resources")
+            .select(
+              "id,content_item_id,title,description,resource_type,external_url,storage_path,thumbnail_url,cover_image_path,tags,status"
+            )
+            .in(
+              "content_item_id",
+              byKind.resource.map((assignment) => assignment.content_item_id)
+            )
+            .eq("status", "published")
+        : Promise.resolve({ data: [], error: null }),
+      byKind.training.length
+        ? supabase
+            .from("trainings")
+            .select(
+              "id,content_item_id,title,description,category,estimated_duration,cover_image_url,status"
+            )
+            .in(
+              "content_item_id",
+              byKind.training.map((assignment) => assignment.content_item_id)
+            )
+            .eq("status", "published")
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+  const sourceError = [
+    questionsResponse.error,
+    resourcesResponse.error,
+    trainingsResponse.error,
+  ].find(Boolean);
+  if (sourceError) throw new Error(`Dashboard content query failed: ${sourceError.message}`);
+
+  const questionByContentItem = new Map(
+    (questionsResponse.data || []).map((row) => [row.content_item_id, row])
+  );
+  const circleQuestionAssignments = byKind.monthly_question.filter(
+    (assignment) =>
+      assignment.audience_type === "selected_circle" && assignment.circle_id
+  );
+  const metadataByTarget = new Map<string, string | null>();
+  if (circleQuestionAssignments.length) {
+    const { data, error } = await supabase
+      .from("monthly_question_circle_assignments")
+      .select("monthly_question_id,circle_id,coach_introduction")
+      .in(
+        "monthly_question_id",
+        circleQuestionAssignments.map((assignment) => assignment.source_id)
+      )
+      .in(
+        "circle_id",
+        circleQuestionAssignments.map((assignment) => assignment.circle_id as string)
+      );
+    if (error) throw new Error(`Monthly Question metadata failed: ${error.message}`);
+    (data || []).forEach((row) => {
+      metadataByTarget.set(
+        `${row.monthly_question_id}:${row.circle_id}`,
+        row.coach_introduction || null
+      );
+    });
+  }
+
+  const monthlyQuestions = byKind.monthly_question
+    .map((assignment) => {
+      const row = questionByContentItem.get(assignment.content_item_id);
+      if (!row) return null;
+      return {
+        id: row.id,
+        contentItemId: assignment.content_item_id,
+        title: row.title || "",
+        theme: row.theme || "",
+        question: row.question_text || "",
+        openingReflection: row.opening_reflection || "",
+        discussionPrompts: normalizeStrings(row.discussion_prompts),
+        guidance: row.guidance || "",
+        category: row.category || "",
+        visibleFrom: assignment.visible_from,
+        visibleUntil: assignment.visible_until,
+        placement: assignment.placement || "",
+        circle: assignment.circle_id
+          ? {
+              id: assignment.circle_id,
+              name: circleNames.get(assignment.circle_id) || "",
+            }
+          : null,
+        coachIntroduction: assignment.circle_id
+          ? metadataByTarget.get(`${row.id}:${assignment.circle_id}`) || null
+          : null,
+      };
+    })
+    .filter((item): item is DashboardMonthlyQuestion => Boolean(item));
+
+  const resources = await Promise.all(
+    byKind.resource.map(async (assignment) => {
+      const row = (resourcesResponse.data || []).find(
+        (item) => item.content_item_id === assignment.content_item_id
+      );
+      if (!row) return null;
+      return {
+        id: row.id,
+        contentItemId: assignment.content_item_id,
+        title: row.title || "",
+        description: row.description || "",
+        resourceType: row.resource_type || "link",
+        url:
+          row.external_url ||
+          (row.storage_path ? await createResourceSignedUrl(row.storage_path) : null),
+        thumbnailUrl: row.thumbnail_url || null,
+        coverUrl: row.cover_image_path
+          ? await createResourceSignedUrl(row.cover_image_path)
+          : null,
+        tags: normalizeStrings(row.tags),
+        visibleFrom: assignment.visible_from,
+        visibleUntil: assignment.visible_until,
+        placement: assignment.placement || "",
+      };
+    })
+  );
+
+  const trainingByContentItem = new Map(
+    (trainingsResponse.data || []).map((row) => [row.content_item_id, row])
+  );
+  const trainings = byKind.training
+    .map((assignment) => {
+      const row = trainingByContentItem.get(assignment.content_item_id);
+      if (!row) return null;
+      return {
+        id: row.id,
+        contentItemId: assignment.content_item_id,
+        title: row.title || "",
+        description: row.description || "",
+        category: row.category || "",
+        duration: row.estimated_duration || "",
+        coverUrl: row.cover_image_url || null,
+        visibleFrom: assignment.visible_from,
+        visibleUntil: assignment.visible_until,
+        placement: assignment.placement || "",
+      };
+    })
+    .filter((item): item is DashboardTraining => Boolean(item));
+
+  return {
+    monthlyQuestions: sortDashboardItems(monthlyQuestions),
+    resources: sortDashboardItems(
+      resources.filter((item): item is DashboardResource => Boolean(item))
+    ),
+    trainings: sortDashboardItems(trainings),
+  };
+}
+
+async function createResourceSignedUrl(path: string) {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase.storage
+    .from("peaceworks-resources")
+    .createSignedUrl(path, 60 * 10);
+  if (error) {
+    console.warn("Member dashboard resource URL could not be signed", error);
+    return null;
+  }
+  return data.signedUrl;
+}
+
+function sortDashboardItems<
+  T extends {
+    placement: string;
+    visibleFrom: string | null;
+    title: string;
+    id: string;
+  },
+>(items: T[]) {
+  return items.sort(
+    (first, second) =>
+      first.placement.localeCompare(second.placement) ||
+      String(second.visibleFrom || "").localeCompare(
+        String(first.visibleFrom || "")
+      ) ||
+      first.title.localeCompare(second.title) ||
+      first.id.localeCompare(second.id)
+  );
+}
+
+function displayName(firstName: string | null, lastName: string | null) {
+  return [firstName, lastName].filter(Boolean).join(" ").trim() || "PeaceWorks Member";
+}
+
+function normalizeStrings(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function normalizeScores(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([, score]) => Number.isFinite(Number(score)))
+      .map(([key, score]) => [key, Number(score)])
+  );
+}
