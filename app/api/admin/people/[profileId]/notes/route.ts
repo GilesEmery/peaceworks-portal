@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 type NoteBody = {
   noteType?: unknown;
   body?: unknown;
-  isPrivate?: unknown;
+  visibility?: unknown;
 };
 
 export async function POST(
@@ -54,7 +54,7 @@ export async function POST(
     const result = await createAdminProfileNote(profileId, auth.user.id, {
       noteType: typeof body.noteType === "string" ? body.noteType : "general",
       body: typeof body.body === "string" ? body.body : "",
-      isPrivate: body.isPrivate !== false,
+      visibility: typeof body.visibility === "string" ? body.visibility : "admins",
     });
 
     if (!result.ok) {

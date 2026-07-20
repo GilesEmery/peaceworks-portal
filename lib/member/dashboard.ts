@@ -73,6 +73,48 @@ export type DashboardTraining = {
   placement: string;
 };
 
+export type DashboardNoteSource = "circle" | "member";
+
+export type DashboardNoteLink = {
+  id: string;
+  label: string;
+  url: string;
+};
+
+export type DashboardNote = {
+  id: string;
+  noteSource: DashboardNoteSource;
+  title: string;
+  noteType: string;
+  preview: string;
+  publishedAt: string | null;
+  meetingDate: string | null;
+  followUpDate: string | null;
+  authorDisplayName: string | null;
+  circle: { id: string; name: string } | null;
+  links: DashboardNoteLink[];
+  detailHref: string;
+};
+
+export type MemberVisibleNoteDetail = DashboardNote & {
+  body: string;
+};
+
+export type MemberVisibleCircleNote = MemberVisibleNoteDetail & {
+  noteSource: "circle";
+  circle: { id: string; name: string };
+};
+
+export type MemberVisibleProfileNote = MemberVisibleNoteDetail & {
+  noteSource: "member";
+  circle: null;
+};
+
+export type MemberNoteDetailResponse = {
+  ok: true;
+  note: MemberVisibleCircleNote | MemberVisibleProfileNote;
+};
+
 export type MemberDashboardResponse = {
   ok: true;
   member: {
@@ -113,6 +155,7 @@ export type MemberDashboardResponse = {
   };
   sections: {
     monthlyQuestions: DashboardMonthlyQuestion[];
+    notes: DashboardNote[];
     resources: DashboardResource[];
     trainings: DashboardTraining[];
   };
@@ -299,18 +342,20 @@ export async function fetchMemberDashboard(
       typeof resolveCanonicalAssignmentRows
     >[0]
   );
+  const activeCircleIds = new Set(circles.map((circle) => circle.id));
   const matchingAssignments = deduplicateAssignments(
     resolvedAssignments.filter(
       (assignment) =>
         isCurrentlyVisible(assignment, now) &&
-        matchesMemberAudience(assignment, memberId, new Set(circleIds))
+        matchesMemberAudience(assignment, memberId, activeCircleIds)
     )
   );
-  const sections = await resolveDashboardContent(
-    matchingAssignments,
-    new Map(circles.map((circle) => [circle.id, circle.name])),
-    memberId
-  );
+  const circleNames = new Map(circles.map((circle) => [circle.id, circle.name]));
+  const [contentSections, notes] = await Promise.all([
+    resolveDashboardContent(matchingAssignments, circleNames, memberId),
+    fetchMemberVisibleNotes(memberId, activeCircleIds, circleNames),
+  ]);
+  const sections = { ...contentSections, notes };
   const roles = (rolesResponse.data || []).map((role) => role.name);
   const assessment = assessmentResponse.data;
 
@@ -428,7 +473,7 @@ async function resolveDashboardContent(
   assignments: ResolvedCanonicalAssignment[],
   circleNames: Map<string, string>,
   memberId: string
-): Promise<MemberDashboardResponse["sections"]> {
+): Promise<Omit<MemberDashboardResponse["sections"], "notes">> {
   const supabase = createAdminSupabaseClient();
   const byKind = {
     monthly_question: assignments.filter(
@@ -649,6 +694,199 @@ async function resolveDashboardContent(
     ),
     trainings: sortDashboardItems(trainings),
   };
+}
+
+export async function fetchMemberVisibleNoteDetail(
+  auth: Extract<MemberAuthResult, { ok: true }>,
+  noteSource: string,
+  noteId: string
+): Promise<MemberVisibleCircleNote | MemberVisibleProfileNote | null> {
+  const supabase = createAdminSupabaseClient();
+  const { data: memberships, error } = await supabase
+    .from("circle_memberships")
+    .select("circle_id")
+    .eq("profile_id", auth.user.id)
+    .eq("status", "active")
+    .is("ended_at", null);
+  if (error) throw new Error(`Member note authorization failed: ${error.message}`);
+
+  const circleIds = new Set((memberships || []).map((row) => row.circle_id));
+  const { data: circles, error: circleError } = circleIds.size
+    ? await supabase
+        .from("circles")
+        .select("id,name")
+        .in("id", Array.from(circleIds))
+        .eq("status", "active")
+    : { data: [], error: null };
+  if (circleError) throw new Error(`Member note Circle lookup failed: ${circleError.message}`);
+
+  const activeCircleIds = new Set((circles || []).map((circle) => circle.id));
+  const notes = await fetchMemberVisibleNotes(
+    auth.user.id,
+    activeCircleIds,
+    new Map((circles || []).map((circle) => [circle.id, circle.name || ""])),
+    { includeBody: true, noteSource, noteId }
+  );
+  return (notes[0] as MemberVisibleCircleNote | MemberVisibleProfileNote | undefined) || null;
+}
+
+async function fetchMemberVisibleNotes(
+  memberId: string,
+  activeCircleIds: Set<string>,
+  circleNames: Map<string, string>,
+  options?: { includeBody?: boolean; noteSource?: string; noteId?: string }
+): Promise<Array<DashboardNote | MemberVisibleCircleNote | MemberVisibleProfileNote>> {
+  const supabase = createAdminSupabaseClient();
+  const circleIds = Array.from(activeCircleIds);
+  const includeCircle = !options?.noteSource || options.noteSource === "circle";
+  const includeProfile = !options?.noteSource || options.noteSource === "member";
+
+  const [circleResponse, profileResponse] = await Promise.all([
+    includeCircle && circleIds.length
+      ? supabase
+          .from("circle_notes")
+          .select(
+            "id,circle_id,author_id,note_type,body,visibility,audience_type,meeting_date,follow_up_at,published_at,created_at,updated_at"
+          )
+          .in("circle_id", circleIds)
+          .in("audience_type", ["all_circle_members", "selected_members"])
+          .not("published_at", "is", null)
+          .eq(options?.noteId ? "id" : "visibility", options?.noteId || "coaches")
+      : Promise.resolve({ data: [], error: null }),
+    includeProfile
+      ? supabase
+          .from("profile_notes")
+          .select("id,profile_id,author_id,note_type,body,visibility,created_at,updated_at")
+          .eq("profile_id", memberId)
+          .eq("visibility", "member")
+          .eq(options?.noteId ? "id" : "profile_id", options?.noteId || memberId)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  const firstError = circleResponse.error || profileResponse.error;
+  if (firstError) throw new Error(`Member-visible notes query failed: ${firstError.message}`);
+
+  const circleRows = circleResponse.data || [];
+  const selectedIds = circleRows
+    .filter((row) => row.audience_type === "selected_members")
+    .map((row) => row.id);
+  const noteIds = circleRows.map((row) => row.id);
+  const authorIds = Array.from(
+    new Set(
+      [...circleRows, ...(profileResponse.data || [])]
+        .map((row) => row.author_id)
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+
+  const [recipientsResponse, linksResponse, authorsResponse] = await Promise.all([
+    selectedIds.length
+      ? supabase
+          .from("circle_note_recipients")
+          .select("circle_note_id")
+          .in("circle_note_id", selectedIds)
+          .eq("profile_id", memberId)
+      : Promise.resolve({ data: [], error: null }),
+    noteIds.length
+      ? supabase
+          .from("circle_note_links")
+          .select("id,circle_note_id,label,url,sort_order")
+          .in("circle_note_id", noteIds)
+          .order("sort_order", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+    authorIds.length
+      ? supabase.from("profiles").select("id,first_name,last_name").in("id", authorIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  const relatedError =
+    recipientsResponse.error || linksResponse.error || authorsResponse.error;
+  if (relatedError) throw new Error(`Member-visible note details failed: ${relatedError.message}`);
+
+  const permittedSelectedIds = new Set(
+    (recipientsResponse.data || []).map((row) => row.circle_note_id)
+  );
+  const linksByNote = new Map<string, DashboardNoteLink[]>();
+  (linksResponse.data || []).forEach((row) => {
+    const current = linksByNote.get(row.circle_note_id) || [];
+    current.push({ id: row.id, label: row.label || "Open link", url: row.url });
+    linksByNote.set(row.circle_note_id, current);
+  });
+  const authorById = new Map(
+    (authorsResponse.data || []).map((row) => [
+      row.id,
+      displayName(row.first_name, row.last_name),
+    ])
+  );
+
+  const circleNotes = circleRows
+    .filter(
+      (row) =>
+        row.visibility === "coaches" &&
+        (row.audience_type === "all_circle_members" ||
+          permittedSelectedIds.has(row.id))
+    )
+    .map((row) => {
+      const body = row.body || "";
+      return {
+        id: row.id,
+        noteSource: "circle" as const,
+        title: noteTitle(row.note_type, circleNames.get(row.circle_id)),
+        noteType: row.note_type || "general",
+        preview: notePreview(body),
+        publishedAt: row.published_at,
+        meetingDate: row.meeting_date,
+        followUpDate: row.follow_up_at,
+        authorDisplayName: row.author_id ? authorById.get(row.author_id) || null : null,
+        circle: { id: row.circle_id, name: circleNames.get(row.circle_id) || "Your Circle" },
+        links: linksByNote.get(row.id) || [],
+        detailHref: `/my-dashboard/notes/circle/${row.id}`,
+        ...(options?.includeBody ? { body } : {}),
+        sortDate: row.published_at || row.meeting_date || row.created_at || "",
+      };
+    });
+  const profileNotes = (profileResponse.data || []).map((row) => {
+    const body = row.body || "";
+    return {
+      id: row.id,
+      noteSource: "member" as const,
+      title: noteTitle(row.note_type),
+      noteType: row.note_type || "general",
+      preview: notePreview(body),
+      publishedAt: row.updated_at || row.created_at,
+      meetingDate: null,
+      followUpDate: null,
+      authorDisplayName: row.author_id ? authorById.get(row.author_id) || null : null,
+      circle: null,
+      links: [],
+      detailHref: `/my-dashboard/notes/member/${row.id}`,
+      ...(options?.includeBody ? { body } : {}),
+      sortDate: row.updated_at || row.created_at || "",
+    };
+  });
+
+  return [...circleNotes, ...profileNotes]
+    .sort(
+      (first, second) =>
+        second.sortDate.localeCompare(first.sortDate) ||
+        first.noteSource.localeCompare(second.noteSource) ||
+        first.id.localeCompare(second.id)
+    )
+    .map(({ sortDate, ...note }) => {
+      void sortDate;
+      return note;
+    });
+}
+
+function notePreview(body: string) {
+  const normalized = body.replace(/\s+/g, " ").trim();
+  return normalized.length > 180 ? `${normalized.slice(0, 177).trimEnd()}...` : normalized;
+}
+
+function noteTitle(noteType: string | null, context?: string) {
+  const label = (noteType || "general")
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return context ? `${label} · ${context}` : label;
 }
 
 async function createResourceSignedUrl(path: string) {

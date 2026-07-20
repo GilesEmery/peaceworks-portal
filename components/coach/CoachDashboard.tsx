@@ -3467,6 +3467,11 @@ function CircleNoteForm({
         </div>
       )}
       <TextAreaField label="Note" value={form.body} onChange={(value) => update("body", value)} />
+      <p className="admin-form-help">
+        {form.audienceType === "selected_members"
+          ? "This will appear on the selected members’ My Dashboards."
+          : "This will appear on the dashboards of active members in this Circle."}
+      </p>
       <div className="coach-note-link-editor">
         <div className="coach-panel-head">
           <div>

@@ -3639,7 +3639,17 @@ function ContentAssignmentPanel({
       return;
     }
 
-    onMessage({ type: "success", text: "Content assignment was saved." });
+    onMessage({
+      type: "success",
+      text:
+        audienceType === "selected_member"
+          ? "Content assignment was saved. This will appear on the selected member’s My Dashboard."
+          : audienceType === "selected_circle" || audienceType === "all_circle_members"
+            ? "Content assignment was saved. This will appear on the dashboards of eligible active Circle members."
+            : audienceType === "all_members"
+              ? "Content assignment was saved. This will appear on eligible members’ My Dashboards."
+              : "Content assignment was saved.",
+    });
     await onRefresh();
   }
 
@@ -3706,6 +3716,15 @@ function ContentAssignmentPanel({
           Close
         </button>
       </div>
+
+      {["all_members", "all_circle_members", "selected_member", "selected_circle"].includes(
+        audienceType
+      ) && (
+        <p className="admin-form-help">
+          This assignment will appear on eligible members’ My Dashboards while it is
+          active, published, and within its visibility window.
+        </p>
+      )}
 
       {content.status !== "published" ? (
         <div className="admin-empty">Publish this content before assigning it.</div>

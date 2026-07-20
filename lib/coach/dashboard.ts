@@ -769,7 +769,10 @@ export async function createCoachCircleNote(
 
   return {
     ok: true as const,
-    message: "Circle note was added.",
+    message:
+      cleaned.audienceType === "selected_members"
+        ? "Circle note was added. This will appear on the selected members’ My Dashboards."
+        : "Circle note was added. This will appear on the dashboards of active members in this Circle.",
     note: mapCircleNote(
       data as CircleNoteRow,
       auth,
@@ -849,7 +852,10 @@ export async function updateCoachCircleNote(
 
   return {
     ok: true as const,
-    message: "Circle note was updated.",
+    message:
+      cleaned.audienceType === "selected_members"
+        ? "Circle note was updated. This will appear on the selected members’ My Dashboards."
+        : "Circle note was updated. This will appear on the dashboards of active members in this Circle.",
     note: mapCircleNote(
       data as CircleNoteRow,
       auth,

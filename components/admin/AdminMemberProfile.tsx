@@ -39,6 +39,7 @@ export default function AdminMemberProfile({
   const [noteState, setNoteState] = useState<SaveState>("idle");
   const [noteType, setNoteType] = useState("general");
   const [noteBody, setNoteBody] = useState("");
+  const [noteVisibility, setNoteVisibility] = useState("admins");
   const [editingNoteId, setEditingNoteId] = useState("");
   const [modalResult, setModalResult] = useState<PeaceAssessmentResult | null>(
     null
@@ -149,7 +150,7 @@ export default function AdminMemberProfile({
         body: JSON.stringify({
           noteType,
           body: noteBody,
-          isPrivate: true,
+          visibility: noteVisibility,
         }),
       }
     );
@@ -160,10 +161,12 @@ export default function AdminMemberProfile({
       return;
     }
 
+    const result = (await response.json()) as { message?: string };
     setNoteState("success");
     setEditingNoteId("");
     setNoteBody("");
-    setMessage(editingNoteId ? "Note was updated." : "Note was added.");
+    setNoteVisibility("admins");
+    setMessage(result.message || (editingNoteId ? "Note was updated." : "Note was added."));
     await loadProfile();
   }
 
@@ -327,6 +330,7 @@ export default function AdminMemberProfile({
               body={noteBody}
               noteState={noteState}
               noteType={noteType}
+              visibility={noteVisibility}
               notes={payload.notes}
               editingNoteId={editingNoteId}
               onBodyChange={setNoteBody}
@@ -335,13 +339,16 @@ export default function AdminMemberProfile({
                 setEditingNoteId(note.id);
                 setNoteType(note.noteType);
                 setNoteBody(note.body);
+                setNoteVisibility(note.visibility);
               }}
               onEditCancel={() => {
                 setEditingNoteId("");
                 setNoteType("general");
                 setNoteBody("");
+                setNoteVisibility("admins");
               }}
               onNoteTypeChange={setNoteType}
+              onVisibilityChange={setNoteVisibility}
               onSave={saveNote}
             />
             <ProfileActivityTimeline activity={activity} />
@@ -591,32 +598,36 @@ function ProfileNotes({
   editingNoteId,
   noteState,
   noteType,
+  visibility,
   notes,
   onBodyChange,
   onDelete,
   onEdit,
   onEditCancel,
   onNoteTypeChange,
+  onVisibilityChange,
   onSave,
 }: {
   body: string;
   editingNoteId: string;
   noteState: SaveState;
   noteType: string;
+  visibility: string;
   notes: AdminMemberProfilePayload["notes"];
   onBodyChange: (value: string) => void;
   onDelete: (noteId: string) => void;
   onEdit: (note: AdminMemberProfilePayload["notes"][number]) => void;
   onEditCancel: () => void;
   onNoteTypeChange: (value: string) => void;
+  onVisibilityChange: (value: string) => void;
   onSave: () => void;
 }) {
   return (
     <section className="admin-member-panel portal-card">
       <div className="admin-member-panel-head">
         <span className="card-label">Notes</span>
-        <h2>Admin-only notes</h2>
-        <p>Notes are private to authorized administrators in this version.</p>
+        <h2>Member notes</h2>
+        <p>Choose exactly who may view each note.</p>
       </div>
       <div className="admin-member-note-composer">
         <label>
@@ -629,6 +640,23 @@ function ProfileNotes({
             ))}
           </select>
         </label>
+        <label>
+          <span>Visibility</span>
+          <select
+            value={visibility}
+            onChange={(event) => onVisibilityChange(event.target.value)}
+          >
+            <option value="admins">Admin only</option>
+            <option value="assigned_coaches">Assigned coaches</option>
+            <option value="circle_coaches">Circle coaches</option>
+            <option value="member">Member</option>
+          </select>
+        </label>
+        {visibility === "member" && (
+          <p className="admin-form-help">
+            This will appear on the selected member’s My Dashboard.
+          </p>
+        )}
         <TextArea label="Note" value={body} onChange={onBodyChange} />
         <button
           className="btn btn-primary"
@@ -661,7 +689,8 @@ function ProfileNotes({
               <strong>{note.noteType.replace("_", " ")}</strong>
               <p>{note.body}</p>
               <small>
-                {note.authorName} · {formatDate(note.createdAt)}
+                {formatNoteVisibility(note.visibility)} · {note.authorName} ·{" "}
+                {formatDate(note.createdAt)}
               </small>
               <div className="admin-member-note-actions">
                 <button
@@ -685,6 +714,13 @@ function ProfileNotes({
       )}
     </section>
   );
+}
+
+function formatNoteVisibility(value: string) {
+  if (value === "member") return "Member";
+  if (value === "assigned_coaches") return "Assigned coaches";
+  if (value === "circle_coaches") return "Circle coaches";
+  return "Admin only";
 }
 
 function ProfileActivityTimeline({

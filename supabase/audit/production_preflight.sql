@@ -520,3 +520,94 @@ select
       and char_length(question_number) > 50
   ) as oversized_question_numbers
 from public.monthly_questions;
+
+-- Update 10 healthy result: every count is zero. Aggregate-only; no note body,
+-- member identity, or other private content is returned.
+select
+  count(*) filter (
+    where cn.audience_type = 'selected_members'
+      and not exists (
+        select 1
+        from public.circle_note_recipients cnr
+        where cnr.circle_note_id = cn.id
+      )
+  ) as selected_circle_notes_without_recipients,
+  count(*) filter (
+    where cn.audience_type in ('all_circle_members', 'selected_members')
+      and cn.published_at is null
+  ) as member_audience_circle_notes_without_publication,
+  count(*) filter (
+    where cn.audience_type in ('all_circle_members', 'selected_members')
+      and cn.published_at is not null
+      and not exists (
+        select 1
+        from public.circle_memberships cm
+        join public.circles c on c.id = cm.circle_id
+        where cm.circle_id = cn.circle_id
+          and cm.status = 'active'
+          and cm.ended_at is null
+          and c.status = 'active'
+          and (
+            cn.audience_type = 'all_circle_members'
+            or exists (
+              select 1
+              from public.circle_note_recipients cnr
+              where cnr.circle_note_id = cn.id
+                and cnr.profile_id = cm.profile_id
+            )
+          )
+      )
+  ) as member_visible_circle_notes_without_eligible_members
+from public.circle_notes cn;
+
+select count(*) as circle_note_recipients_without_active_membership
+from public.circle_note_recipients cnr
+join public.circle_notes cn on cn.id = cnr.circle_note_id
+where not exists (
+  select 1
+  from public.circle_memberships cm
+  join public.circles c on c.id = cm.circle_id
+  where cm.circle_id = cn.circle_id
+    and cm.profile_id = cnr.profile_id
+    and cm.status = 'active'
+    and cm.ended_at is null
+    and c.status = 'active'
+);
+
+select
+  count(*) filter (
+    where pn.visibility not in ('admins', 'assigned_coaches', 'circle_coaches', 'member')
+  ) as profile_notes_with_invalid_visibility,
+  count(*) filter (
+    where pn.visibility = 'member' and p.id is null
+  ) as member_visible_profile_notes_without_profile
+from public.profile_notes pn
+left join public.profiles p on p.id = pn.profile_id;
+
+select
+  count(*) filter (
+    where ci.content_kind = 'resource' and r.id is null
+  ) as canonical_resource_assignments_without_source,
+  count(*) filter (
+    where ci.content_kind = 'training' and t.id is null
+  ) as canonical_training_assignments_without_source,
+  count(*) filter (
+    where ca.assignment_status = 'active'
+      and ca.audience_type in (
+        'all_members', 'all_circle_members', 'selected_member', 'selected_circle'
+      )
+      and (
+        (ca.audience_type in ('all_members', 'all_circle_members')
+          and (ca.circle_id is not null or ca.profile_id is not null))
+        or (ca.audience_type = 'selected_member'
+          and (ca.profile_id is null or ca.circle_id is not null))
+        or (ca.audience_type = 'selected_circle'
+          and (ca.circle_id is null or ca.profile_id is not null))
+      )
+  ) as active_member_assignments_with_invalid_target_shape
+from public.content_assignments ca
+join public.content_items ci on ci.id = ca.content_item_id
+left join public.resources r
+  on r.content_item_id = ci.id and ci.content_kind = 'resource'
+left join public.trainings t
+  on t.content_item_id = ci.id and ci.content_kind = 'training';

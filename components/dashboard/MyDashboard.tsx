@@ -253,6 +253,40 @@ export default function MyDashboard() {
         )}
       />
     ) : null;
+  const notesSection =
+    dashboard.sections.notes.length > 0 ? (
+      <ExpandableDashboardSection
+        sectionId="notes"
+        eyebrow="Notes"
+        title="Notes for Your Journey"
+        items={dashboard.sections.notes}
+        expandLabel="Show all Notes"
+        collapseLabel="Show Less"
+        renderItem={(note) => (
+          <article
+            className="portal-card dashboard-journey-card dashboard-note-card"
+            key={`${note.noteSource}-${note.id}`}
+          >
+            <div>
+              <span className="card-label">
+                {note.circle?.name || formatLabel(note.noteType)}
+              </span>
+              <h3>{note.title}</h3>
+              {note.preview && <p>{note.preview}</p>}
+              {note.publishedAt && <small>Shared {formatDate(note.publishedAt)}</small>}
+            </div>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => router.push(note.detailHref)}
+              aria-label={`Read note: ${note.title}`}
+            >
+              Read Note
+            </button>
+          </article>
+        )}
+      />
+    ) : null;
 
   return (
     <main className="portal-page">
@@ -331,6 +365,8 @@ export default function MyDashboard() {
           </DashboardSection>
 
           {!isCircleMember && monthlyQuestionSection}
+
+          {notesSection}
 
           {dashboard.sections.trainings.length > 0 && (
             <ExpandableDashboardSection

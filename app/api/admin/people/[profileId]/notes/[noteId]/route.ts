@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 type NoteBody = {
   noteType?: unknown;
   body?: unknown;
-  isPrivate?: unknown;
+  visibility?: unknown;
 };
 
 export async function PATCH(
@@ -57,7 +57,7 @@ export async function PATCH(
     const result = await updateAdminProfileNote(profileId, noteId, {
       noteType: typeof body.noteType === "string" ? body.noteType : "general",
       body: typeof body.body === "string" ? body.body : "",
-      isPrivate: body.isPrivate !== false,
+      visibility: typeof body.visibility === "string" ? body.visibility : "admins",
     });
 
     if (!result.ok) {

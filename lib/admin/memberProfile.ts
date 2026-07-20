@@ -38,9 +38,16 @@ export type AdminProfileNote = {
   noteType: string;
   body: string;
   isPrivate: boolean;
+  visibility: AdminProfileNoteVisibility;
   createdAt: string | null;
   updatedAt: string | null;
 };
+
+export type AdminProfileNoteVisibility =
+  | "admins"
+  | "assigned_coaches"
+  | "circle_coaches"
+  | "member";
 
 export type AdminMemberProfilePayload = {
   ok: true;
@@ -110,6 +117,7 @@ type ProfileNoteRow = {
   note_type: string | null;
   body: string | null;
   is_private: boolean | null;
+  visibility: string | null;
   created_at: string | null;
   updated_at: string | null;
 };
@@ -128,7 +136,7 @@ export type AdminGrowthStatusUpdate = {
 export type AdminProfileNoteCreate = {
   noteType: string;
   body: string;
-  isPrivate: boolean;
+  visibility: string;
 };
 
 export async function fetchAdminMemberProfile(
@@ -267,6 +275,7 @@ export async function createAdminProfileNote(
 ) {
   const supabase = createAdminSupabaseClient();
   const body = values.body.trim();
+  const visibility = cleanNoteVisibility(values.visibility);
 
   if (!body) {
     return {
@@ -281,7 +290,8 @@ export async function createAdminProfileNote(
     author_id: adminId,
     note_type: cleanNoteType(values.noteType),
     body,
-    is_private: values.isPrivate !== false,
+    visibility,
+    is_private: visibility === "admins",
   });
 
   if (error) {
@@ -289,7 +299,13 @@ export async function createAdminProfileNote(
     throw new Error("Unable to save note.");
   }
 
-  return { ok: true as const, message: "Note was added." };
+  return {
+    ok: true as const,
+    message:
+      visibility === "member"
+        ? "Note was added. This will appear on the selected member’s My Dashboard."
+        : "Note was added.",
+  };
 }
 
 export async function updateAdminProfileNote(
@@ -299,6 +315,7 @@ export async function updateAdminProfileNote(
 ) {
   const supabase = createAdminSupabaseClient();
   const body = values.body.trim();
+  const visibility = cleanNoteVisibility(values.visibility);
 
   if (!body) {
     return {
@@ -313,7 +330,8 @@ export async function updateAdminProfileNote(
     .update({
       note_type: cleanNoteType(values.noteType),
       body,
-      is_private: values.isPrivate !== false,
+      visibility,
+      is_private: visibility === "admins",
       updated_at: new Date().toISOString(),
     })
     .eq("id", noteId)
@@ -324,7 +342,13 @@ export async function updateAdminProfileNote(
     throw new Error("Unable to update note.");
   }
 
-  return { ok: true as const, message: "Note was updated." };
+  return {
+    ok: true as const,
+    message:
+      visibility === "member"
+        ? "Note was updated. This will appear on the selected member’s My Dashboard."
+        : "Note was updated.",
+  };
 }
 
 export async function deleteAdminProfileNote(profileId: string, noteId: string) {
@@ -373,7 +397,9 @@ async function fetchProfileNotes(
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("profile_notes")
-    .select("id, profile_id, author_id, note_type, body, is_private, created_at, updated_at")
+    .select(
+      "id, profile_id, author_id, note_type, body, is_private, visibility, created_at, updated_at"
+    )
     .eq("profile_id", profileId)
     .order("created_at", { ascending: false });
 
@@ -424,9 +450,21 @@ function mapProfileNote(
     noteType: row.note_type || "general",
     body: row.body || "",
     isPrivate: row.is_private !== false,
+    visibility: cleanNoteVisibility(row.visibility),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+function cleanNoteVisibility(value: unknown): AdminProfileNoteVisibility {
+  if (
+    value === "assigned_coaches" ||
+    value === "circle_coaches" ||
+    value === "member"
+  ) {
+    return value;
+  }
+  return "admins";
 }
 
 function buildActivity({

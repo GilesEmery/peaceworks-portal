@@ -201,7 +201,13 @@ export async function assignCoachResourceToCircle(
     return databaseFailure("resource_assignment_save_failed", error);
   }
 
-  return { ok: true as const, message: "Resource assigned." };
+  return {
+    ok: true as const,
+    message:
+      cleaned.audienceType === "selected_member"
+        ? "Resource assigned. This will appear on the selected member’s My Dashboard."
+        : "Resource assigned. This will appear on the dashboards of active members in this Circle.",
+  };
 }
 
 async function loadResourceContext(

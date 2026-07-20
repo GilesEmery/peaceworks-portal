@@ -525,7 +525,11 @@ export async function assignCoachMonthlyQuestion(
     return monthlyQuestionDatabaseFailure("monthly_question_assignment_save_failed", error);
   }
 
-  return { ok: true as const, message: "Monthly Question assigned to Circle." };
+  return {
+    ok: true as const,
+    message:
+      "Monthly Question assigned to Circle. This will appear on the dashboards of active members in the selected Circle.",
+  };
 }
 
 export async function archiveCoachMonthlyQuestionAssignment(
