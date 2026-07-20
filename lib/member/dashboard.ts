@@ -33,6 +33,7 @@ export type DashboardMonthlyQuestion = {
   discussionPrompts: string[];
   guidance: string;
   category: string;
+  questionNumber: string;
   questionMonth: number | null;
   questionYear: number | null;
   hasReflection: boolean;
@@ -452,7 +453,7 @@ async function resolveDashboardContent(
         ? supabase
             .from("monthly_questions")
             .select(
-              "id,content_item_id,title,theme,question_text,opening_reflection,discussion_prompts,guidance,category,question_month,question_year,status"
+              "id,content_item_id,title,theme,question_text,opening_reflection,discussion_prompts,guidance,category,question_number,status"
             )
             .in(
               "content_item_id",
@@ -517,11 +518,20 @@ async function resolveDashboardContent(
     (assignment) =>
       assignment.audience_type === "selected_circle" && assignment.circle_id
   );
-  const metadataByTarget = new Map<string, string | null>();
+  const metadataByTarget = new Map<
+    string,
+    {
+      coachIntroduction: string | null;
+      questionMonth: number | null;
+      questionYear: number | null;
+    }
+  >();
   if (circleQuestionAssignments.length) {
     const { data, error } = await supabase
       .from("monthly_question_circle_assignments")
-      .select("monthly_question_id,circle_id,coach_introduction")
+      .select(
+        "monthly_question_id,circle_id,coach_introduction,question_month,question_year"
+      )
       .in(
         "monthly_question_id",
         circleQuestionAssignments.map((assignment) => assignment.source_id)
@@ -534,7 +544,11 @@ async function resolveDashboardContent(
     (data || []).forEach((row) => {
       metadataByTarget.set(
         `${row.monthly_question_id}:${row.circle_id}`,
-        row.coach_introduction || null
+        {
+          coachIntroduction: row.coach_introduction || null,
+          questionMonth: row.question_month ?? null,
+          questionYear: row.question_year ?? null,
+        }
       );
     });
   }
@@ -543,6 +557,9 @@ async function resolveDashboardContent(
     .map((assignment) => {
       const row = questionByContentItem.get(assignment.content_item_id);
       if (!row) return null;
+      const assignmentMetadata = assignment.circle_id
+        ? metadataByTarget.get(`${row.id}:${assignment.circle_id}`)
+        : null;
       return {
         id: row.id,
         assignmentId: assignment.id,
@@ -554,8 +571,9 @@ async function resolveDashboardContent(
         discussionPrompts: normalizeStrings(row.discussion_prompts),
         guidance: row.guidance || "",
         category: row.category || "",
-        questionMonth: row.question_month ?? null,
-        questionYear: row.question_year ?? null,
+        questionNumber: row.question_number || "",
+        questionMonth: assignmentMetadata?.questionMonth ?? null,
+        questionYear: assignmentMetadata?.questionYear ?? null,
         hasReflection: reflectionByAssignmentId.has(assignment.id),
         reflectionUpdatedAt:
           reflectionByAssignmentId.get(assignment.id) || null,
@@ -569,7 +587,7 @@ async function resolveDashboardContent(
             }
           : null,
         coachIntroduction: assignment.circle_id
-          ? metadataByTarget.get(`${row.id}:${assignment.circle_id}`) || null
+          ? assignmentMetadata?.coachIntroduction || null
           : null,
       };
     })

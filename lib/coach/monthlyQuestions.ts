@@ -35,8 +35,7 @@ export type CoachMonthlyQuestion = {
   discussionPrompts: string[];
   category: string;
   theme: string;
-  questionMonth: number | null;
-  questionYear: number | null;
+  questionNumber: string;
   status: MonthlyQuestionStatus;
   publishedAt: string | null;
   createdAt: string | null;
@@ -59,6 +58,8 @@ export type CoachMonthlyQuestionAssignment = {
   visibleFrom: string | null;
   archivedAt: string | null;
   coachIntroduction: string;
+  questionMonth: number | null;
+  questionYear: number | null;
   assignedBy: CoachPersonSummary;
   canArchive: boolean;
   canRemove: boolean;
@@ -85,6 +86,8 @@ export type CoachMonthlyQuestionAssignmentInput = {
   questionId: string;
   circleIds: string[];
   coachIntroduction: string;
+  questionMonth: number | string | null;
+  questionYear: number | string | null;
 };
 
 export type CoachMonthlyQuestionInput = {
@@ -94,8 +97,7 @@ export type CoachMonthlyQuestionInput = {
   guidance: string;
   discussionPrompts: string[];
   circleIds: string[];
-  questionMonth?: number | string | null;
-  questionYear?: number | string | null;
+  questionNumber?: string | null;
 };
 
 export type MemberMonthlyQuestion = {
@@ -106,6 +108,7 @@ export type MemberMonthlyQuestion = {
   questionText: string;
   guidance: string;
   discussionPrompts: string[];
+  questionNumber: string;
   questionMonth: number | null;
   questionYear: number | null;
   status: "published" | "archived";
@@ -123,8 +126,7 @@ type MonthlyQuestionRow = {
   status: string | null;
   category?: string | null;
   theme?: string | null;
-  question_month: number | null;
-  question_year: number | null;
+  question_number: string | null;
   published_at: string | null;
   created_by: string | null;
   updated_by: string | null;
@@ -143,6 +145,8 @@ type MonthlyQuestionAssignmentRow = {
   visible_from?: string | null;
   archived_at?: string | null;
   coach_introduction?: string | null;
+  question_month?: number | null;
+  question_year?: number | null;
 };
 
 type ContentAssignmentRow = ResolvedCanonicalAssignment;
@@ -223,8 +227,7 @@ export async function createCoachMonthlyQuestion(
       question_text: cleaned.questionText,
       guidance: cleaned.guidance || null,
       discussion_prompts: cleaned.discussionPrompts,
-      question_month: cleaned.questionMonth,
-      question_year: cleaned.questionYear,
+      question_number: cleaned.questionNumber || null,
       status: "draft",
       created_by: auth.user.id,
       updated_by: auth.user.id,
@@ -291,8 +294,7 @@ export async function updateCoachMonthlyQuestion(
       question_text: cleaned.questionText,
       guidance: cleaned.guidance || null,
       discussion_prompts: cleaned.discussionPrompts,
-      question_month: cleaned.questionMonth,
-      question_year: cleaned.questionYear,
+      question_number: cleaned.questionNumber || null,
       updated_by: auth.user.id,
       updated_at: new Date().toISOString(),
     })
@@ -339,17 +341,6 @@ export async function publishCoachMonthlyQuestion(
   if (!canManageQuestion(auth, existing, assignments, context)) return notFoundResult();
   if (parseStatus(existing.status) === "archived") {
     return validationResult("Archived questions cannot be republished in this phase.");
-  }
-  try {
-    parseMonthlyQuestionPeriod(
-      existing.question_month,
-      existing.question_year,
-      { required: true }
-    );
-  } catch (error) {
-    return validationResult(
-      error instanceof Error ? error.message : "Choose a Month and Year."
-    );
   }
 
   const circleIds = assignments.get(questionId) || [];
@@ -446,8 +437,7 @@ export async function duplicateCoachMonthlyQuestion(
     circleIds: (assignments.get(questionId) || []).filter((circleId) =>
       context.authorizedCircleIds.has(circleId)
     ),
-    questionMonth: existing.question_month,
-    questionYear: existing.question_year,
+    questionNumber: existing.question_number || "",
   });
 }
 
@@ -485,10 +475,11 @@ export async function assignCoachMonthlyQuestion(
   if (!question || parseStatus(question.status) !== "published") {
     return notFoundResult();
   }
+  let period;
   try {
-    parseMonthlyQuestionPeriod(
-      question.question_month,
-      question.question_year,
+    period = parseMonthlyQuestionPeriod(
+      values.questionMonth,
+      values.questionYear,
       { required: true }
     );
   } catch (error) {
@@ -527,6 +518,8 @@ export async function assignCoachMonthlyQuestion(
       assignedBy: auth.user.id,
       visibleFrom: timestamp,
       coachIntroduction: cleanText(values.coachIntroduction, 1200) || null,
+      questionMonth: period.month,
+      questionYear: period.year,
     });
   } catch (error) {
     return monthlyQuestionDatabaseFailure("monthly_question_assignment_save_failed", error);
@@ -654,7 +647,7 @@ export async function fetchMemberMonthlyQuestions(request: Request) {
             assignment.assignment_status !== "archived"
         )
         .map((assignment) =>
-          mapMemberMonthlyQuestion(row, assignment.circle_id, usersPayload)
+          mapMemberMonthlyQuestion(row, assignment, usersPayload)
         )
     )
     .sort((first, second) =>
@@ -665,9 +658,9 @@ export async function fetchMemberMonthlyQuestions(request: Request) {
 }
 
 const monthlyQuestionSelect =
-  "id, content_item_id, title, opening_reflection, question_text, guidance, discussion_prompts, status, category, theme, question_month, question_year, published_at, created_by, updated_by, created_at, updated_at";
+  "id, content_item_id, title, opening_reflection, question_text, guidance, discussion_prompts, status, category, theme, question_number, published_at, created_by, updated_by, created_at, updated_at";
 const monthlyQuestionAssignmentSelect =
-  "id, monthly_question_id, circle_id, assigned_by, assigned_at, created_at, assignment_status, visible_from, archived_at, coach_introduction";
+  "id, monthly_question_id, circle_id, assigned_by, assigned_at, created_at, assignment_status, visible_from, archived_at, coach_introduction, question_month, question_year";
 
 async function loadMonthlyQuestionContext(
   auth: Extract<CoachAuthResult, { ok: true }>
@@ -793,6 +786,8 @@ function mergeMonthlyQuestionAssignmentRows(
         visible_from: row.visible_from,
         archived_at: null,
         coach_introduction: specialized?.coach_introduction || "",
+        question_month: specialized?.question_month || null,
+        question_year: specialized?.question_year || null,
       };
     });
 }
@@ -980,18 +975,16 @@ function cleanMonthlyQuestionInput(
   if (invalidCircleId) {
     return validationResult("One selected Circle is not available to you.");
   }
-  let period;
-  try {
-    period = parseMonthlyQuestionPeriod(
-      values.questionMonth,
-      values.questionYear,
-      { required: requireCircle || circleIds.length > 0 }
-    );
-  } catch (error) {
+  const rawQuestionNumber =
+    typeof values.questionNumber === "string"
+      ? values.questionNumber.trim()
+      : "";
+  if (rawQuestionNumber.length > 50) {
     return validationResult(
-      error instanceof Error ? error.message : "Choose a Month and Year."
+      "Question Number must be 50 characters or fewer."
     );
   }
+  const questionNumber = rawQuestionNumber;
 
   return {
     ok: true as const,
@@ -1001,8 +994,7 @@ function cleanMonthlyQuestionInput(
     guidance,
     discussionPrompts,
     circleIds,
-    questionMonth: period.month,
-    questionYear: period.year,
+    questionNumber,
   };
 }
 
@@ -1066,8 +1058,7 @@ function mapCoachMonthlyQuestion(
     discussionPrompts: parseDiscussionPrompts(row.discussion_prompts),
     category: row.category || "",
     theme: row.theme || "",
-    questionMonth: row.question_month,
-    questionYear: row.question_year,
+    questionNumber: row.question_number || "",
     status,
     publishedAt: row.published_at,
     createdAt: row.created_at,
@@ -1113,6 +1104,8 @@ function mapCoachMonthlyQuestionAssignments(
         visibleFrom: assignment.visible_from || null,
         archivedAt: assignment.archived_at || null,
         coachIntroduction: assignment.coach_introduction || "",
+        questionMonth: assignment.question_month || null,
+        questionYear: assignment.question_year || null,
         assignedBy: toPersonSummary(getUserById(assignment.assigned_by || "", context.usersPayload)),
         canArchive:
           assignment.assignment_status !== "archived" &&
@@ -1126,9 +1119,10 @@ function mapCoachMonthlyQuestionAssignments(
 
 function mapMemberMonthlyQuestion(
   row: MonthlyQuestionRow,
-  circleId: string,
+  assignment: MonthlyQuestionAssignmentRow,
   usersPayload: AdminUsersPayload
 ): MemberMonthlyQuestion {
+  const circleId = assignment.circle_id;
   const circle = usersPayload.circles.find((item) => item.id === circleId);
 
   return {
@@ -1143,8 +1137,9 @@ function mapMemberMonthlyQuestion(
     questionText: row.question_text || "",
     guidance: row.guidance || "",
     discussionPrompts: parseDiscussionPrompts(row.discussion_prompts),
-    questionMonth: row.question_month,
-    questionYear: row.question_year,
+    questionNumber: row.question_number || "",
+    questionMonth: assignment.question_month || null,
+    questionYear: assignment.question_year || null,
     status: parseStatus(row.status) === "archived" ? "archived" : "published",
     publishedAt: row.published_at,
   };

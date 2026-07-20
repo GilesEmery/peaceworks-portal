@@ -60,6 +60,8 @@ function parseQuestionBody(body: QuestionBody): CoachMonthlyQuestionAssignmentIn
     questionId: getString(body.questionId),
     circleIds: getStringArray(body.circleIds),
     coachIntroduction: getString(body.coachIntroduction),
+    questionMonth: getNumber(body.questionMonth),
+    questionYear: getNumber(body.questionYear),
   };
 }
 
@@ -88,6 +90,12 @@ function getStringArray(value: unknown) {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
     : [];
+}
+
+function getNumber(value: unknown) {
+  if (typeof value === "number") return value;
+  if (typeof value === "string" && value.trim()) return Number(value);
+  return null;
 }
 
 function getErrorDetail(error: unknown) {

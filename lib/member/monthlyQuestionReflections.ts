@@ -194,18 +194,31 @@ export async function fetchCoachMonthlyQuestionReflections(input: {
         .filter((id): id is string => Boolean(id))
     )
   );
-  const [questionsResponse, circlesResponse] = await Promise.all([
+  const [questionsResponse, circlesResponse, assignmentMetadataResponse] =
+    await Promise.all([
     supabase
       .from("monthly_questions")
       .select(
-        "id,title,theme,category,question_text,question_month,question_year"
+        "id,title,theme,category,question_text,question_number"
       )
       .in("id", questionIds),
     circleIds.length
       ? supabase.from("circles").select("id,name").in("id", circleIds)
       : Promise.resolve({ data: [], error: null }),
+    circleIds.length
+      ? supabase
+          .from("monthly_question_circle_assignments")
+          .select(
+            "monthly_question_id,circle_id,question_month,question_year"
+          )
+          .in("monthly_question_id", questionIds)
+          .in("circle_id", circleIds)
+      : Promise.resolve({ data: [], error: null }),
   ]);
-  const detailError = questionsResponse.error || circlesResponse.error;
+  const detailError =
+    questionsResponse.error ||
+    circlesResponse.error ||
+    assignmentMetadataResponse.error;
   if (detailError) {
     throw new Error(`Coach reflection details failed: ${detailError.message}`);
   }
@@ -216,11 +229,22 @@ export async function fetchCoachMonthlyQuestionReflections(input: {
   const circleById = new Map(
     (circlesResponse.data || []).map((row) => [row.id, row.name || ""])
   );
+  const metadataByTarget = new Map(
+    (assignmentMetadataResponse.data || []).map((metadata) => [
+      `${metadata.monthly_question_id}:${metadata.circle_id}`,
+      metadata,
+    ])
+  );
 
   return visibleRows.flatMap((row) => {
     const assignment = assignmentById.get(row.content_assignment_id);
     const question = questionById.get(row.monthly_question_id);
     if (!assignment || !question) return [];
+    const assignmentMetadata = assignment.circle_id
+      ? metadataByTarget.get(
+          `${row.monthly_question_id}:${assignment.circle_id}`
+        )
+      : null;
     return [
       {
         id: row.id,
@@ -230,8 +254,9 @@ export async function fetchCoachMonthlyQuestionReflections(input: {
         title: question.title || "Monthly Question",
         theme: question.theme || "",
         category: question.category || "",
-        questionMonth: question.question_month ?? null,
-        questionYear: question.question_year ?? null,
+        questionNumber: question.question_number || "",
+        questionMonth: assignmentMetadata?.question_month ?? null,
+        questionYear: assignmentMetadata?.question_year ?? null,
         circle: assignment.circle_id
           ? {
               id: assignment.circle_id,

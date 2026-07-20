@@ -472,36 +472,51 @@ from (
   having count(*) > 1
 ) duplicate_groups;
 
--- Update 8 healthy result after legacy repair: every count is zero. This
--- returns period metadata only and never selects question or reflection text.
+-- Update 9 healthy result: all integrity counts are zero. Source period values
+-- are informational compatibility debt until the later retirement migration.
 select
   count(*) filter (
-    where question_month is not null and question_year is null
-  ) as month_without_year,
+    where mqa.question_month is not null and mqa.question_year is null
+  ) as assignment_month_without_year,
   count(*) filter (
-    where question_month is null and question_year is not null
-  ) as year_without_month,
+    where mqa.question_month is null and mqa.question_year is not null
+  ) as assignment_year_without_month,
   count(*) filter (
-    where question_month is not null
-      and question_month not between 1 and 12
-  ) as invalid_question_months,
+    where mqa.question_month is not null
+      and mqa.question_month not between 1 and 12
+  ) as invalid_assignment_months,
   count(*) filter (
-    where question_year is not null
-      and question_year not between 2020 and 2100
-  ) as invalid_question_years,
+    where mqa.question_year is not null
+      and mqa.question_year not between 2020 and 2100
+  ) as invalid_assignment_years,
   count(*) filter (
-    where status = 'published'
-      and (question_month is null or question_year is null)
-  ) as published_questions_without_period
-from public.monthly_questions;
+    where mqa.assignment_status = 'active'
+      and (mqa.question_month is null or mqa.question_year is null)
+  ) as active_circle_assignments_without_period,
+  count(*) filter (
+    where not exists (
+      select 1
+      from public.content_assignments ca
+      where ca.content_item_id = mq.content_item_id
+        and ca.audience_type = 'selected_circle'
+        and ca.circle_id = mqa.circle_id
+        and ca.placement = 'circle_dashboard'
+    )
+  )
+    as assignment_period_rows_without_canonical_assignments
+from public.monthly_question_circle_assignments mqa
+left join public.monthly_questions mq
+  on mq.id = mqa.monthly_question_id;
 
--- Update 8 healthy result after legacy repair: zero.
-select count(*) as active_assigned_questions_without_period
-from public.content_assignments ca
-join public.content_items ci
-  on ci.id = ca.content_item_id
- and ci.content_kind = 'monthly_question'
-join public.monthly_questions mq
-  on mq.content_item_id = ca.content_item_id
-where ca.assignment_status = 'active'
-  and (mq.question_month is null or mq.question_year is null);
+select
+  count(*) filter (
+    where question_month is not null or question_year is not null
+  ) as deprecated_source_period_rows,
+  count(*) filter (
+    where question_number is not null and btrim(question_number) = ''
+  ) as blank_question_numbers,
+  count(*) filter (
+    where question_number is not null
+      and char_length(question_number) > 50
+  ) as oversized_question_numbers
+from public.monthly_questions;

@@ -213,7 +213,8 @@ export default function MyDashboard() {
               <span className="card-label">
                 {formatMonthlyQuestionTileLabel(
                   question.questionMonth,
-                  question.questionYear
+                  question.questionYear,
+                  question.questionNumber
                 )}
               </span>
               <h3>{question.question}</h3>
@@ -475,10 +476,17 @@ function formatLabel(value: string) {
 
 function formatMonthlyQuestionTileLabel(
   month: number | null,
-  year: number | null
+  year: number | null,
+  questionNumber: string
 ) {
   const period = formatMonthlyQuestionPeriod(month, year);
-  return period ? `${period.toUpperCase()} · MONTHLY QUESTION` : "MONTHLY QUESTION";
+  const number = questionNumber.trim();
+  if (period && number) {
+    return `${period.toUpperCase()} · ${number.toUpperCase()}`;
+  }
+  if (period) return `${period.toUpperCase()} · MONTHLY QUESTION`;
+  if (number) return number.toUpperCase();
+  return "MONTHLY QUESTION";
 }
 
 function getSecondaryIdentityType(

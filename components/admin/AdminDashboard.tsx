@@ -41,10 +41,6 @@ import {
   getMissingProfileCompletionFields,
   isProfileComplete,
 } from "../../lib/profileCompletion";
-import {
-  formatMonthlyQuestionPeriod,
-  monthlyQuestionMonths,
-} from "../../lib/monthlyQuestionPeriod";
 
 type LoadState = "loading" | "ready" | "denied" | "error";
 type ContentStatus = "draft" | "published" | "archived";
@@ -100,8 +96,7 @@ type AdminMonthlyQuestion = {
   status: ContentStatus;
   category: string;
   theme: string;
-  questionMonth: number | null;
-  questionYear: number | null;
+  questionNumber: string;
   assignedCircleCount: number;
   currentUseCount: number;
   publishedAt: string | null;
@@ -1872,8 +1867,7 @@ function MonthlyQuestionLibrary({
     title: "",
     category: "",
     theme: "",
-    questionMonth: "",
-    questionYear: "",
+    questionNumber: "",
     openingReflection: "",
     questionText: "",
     guidance: "",
@@ -1907,12 +1901,7 @@ function MonthlyQuestionLibrary({
       title: question.title,
       category: question.category,
       theme: question.theme,
-      questionMonth: question.questionMonth
-        ? String(question.questionMonth)
-        : "",
-      questionYear: question.questionYear
-        ? String(question.questionYear)
-        : "",
+      questionNumber: question.questionNumber,
       openingReflection: question.openingReflection,
       questionText: question.questionText,
       guidance: question.guidance,
@@ -1934,8 +1923,7 @@ function MonthlyQuestionLibrary({
           title: form.title,
           category: form.category,
           theme: form.theme,
-          questionMonth: form.questionMonth || null,
-          questionYear: form.questionYear || null,
+          questionNumber: form.questionNumber,
           openingReflection: form.openingReflection,
           questionText: form.questionText,
           guidance: form.guidance,
@@ -1986,25 +1974,11 @@ function MonthlyQuestionLibrary({
           <ContentInput label="Title" value={form.title} onChange={(title) => setForm({ ...form, title })} />
           <ContentInput label="Category" value={form.category} onChange={(category) => setForm({ ...form, category })} />
           <ContentInput label="Theme" value={form.theme} onChange={(theme) => setForm({ ...form, theme })} />
-          <ContentSelect
-            label="Month"
-            value={form.questionMonth}
-            options={[
-              ["", "Select month"],
-              ...monthlyQuestionMonths.map(
-                (month, index) => [String(index + 1), month] as [string, string]
-              ),
-            ]}
-            onChange={(questionMonth) =>
-              setForm({ ...form, questionMonth })
-            }
-          />
-          <ContentSelect
-            label="Year"
-            value={form.questionYear}
-            options={getMonthlyQuestionYearOptions()}
-            onChange={(questionYear) =>
-              setForm({ ...form, questionYear })
+          <ContentInput
+            label="Question Number (optional, e.g. Question 1 or Question 2A)"
+            value={form.questionNumber}
+            onChange={(questionNumber) =>
+              setForm({ ...form, questionNumber })
             }
           />
           <ContentTextarea label="Opening Reflection" value={form.openingReflection} onChange={(openingReflection) => setForm({ ...form, openingReflection })} />
@@ -2113,10 +2087,7 @@ function MonthlyQuestionCard({
         <p>{question.questionText || "No question text yet."}</p>
         <small>
           {[
-            formatMonthlyQuestionPeriod(
-              question.questionMonth,
-              question.questionYear
-            ),
+            question.questionNumber,
             question.category,
             question.theme,
           ]
@@ -4150,17 +4121,6 @@ function ContentSelect({
       </select>
     </label>
   );
-}
-
-function getMonthlyQuestionYearOptions(): Array<[string, string]> {
-  const currentYear = new Date().getFullYear();
-  return [
-    ["", "Select year"],
-    ...Array.from({ length: 7 }, (_, index) => {
-      const year = currentYear - 1 + index;
-      return [String(year), String(year)] as [string, string];
-    }),
-  ];
 }
 
 function ContentTextarea({

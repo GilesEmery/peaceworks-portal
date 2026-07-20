@@ -266,6 +266,7 @@ function MonthlyQuestionDetail({
     <article className="portal-card dashboard-detail-card">
       <span className="card-label">
         {period ? `${period} · ` : ""}
+        {question.questionNumber ? `${question.questionNumber} · ` : ""}
         {isCircleMember ? "Circle Member Monthly Question" : "Monthly Question"}
       </span>
       <h1>{question.title || "This Month's Question"}</h1>

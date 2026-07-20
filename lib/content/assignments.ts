@@ -215,6 +215,8 @@ export async function upsertMonthlyQuestionAssignmentMetadata(input: {
   assignedBy: string;
   visibleFrom: string;
   coachIntroduction?: string | null;
+  questionMonth?: number | null;
+  questionYear?: number | null;
 }) {
   if (input.circleIds.length === 0) return;
 
@@ -231,6 +233,12 @@ export async function upsertMonthlyQuestionAssignmentMetadata(input: {
         visible_from: input.visibleFrom,
         archived_at: null,
         coach_introduction: input.coachIntroduction || null,
+        ...(input.questionMonth !== undefined
+          ? { question_month: input.questionMonth }
+          : {}),
+        ...(input.questionYear !== undefined
+          ? { question_year: input.questionYear }
+          : {}),
       })),
       { onConflict: "monthly_question_id,circle_id" }
     );

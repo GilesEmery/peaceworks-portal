@@ -39,7 +39,10 @@ import type {
   CoachMonthlyQuestion,
   CoachMonthlyQuestionsPayload,
 } from "../../lib/coach/monthlyQuestions";
-import { formatMonthlyQuestionPeriod } from "../../lib/monthlyQuestionPeriod";
+import {
+  formatMonthlyQuestionPeriod,
+  monthlyQuestionMonths,
+} from "../../lib/monthlyQuestionPeriod";
 import type {
   CoachResource,
   CoachResourceAssignment,
@@ -1438,10 +1441,7 @@ function MonthlyQuestionTile({
       <div>
         <span>Published</span>
         <small>
-          {formatMonthlyQuestionPeriod(
-            question.questionMonth,
-            question.questionYear
-          ) ||
+          {question.questionNumber ||
             question.category ||
             question.theme ||
             question.author.name ||
@@ -1491,6 +1491,17 @@ function MonthlyQuestionAssignmentTile({
         <small>{assignment.circle.name}</small>
       </div>
       <strong>{assignment.question.title || shorten(assignment.question.questionText, 78)}</strong>
+      {formatMonthlyQuestionPeriod(
+        assignment.questionMonth,
+        assignment.questionYear
+      ) && (
+        <small>
+          {formatMonthlyQuestionPeriod(
+            assignment.questionMonth,
+            assignment.questionYear
+          )}
+        </small>
+      )}
       <blockquote>{assignment.question.questionText}</blockquote>
       <footer>
         <small>
@@ -1537,6 +1548,8 @@ function MonthlyQuestionAssignmentForm({
     questionId: question.id,
     circleIds: defaultCircleId ? [defaultCircleId] : [],
     coachIntroduction: "",
+    questionMonth: null,
+    questionYear: null,
   });
   const [dirty, setDirty] = useState(false);
 
@@ -1557,6 +1570,35 @@ function MonthlyQuestionAssignmentForm({
         wording can only be changed by an admin.
       </div>
       <MonthlyQuestionReadOnlyContent question={question} />
+      <div className="coach-form-grid">
+        <SelectField
+          label="Month"
+          value={form.questionMonth ? String(form.questionMonth) : ""}
+          options={monthlyQuestionMonths.map((label, index) => ({
+            value: String(index + 1),
+            label,
+          }))}
+          onChange={(value) => {
+            setForm((current) => ({
+              ...current,
+              questionMonth: value ? Number(value) : null,
+            }));
+            setDirty(true);
+          }}
+        />
+        <SelectField
+          label="Year"
+          value={form.questionYear ? String(form.questionYear) : ""}
+          options={getMonthlyQuestionYearOptions()}
+          onChange={(value) => {
+            setForm((current) => ({
+              ...current,
+              questionYear: value ? Number(value) : null,
+            }));
+            setDirty(true);
+          }}
+        />
+      </div>
       <div className="coach-recipient-picker">
         <div className="coach-panel-head">
           <strong>Assigned Circles</strong>
@@ -1630,15 +1672,9 @@ function MonthlyQuestionReadOnlyContent({
 }) {
   return (
     <div className="monthly-question-member-card">
-      {formatMonthlyQuestionPeriod(
-        question.questionMonth,
-        question.questionYear
-      ) && (
+      {question.questionNumber && (
         <span className="card-label">
-          {formatMonthlyQuestionPeriod(
-            question.questionMonth,
-            question.questionYear
-          )}
+          {question.questionNumber}
         </span>
       )}
       {question.openingReflection && <p>{question.openingReflection}</p>}
@@ -2825,15 +2861,15 @@ function MonthlyQuestionReflectionsPanel({
         {reflections.map((reflection) => (
           <article className="coach-reflection-card" key={reflection.id}>
             <span className="card-label">
-              {formatMonthlyQuestionPeriod(
-                reflection.questionMonth,
-                reflection.questionYear
-              )
-                ? `${formatMonthlyQuestionPeriod(
-                    reflection.questionMonth,
-                    reflection.questionYear
-                  )} Monthly Question`
-                : "Monthly Question"}
+              {[
+                formatMonthlyQuestionPeriod(
+                  reflection.questionMonth,
+                  reflection.questionYear
+                ),
+                reflection.questionNumber,
+              ]
+                .filter(Boolean)
+                .join(" · ") || "Monthly Question"}
             </span>
             <h5>{reflection.title}</h5>
             <p className="coach-reflection-question">{reflection.question}</p>
@@ -3642,6 +3678,14 @@ function TextAreaField({
       <textarea value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
   );
+}
+
+function getMonthlyQuestionYearOptions() {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: 7 }, (_, index) => {
+    const year = currentYear - 1 + index;
+    return { value: String(year), label: String(year) };
+  });
 }
 
 function SelectField({
