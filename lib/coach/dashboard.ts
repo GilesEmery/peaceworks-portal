@@ -19,6 +19,8 @@ import {
   type AdminManagedProfile,
   type AdminUsersPayload,
 } from "../admin/userManagement";
+import { fetchCoachMonthlyQuestionReflections } from "../member/monthlyQuestionReflections";
+import type { CoachMonthlyQuestionReflection } from "../monthlyQuestionReflections";
 import type { PeaceAssessmentResult } from "../peaceAssessmentScoring";
 
 export type CoachAuthResult =
@@ -153,6 +155,7 @@ export type CoachMemberPayload = {
   growthStatus: CoachGrowthStatus | null;
   notes: CoachProfileNote[];
   notesMessage: string;
+  monthlyQuestionReflections: CoachMonthlyQuestionReflection[];
   activity: Array<{
     key: string;
     label: string;
@@ -641,7 +644,14 @@ export async function fetchCoachMember(
     context.records.filter((record) => record.userId === profileId)
   );
   const growthStatus = context.growthStatuses.get(profileId) || null;
-  const notes = await fetchProfileNotesForAuth(auth, profileId, context);
+  const [notes, monthlyQuestionReflections] = await Promise.all([
+    fetchProfileNotesForAuth(auth, profileId, context),
+    fetchCoachMonthlyQuestionReflections({
+      coachId: auth.user.id,
+      profileId,
+      isAdmin: auth.isAdmin,
+    }),
+  ]);
 
   return {
     ok: true,
@@ -665,6 +675,7 @@ export async function fetchCoachMember(
       notes.length === 0
         ? "No coach-visible notes have been added for this member."
         : "",
+    monthlyQuestionReflections,
     activity: buildMemberActivity({ profile, assessments, growthStatus }),
   };
 }

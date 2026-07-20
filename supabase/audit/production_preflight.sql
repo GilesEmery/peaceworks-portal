@@ -404,3 +404,70 @@ where ca.assignment_status = 'active'
       and m.circle_id = ca.circle_id
       and m.assignment_status <> 'archived'
   );
+
+-- Update 7 healthy result: every count is zero. This query returns aggregate
+-- metadata only and never selects reflection_body.
+select
+  count(*) filter (where p.id is null)
+    as reflections_without_profiles,
+  count(*) filter (where ca.id is null)
+    as reflections_without_assignments,
+  count(*) filter (
+    where ca.id is not null
+      and (
+        ci.id is null
+        or ci.content_kind <> 'monthly_question'
+      )
+  ) as reflections_on_non_monthly_question_assignments,
+  count(*) filter (
+    where ca.id is not null
+      and (
+        mq.id is null
+        or mq.content_item_id <> ca.content_item_id
+      )
+  ) as reflection_assignment_question_mismatches,
+  count(*) filter (where char_length(r.reflection_body) > 20000)
+    as oversized_reflection_bodies,
+  count(*) filter (
+    where p.id is not null
+      and (
+        p.account_status <> 'active'
+        or case
+          when ca.audience_type = 'all_members' then false
+          when ca.audience_type = 'selected_member'
+            then ca.profile_id is distinct from r.profile_id
+          when ca.audience_type = 'all_circle_members'
+            then not exists (
+              select 1
+              from public.circle_memberships cm
+              where cm.profile_id = r.profile_id
+                and cm.status = 'active'
+                and cm.ended_at is null
+            )
+          when ca.audience_type = 'selected_circle'
+            then not exists (
+              select 1
+              from public.circle_memberships cm
+              where cm.profile_id = r.profile_id
+                and cm.circle_id = ca.circle_id
+                and cm.status = 'active'
+                and cm.ended_at is null
+            )
+          else true
+        end
+      )
+  ) as reflections_without_current_audience_eligibility
+from public.monthly_question_reflections r
+left join public.profiles p on p.id = r.profile_id
+left join public.content_assignments ca on ca.id = r.content_assignment_id
+left join public.content_items ci on ci.id = ca.content_item_id
+left join public.monthly_questions mq on mq.id = r.monthly_question_id;
+
+-- Update 7 healthy result: zero duplicate groups.
+select count(*) as duplicate_reflection_profile_assignment_groups
+from (
+  select 1
+  from public.monthly_question_reflections
+  group by profile_id, content_assignment_id
+  having count(*) > 1
+) duplicate_groups;

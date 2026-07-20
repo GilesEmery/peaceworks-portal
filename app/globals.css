@@ -2215,6 +2215,90 @@ a {
   padding-left: 22px;
 }
 
+.dashboard-reflection-editor {
+  display: grid;
+  gap: 14px;
+  margin-top: 34px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+
+.dashboard-reflection-editor label {
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+}
+
+.dashboard-reflection-editor textarea {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  padding: 18px;
+  border: 1px solid rgba(58, 91, 64, 0.28);
+  border-radius: 16px;
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.55;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.dashboard-reflection-editor textarea:focus-visible {
+  outline: 3px solid rgba(58, 91, 64, 0.35);
+  outline-offset: 2px;
+}
+
+.dashboard-reflection-meta,
+.dashboard-reflection-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+}
+
+.dashboard-reflection-meta {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.dashboard-reflection-disclosure {
+  padding: 16px 18px;
+  border-left: 3px solid var(--sage);
+  border-radius: 0 12px 12px 0;
+  background: rgba(143, 171, 142, 0.12);
+}
+
+.coach-reflection-list {
+  display: grid;
+  gap: 16px;
+}
+
+.coach-reflection-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid rgba(58, 91, 64, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.coach-reflection-card h5,
+.coach-reflection-card p {
+  margin: 0;
+}
+
+.coach-reflection-card h5 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+}
+
+.coach-reflection-question {
+  color: var(--sage-dark);
+  font-weight: 700;
+}
+
+.coach-reflection-body {
+  white-space: pre-wrap;
+}
+
 @media (max-width: 900px) {
   .dashboard-wide-grid {
     grid-template-columns: 1fr;
@@ -2252,8 +2336,14 @@ a {
   }
 
   .dashboard-card-actions .btn,
-  .dashboard-journey-card > .btn {
+  .dashboard-journey-card > .btn,
+  .dashboard-reflection-actions .btn {
     width: 100%;
+  }
+
+  .dashboard-reflection-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

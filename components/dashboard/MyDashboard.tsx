@@ -224,11 +224,15 @@ export default function MyDashboard() {
               className="btn btn-primary"
               type="button"
               onClick={() =>
-                router.push(`/my-dashboard/monthly-questions/${question.id}`)
+                router.push(
+                  `/my-dashboard/monthly-questions/${question.assignmentId}`
+                )
               }
               aria-label={`Reflect on ${question.title || "this Monthly Question"}`}
             >
-              Reflect on This Question
+              {isCircleMember
+                ? "Reflect and Take Notes"
+                : "Reflect on This Question"}
             </button>
           </article>
         )}

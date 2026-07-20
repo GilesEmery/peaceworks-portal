@@ -24,6 +24,7 @@ export type DashboardCircle = {
 
 export type DashboardMonthlyQuestion = {
   id: string;
+  assignmentId: string;
   contentItemId: string;
   title: string;
   theme: string;
@@ -516,6 +517,7 @@ async function resolveDashboardContent(
       if (!row) return null;
       return {
         id: row.id,
+        assignmentId: assignment.id,
         contentItemId: assignment.content_item_id,
         title: row.title || "",
         theme: row.theme || "",

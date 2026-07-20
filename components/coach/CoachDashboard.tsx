@@ -2765,6 +2765,10 @@ function MemberDetail({
           }
         />
 
+        <MonthlyQuestionReflectionsPanel
+          reflections={member.monthlyQuestionReflections}
+        />
+
         <DetailPanel title="Activity">
           {member.activity.length === 0 ? (
             <EmptyLine>No recent activity available.</EmptyLine>
@@ -2778,6 +2782,41 @@ function MemberDetail({
             ))
           )}
         </DetailPanel>
+      </div>
+    </section>
+  );
+}
+
+function MonthlyQuestionReflectionsPanel({
+  reflections,
+}: {
+  reflections: CoachMemberPayload["monthlyQuestionReflections"];
+}) {
+  if (reflections.length === 0) return null;
+
+  return (
+    <section className="coach-detail-panel coach-reflections-panel">
+      <div className="coach-panel-head">
+        <h4>Monthly Question Reflections</h4>
+        <span>Member-authored · Read only</span>
+      </div>
+      <div className="coach-reflection-list">
+        {reflections.map((reflection) => (
+          <article className="coach-reflection-card" key={reflection.id}>
+            <span className="card-label">
+              {reflection.theme ||
+                reflection.category ||
+                "Monthly Question"}
+            </span>
+            <h5>{reflection.title}</h5>
+            <p className="coach-reflection-question">{reflection.question}</p>
+            {reflection.circle && (
+              <small>Circle: {reflection.circle.name}</small>
+            )}
+            <p className="coach-reflection-body">{reflection.body}</p>
+            <small>Updated {formatDate(reflection.updatedAt)}</small>
+          </article>
+        ))}
       </div>
     </section>
   );
