@@ -20,6 +20,7 @@ import SiteFooter from "../../components/layout/SiteFooter";
 import QuestionCard from "../../components/assessment/QuestionCard";
 import ProgressBar from "../../components/assessment/ProgressBar";
 import ResultModal from "../../components/assessment/ResultModal";
+import { requestConfirmation } from "../../components/ui/FeedbackCenter";
 import { peaceAssessmentProfiles } from "../../data/peaceAssessmentProfiles";
 import { buildPeaceReportProfile } from "../../data/peaceReport";
 import { routes } from "../../lib/navigation";
@@ -211,13 +212,18 @@ export default function PeaceAssessmentPage() {
     setCurrentIndex((prev) => Math.max(prev - 1, 0));
   }
 
-  function restartAssessment() {
-    if (confirm("Restart the Peace Assessment?")) {
-      setAnswers({});
-      setCurrentIndex(0);
-      setMessage("");
-      setResultData(null);
-    }
+  async function restartAssessment() {
+    const confirmed = await requestConfirmation({
+      title: "Restart the Peace Assessment?",
+      description: "This clears your current unsaved answers and starts again at question one.",
+      confirmLabel: "Restart Assessment",
+      tone: "danger",
+    });
+    if (!confirmed) return;
+    setAnswers({});
+    setCurrentIndex(0);
+    setMessage("");
+    setResultData(null);
   }
 
   function startAssessment() {

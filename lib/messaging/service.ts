@@ -334,7 +334,10 @@ export async function setConversationArchived(
   const supabase = createAdminSupabaseClient();
   const { error } = await supabase
     .from("conversation_participants")
-    .update({ archived_at: archived ? new Date().toISOString() : null })
+    .update({
+      archived_at: archived ? new Date().toISOString() : null,
+      ...(archived ? {} : { deleted_at: null }),
+    })
     .eq("conversation_id", conversationId)
     .eq("profile_id", context.profileId);
   if (error) throw new Error(`Conversation archive could not be updated: ${error.message}`);

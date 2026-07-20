@@ -13,6 +13,7 @@ import { routes } from "../../lib/navigation";
 import { supabase } from "../../lib/supabase";
 import SiteFooter from "../layout/SiteFooter";
 import SiteHeader from "../layout/SiteHeader";
+import { showFeedback } from "../ui/FeedbackCenter";
 
 type InboxPayload = {
   ok: true;
@@ -253,14 +254,6 @@ function ConversationThread({
   const [sending, setSending] = useState(false);
 
   async function act(action: "archive" | "unarchive" | "delete-for-me") {
-    if (
-      action === "delete-for-me" &&
-      !window.confirm(
-        "Remove this conversation from your Messages? Other participants will still retain it."
-      )
-    ) {
-      return;
-    }
     try {
       await messagingFetch(
         `/api/messages/conversations/${conversation.id}/${action}`,
@@ -270,11 +263,51 @@ function ConversationThread({
           body: action === "delete-for-me" ? JSON.stringify({ confirmed: true }) : undefined,
         }
       );
-      if (action === "delete-for-me") onRemoved();
-      else await onChanged();
+      if (action === "delete-for-me") {
+        onRemoved();
+        showFeedback({
+          kind: "success",
+          message: "Conversation removed from your Messages.",
+          actionLabel: "Undo",
+          onAction: async () => {
+            await messagingFetch(
+              `/api/messages/conversations/${conversation.id}/unarchive`,
+              token,
+              { method: "POST" }
+            );
+            await onChanged();
+            window.dispatchEvent(new Event("peaceworks-messages-updated"));
+          },
+        });
+      } else {
+        await onChanged();
+        showFeedback({
+          kind: "success",
+          message:
+            action === "archive"
+              ? "Conversation archived."
+              : "Conversation returned to your Messages.",
+          actionLabel: action === "archive" ? "Undo" : undefined,
+          onAction:
+            action === "archive"
+              ? async () => {
+                  await messagingFetch(
+                    `/api/messages/conversations/${conversation.id}/unarchive`,
+                    token,
+                    { method: "POST" }
+                  );
+                  await onChanged();
+                  window.dispatchEvent(new Event("peaceworks-messages-updated"));
+                }
+              : undefined,
+        });
+      }
       window.dispatchEvent(new Event("peaceworks-messages-updated"));
     } catch (error) {
-      onError(error instanceof Error ? error.message : "Conversation could not be updated.");
+      const errorMessage =
+        error instanceof Error ? error.message : "Conversation could not be updated.";
+      onError(errorMessage);
+      showFeedback({ kind: "error", message: errorMessage });
     }
   }
 

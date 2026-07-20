@@ -1,11 +1,12 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { showFeedback } from "../components/ui/FeedbackCenter";
 
 export async function generatePeacePdf(fileName: string) {
   const element = document.getElementById("peace-pdf-report");
 
   if (!element) {
-    alert("PDF report not found.");
+    showFeedback({ kind: "error", message: "PDF report not found." });
     return;
   }
 

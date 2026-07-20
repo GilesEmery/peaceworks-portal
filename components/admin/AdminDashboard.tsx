@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 
 import ResultModal from "../assessment/ResultModal";
+import { requestConfirmation } from "../ui/FeedbackCenter";
 import AdminUsersManager from "./AdminUsersManager";
 import { supabase } from "../../lib/supabase";
 import { routes } from "../../lib/navigation";
@@ -2053,11 +2054,18 @@ function MonthlyQuestionCard({
   onRefresh: () => Promise<void>;
 }) {
   async function runAction(action: "publish" | "archive" | "delete" | "duplicate") {
-    const confirmed =
-      action !== "delete" ||
-      window.confirm("Delete this draft monthly question? Assigned questions should be archived instead.");
-
-    if (!confirmed) return;
+    if (
+      action === "delete" &&
+      !(await requestConfirmation({
+        title: "Delete this draft monthly question?",
+        description:
+          "This permanently deletes the draft. Assigned questions should be archived instead.",
+        confirmLabel: "Delete Draft",
+        tone: "danger",
+      }))
+    ) {
+      return;
+    }
 
     const status = action === "publish" ? "published" : action === "archive" ? "archived" : null;
     const result = await adminContentRequest(
@@ -4209,7 +4217,18 @@ async function deleteContentRecord(
   onMessage: (message: ContentMessage) => void,
   onRefresh: () => Promise<void>
 ) {
-  if (!window.confirm(confirmation)) return;
+  const itemType = confirmation.toLowerCase().includes("resource")
+    ? "Resource"
+    : confirmation.toLowerCase().includes("training")
+      ? "Training"
+      : "Communication";
+  const confirmed = await requestConfirmation({
+    title: `Delete this ${itemType.toLowerCase()} for everyone?`,
+    description: `This permanently deletes the shared ${itemType.toLowerCase()} and cannot be undone.`,
+    confirmLabel: `Delete ${itemType}`,
+    tone: "danger",
+  });
+  if (!confirmed) return;
 
   const result = await adminContentRequest(url, { method: "DELETE" });
 

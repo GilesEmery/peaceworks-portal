@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import ResultModal from "../assessment/ResultModal";
+import { requestConfirmation } from "../ui/FeedbackCenter";
 import { supabase } from "../../lib/supabase";
 import { routes } from "../../lib/navigation";
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
@@ -295,11 +296,14 @@ export default function CoachDashboard() {
         return;
       }
 
-      if (
-        document.querySelector(".coach-note-form") &&
-        !window.confirm("Discard unsaved changes?")
-      ) {
-        return;
+      if (document.querySelector(".coach-note-form")) {
+        const discard = await requestConfirmation({
+          title: "Discard unsaved changes?",
+          description: "Your unsaved note or form changes will be lost.",
+          confirmLabel: "Discard Changes",
+          tone: "danger",
+        });
+        if (!discard) return;
       }
 
       setSelectedCircleId(circleId);
@@ -938,7 +942,13 @@ export default function CoachDashboard() {
   }
 
   async function deleteMemberNote(profileId: string, noteId: string) {
-    if (!window.confirm("Delete this member note?")) return;
+    const confirmed = await requestConfirmation({
+      title: "Delete this member note?",
+      description: "This permanently deletes the note and cannot be undone.",
+      confirmLabel: "Delete Note",
+      tone: "danger",
+    });
+    if (!confirmed) return;
 
     const token = await getAccessToken();
 
@@ -2201,12 +2211,15 @@ function CircleWorkspace({
     },
   ];
 
-  function openWorkspace(workspaceId: CoachWorkspaceId) {
-    if (
-      document.querySelector(".coach-note-form") &&
-      !window.confirm("Discard unsaved changes?")
-    ) {
-      return;
+  async function openWorkspace(workspaceId: CoachWorkspaceId) {
+    if (document.querySelector(".coach-note-form")) {
+      const discard = await requestConfirmation({
+        title: "Discard unsaved changes?",
+        description: "Your unsaved note or form changes will be lost.",
+        confirmLabel: "Discard Changes",
+        tone: "danger",
+      });
+      if (!discard) return;
     }
 
     onWorkspaceChange(workspaceId);
@@ -4045,10 +4058,19 @@ function growthFormFromStatus(status: CoachGrowthStatus | null): GrowthFormState
   };
 }
 
-function guardedCancel(dirty: boolean, onCancel: () => void) {
-  if (!dirty || window.confirm("Discard unsaved changes?")) {
-    onCancel();
+async function guardedCancel(dirty: boolean, onCancel: () => void) {
+  if (
+    dirty &&
+    !(await requestConfirmation({
+      title: "Discard unsaved changes?",
+      description: "Your unsaved form changes will be lost.",
+      confirmLabel: "Discard Changes",
+      tone: "danger",
+    }))
+  ) {
+    return;
   }
+  onCancel();
 }
 
 function formatCoachNames(coaches: Array<{ name: string }>) {
