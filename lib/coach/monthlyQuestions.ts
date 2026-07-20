@@ -1348,3 +1348,4 @@ function getBearerToken(request: Request) {
 
   return authorization.slice("bearer ".length).trim();
 }
+import "server-only";

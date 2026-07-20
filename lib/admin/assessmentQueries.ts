@@ -91,3 +91,4 @@ function formatAuthUser(user: User): AdminUserSummary {
     name,
   };
 }
+import "server-only";

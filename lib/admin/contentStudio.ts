@@ -2716,3 +2716,4 @@ function getDefaultMimeType(resourceType: AdminResourceType) {
 function trimText(value: string | null | undefined) {
   return (value || "").trim();
 }
+import "server-only";

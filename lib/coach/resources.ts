@@ -474,3 +474,4 @@ function safeErrorDetail(error: unknown) {
     .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     .join(" ");
 }
+import "server-only";

@@ -594,3 +594,4 @@ function isMissingAdminProfileTableError(error: unknown, tableName: string) {
 
   return values.includes(tableName) && values.includes("relation");
 }
+import "server-only";

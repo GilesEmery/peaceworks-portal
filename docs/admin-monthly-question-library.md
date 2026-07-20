@@ -1,6 +1,9 @@
-# Admin Dashboard — Monthly Question Library TODO
+# Admin Monthly Question Library — future enhancements
 
-Future phase: build the Admin Monthly Question Library as the source of truth for Monthly Question content.
+The Admin Monthly Question Library is the source of truth for reusable Monthly
+Question content. The current implementation supports authoring, publishing,
+archiving, duplication, and canonical assignment. The following notes describe
+possible future refinements rather than missing foundational behavior.
 
 Scope notes:
 

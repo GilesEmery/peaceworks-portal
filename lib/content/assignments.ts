@@ -549,3 +549,4 @@ function parseContentItemKind(value: string): ContentItemKind {
 
   throw new Error(`Unsupported content kind: ${value}`);
 }
+import "server-only";

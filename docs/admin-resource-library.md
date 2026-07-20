@@ -1,6 +1,7 @@
-# Admin Resource Library TODO
+# Admin Resource Library — future enhancements
 
-Future phase: build a centralized Admin Resource Library for materials that can be assigned to Circles, members, coaches, or training experiences.
+The centralized Resource Library supports reusable content and canonical
+assignment. The following notes describe possible future enhancements.
 
 Initial scope notes:
 

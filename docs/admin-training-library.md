@@ -1,6 +1,7 @@
-# Admin Training Library / Course Builder TODO
+# Admin Training Library / Course Builder — future enhancements
 
-Future phase: build an Admin Training Library and Course Builder for structured learning experiences.
+The current Training Library supports reusable training records and canonical
+assignment. A full course builder remains future work.
 
 Initial scope notes:
 
@@ -12,4 +13,5 @@ Initial scope notes:
 - Keep all assignment and progress writes behind secure server-side APIs.
 - Do not expose service-role credentials or privileged training-management operations to browser code.
 
-The Coach Dashboard Trainings workspace is currently a ready-state destination until this admin system exists.
+The Coach Dashboard Trainings workspace can evolve alongside the future course
+builder without changing the current library contract.

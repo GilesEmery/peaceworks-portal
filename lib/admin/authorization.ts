@@ -265,3 +265,4 @@ function isMissingLifecycleColumnError(error: unknown) {
 
   return values.includes("account_status") && values.includes("column");
 }
+import "server-only";

@@ -11,9 +11,9 @@ the production Supabase SQL Editor. The audit verified 25 public tables, 252
 public columns, 33 check constraints, 43 foreign keys, indexes, RLS state,
 public-table policies, grants, two functions, two triggers, and two private
 Storage buckets. Follow-up aggregate checks found no identity, assessment, or
-relationship-state anomalies. One active self coach assignment is known and
-must remain until application Circle-coach behavior has moved to
-`circle_coaches`.
+relationship-state anomalies. One historical self coach assignment is known.
+New self assignments are prohibited, and the compatibility row remains
+intentionally unmodified pending an approved data-retirement operation.
 
 [`20260720000000_baseline_production_schema.sql`](../supabase/migrations/20260720000000_baseline_production_schema.sql)
 is the repository-side representation of that verified schema. It contains no
@@ -92,11 +92,10 @@ version used for the rollout. It must not be improvised in production.
 
 - Auth-user deletion currently cascades to profiles and assessment results,
   while the approved normal removal model is deactivation or anonymization.
-- Application Circle-coach behavior still contains a self-assignment
-  compatibility convention even though `circle_coaches` is canonical.
-- `content_assignments.content_id` is polymorphic and has no FK.
-- Specialized Monthly Question assignments overlap with generalized content
-  assignments.
+- The known historical self coach assignment remains in production and must not
+  be altered without an approved repair plan.
+- Production migration-history metadata still requires deliberate coordination
+  with the repository baseline; application deployment does not perform it.
 - Assessment scoring is client-generated and stored without a scoring version.
 - `profile_notes.is_private` overlaps with `visibility`.
 - Admin authorization is transitioning from an email allowlist to the database
@@ -109,23 +108,22 @@ version used for the rollout. It must not be improvised in production.
 These are faithfully preserved in the baseline. They require separately
 reviewed forward migrations and application updates.
 
-## Planned forward-only sequence
+## Forward migration status
 
-Later Phase 2B updates should proceed in this order:
+The active migrations after the baseline now record:
 
-1. Generated database types and drift checking.
-2. Application migration to canonical `circle_coaches`.
-3. Safe retirement of the known self coach assignment.
-4. Relationship integrity and optional primary-coach support.
-5. `content_items` registry.
-6. Canonical content assignments and Monthly Question extension.
-7. Server-side assessment validation, versioning, and scoring.
-8. Database-role admin authority transition.
-9. Profile-note visibility and waitlist hardening.
-10. Identity deletion and erasure-workflow changes.
-11. Grants and Storage-policy hardening.
+1. Relationship integrity, canonical `circle_coaches`, and optional primary
+   direct-coach support.
+2. The `content_items` registry and canonical content-assignment cutover.
+3. Monthly Question reflections and assignment-specific period metadata.
+4. Member-visible notes.
+5. Secure portal messaging and its production reconciliation.
 
-No forward-architecture objects are part of this baseline update.
+Remaining architecture work requires separately reviewed updates, including
+generated database types and drift checking, safe retirement of the historical
+self assignment, server-side assessment scoring/versioning, database-role Admin
+authority, profile-note visibility cleanup, waitlist protection, identity
+erasure workflows, and grants/Storage-policy hardening.
 
 ## Database type generation
 
@@ -164,11 +162,12 @@ Current handwritten database row interfaces are concentrated in:
 - `app/assessments/page.tsx`
 - `components/dashboard/MyDashboard.tsx`
 
-Update 1 intentionally does not replace those interfaces.
+The baseline update intentionally did not replace those interfaces. Generated
+database types remain required future work.
 
 ## Drift auditing
 
 [`production_preflight.sql`](../supabase/audit/production_preflight.sql)
 contains read-only aggregate and metadata checks. It exposes no private row
-bodies. The known active self-assignment is documented as a temporary expected
-exception.
+bodies. The known historical self-assignment is documented as an expected
+compatibility exception pending an approved retirement plan.
