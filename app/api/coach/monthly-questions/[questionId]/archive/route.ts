@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       error: "monthly_question_source_mutation_disabled",
       code: "monthly_question_source_mutation_disabled",
       message:
-        "Use Archive from This Circle to archive a Circle assignment. Source questions are managed by admins.",
+        "Use Unassign from Circle to withdraw a Circle assignment. Source questions are managed by admins.",
     },
     { status: 405 }
   );

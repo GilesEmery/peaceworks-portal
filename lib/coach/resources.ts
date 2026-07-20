@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createAdminSupabaseClient } from "../admin/authorization";
 import {
   fetchAdminUsersData,
@@ -5,6 +7,7 @@ import {
   type AdminUsersPayload,
 } from "../admin/userManagement";
 import {
+  archiveCanonicalAssignment,
   canonicalAssignmentSelect,
   createCanonicalAssignments,
   resolveCanonicalAssignmentRows,
@@ -207,6 +210,50 @@ export async function assignCoachResourceToCircle(
       cleaned.audienceType === "selected_member"
         ? "Resource assigned. This will appear on the selected member’s My Dashboard."
         : "Resource assigned. This will appear on the dashboards of active members in this Circle.",
+  };
+}
+
+export async function unassignCoachResourceFromCircle(
+  auth: Extract<CoachAuthResult, { ok: true }>,
+  circleId: string,
+  assignmentId: string
+) {
+  const context = await loadResourceContext(auth, circleId);
+  if (!context) return notFoundResult();
+
+  const { resources, assignments } = await fetchResourceRows();
+  void resources;
+  const assignment = assignments.find(
+    (row) =>
+      row.id === assignmentId &&
+      row.content_kind === "resource" &&
+      row.assignment_status === "active" &&
+      isVisibleCircleResourceAssignment(row, context)
+  );
+  if (!assignment) return notFoundResult();
+  if (!auth.isAdmin && assignment.assigned_by !== auth.user.id) {
+    return {
+      ok: false as const,
+      status: 403,
+      code: "resource_assignment_forbidden",
+      message: "This resource assignment is not available for this coach to manage.",
+    };
+  }
+
+  try {
+    await archiveCanonicalAssignment(assignmentId);
+  } catch (error) {
+    return databaseFailure("resource_assignment_unassign_failed", error);
+  }
+
+  return {
+    ok: true as const,
+    assignmentId,
+    status: "archived" as const,
+    message:
+      assignment.audience_type === "selected_member"
+        ? "Resource unassigned from this member."
+        : "Resource withdrawn from this Circle.",
   };
 }
 
@@ -474,4 +521,3 @@ function safeErrorDetail(error: unknown) {
     .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     .join(" ");
 }
-import "server-only";

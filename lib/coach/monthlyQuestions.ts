@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createClient, type User } from "@supabase/supabase-js";
 
 import {
@@ -12,7 +14,6 @@ import {
 import {
   archiveCanonicalCircleMonthlyQuestion,
   canonicalAssignmentSelect,
-  deleteCanonicalCircleMonthlyQuestion,
   resolveCanonicalAssignmentRows,
   upsertMonthlyQuestionAssignmentMetadata,
   upsertCanonicalCircleMonthlyQuestion,
@@ -62,7 +63,6 @@ export type CoachMonthlyQuestionAssignment = {
   questionYear: number | null;
   assignedBy: CoachPersonSummary;
   canArchive: boolean;
-  canRemove: boolean;
 };
 
 export type CoachMonthlyQuestionCircle = {
@@ -564,7 +564,7 @@ export async function archiveCoachMonthlyQuestionAssignment(
 
   if (error) return monthlyQuestionDatabaseFailure("monthly_question_assignment_archive_failed", error);
 
-  return { ok: true as const, message: "Monthly Question archived from this Circle." };
+  return { ok: true as const, message: "Monthly Question unassigned from this Circle." };
 }
 
 export async function removeCoachMonthlyQuestionAssignment(
@@ -581,22 +581,8 @@ export async function removeCoachMonthlyQuestionAssignment(
   const question = await fetchMonthlyQuestionRow(assignment.monthly_question_id);
   if (!question) return notFoundResult();
 
-  try {
-    await deleteCanonicalCircleMonthlyQuestion(question.content_item_id, circleId);
-  } catch (error) {
-    return monthlyQuestionDatabaseFailure("monthly_question_assignment_remove_failed", error);
-  }
-
-  const supabase = createAdminSupabaseClient();
-  const { error } = await supabase
-    .from("monthly_question_circle_assignments")
-    .delete()
-    .eq("id", assignmentId)
-    .eq("circle_id", circleId);
-
-  if (error) return monthlyQuestionDatabaseFailure("monthly_question_assignment_remove_failed", error);
-
-  return { ok: true as const, message: "Monthly Question assignment was removed." };
+  void question;
+  return archiveCoachMonthlyQuestionAssignment(auth, circleId, assignmentId);
 }
 
 export async function fetchMemberMonthlyQuestions(request: Request) {
@@ -882,7 +868,7 @@ async function syncMonthlyQuestionAssignments(
       ...Array.from(currentCircleIds)
         .filter((circleId) => !nextCircleIds.has(circleId))
         .map((circleId) =>
-          deleteCanonicalCircleMonthlyQuestion(question.content_item_id, circleId)
+          archiveCanonicalCircleMonthlyQuestion(question.content_item_id, circleId)
         ),
       ...circleIds.map((circleId) =>
         upsertCanonicalCircleMonthlyQuestion({
@@ -1114,7 +1100,6 @@ function mapCoachMonthlyQuestionAssignments(
         canArchive:
           assignment.assignment_status !== "archived" &&
           Boolean(auth.isAdmin || assignment.assigned_by === auth.user.id),
-        canRemove: Boolean(auth.isAdmin || assignment.assigned_by === auth.user.id),
       };
     })
     .filter((item): item is CoachMonthlyQuestionAssignment => Boolean(item))
@@ -1348,4 +1333,3 @@ function getBearerToken(request: Request) {
 
   return authorization.slice("bearer ".length).trim();
 }
-import "server-only";

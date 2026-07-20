@@ -23,10 +23,10 @@ export async function PATCH(
 
     return Response.json({ ok: true, assignment });
   } catch (error) {
-    console.error("Admin content assignment archive failed", error);
+    console.error("Admin content assignment unassign failed", error);
 
     return Response.json(
-      { ok: false, message: error instanceof Error ? error.message : "Assignment could not be archived." },
+      { ok: false, message: error instanceof Error ? error.message : "Assignment could not be unassigned." },
       { status: 400 }
     );
   }
@@ -46,10 +46,10 @@ export async function DELETE(
 
     return Response.json({ ok: true });
   } catch (error) {
-    console.error("Admin content assignment delete failed", error);
+    console.error("Admin content assignment unassign failed", error);
 
     return Response.json(
-      { ok: false, message: error instanceof Error ? error.message : "Assignment could not be removed." },
+      { ok: false, message: error instanceof Error ? error.message : "Assignment could not be unassigned." },
       { status: 400 }
     );
   }

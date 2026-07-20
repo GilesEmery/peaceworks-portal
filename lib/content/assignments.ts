@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createAdminSupabaseClient } from "../admin/authorization";
 import type { ContentItemKind, ContentItemRow } from "./registry";
 
@@ -44,6 +46,12 @@ export type CanonicalAssignmentWrite = {
   assignmentStatus?: "active" | "archived";
   visibleFrom?: string | null;
   visibleUntil?: string | null;
+};
+
+export type ContentAssignmentStatus = "active" | "archived";
+export type UnassignContentResult = {
+  assignment: ResolvedCanonicalAssignment;
+  previousStatus: ContentAssignmentStatus;
 };
 
 export type CanonicalAssignmentCreateInput = {
@@ -175,38 +183,49 @@ export async function archiveCanonicalAssignment(assignmentId: string) {
   return resolved;
 }
 
-export async function deleteCanonicalAssignment(assignmentId: string) {
+export async function restoreCanonicalAssignment(
+  assignmentId: string
+): Promise<UnassignContentResult> {
   const supabase = createAdminSupabaseClient();
-  const { data, error: readError } = await supabase
+  const { data: current, error: readError } = await supabase
     .from("content_assignments")
     .select(canonicalAssignmentSelect)
     .eq("id", assignmentId)
     .single();
 
-  if (readError) {
-    throw new Error(`Content assignment could not be loaded: ${readError.message}`);
+  if (readError) throw new Error(`Content assignment could not be loaded: ${readError.message}`);
+
+  const [resolvedCurrent] = await resolveCanonicalAssignmentRows([
+    current as unknown as CanonicalAssignmentRow,
+  ]);
+  const { data, error } = await supabase
+    .from("content_assignments")
+    .update({ assignment_status: "active", updated_at: new Date().toISOString() })
+    .eq("id", assignmentId)
+    .select(canonicalAssignmentSelect)
+    .single();
+
+  if (error?.code === "23505") {
+    throw new Error("This active content assignment already exists.");
   }
+  if (error) throw new Error(`Content assignment could not be restored: ${error.message}`);
 
   const [resolved] = await resolveCanonicalAssignmentRows([
     data as unknown as CanonicalAssignmentRow,
   ]);
-  const { error } = await supabase
-    .from("content_assignments")
-    .delete()
-    .eq("id", assignmentId);
-
-  if (error) throw new Error(`Content assignment could not be removed: ${error.message}`);
-
   if (
     resolved.content_kind === "monthly_question" &&
     resolved.audience_type === "selected_circle" &&
     resolved.circle_id
   ) {
-    await deleteMonthlyQuestionAssignmentMetadata(
-      resolved.source_id,
-      resolved.circle_id
-    );
+    await restoreMonthlyQuestionAssignmentMetadata(resolved.source_id, resolved.circle_id);
   }
+
+  return {
+    assignment: resolved,
+    previousStatus:
+      resolvedCurrent.assignment_status === "active" ? "active" : "archived",
+  };
 }
 
 export async function upsertMonthlyQuestionAssignmentMetadata(input: {
@@ -268,22 +287,6 @@ export async function archiveCanonicalCircleMonthlyQuestion(
   if (error) throw new Error(`Content assignment could not be archived: ${error.message}`);
 }
 
-export async function deleteCanonicalCircleMonthlyQuestion(
-  contentItemId: string,
-  circleId: string
-) {
-  const supabase = createAdminSupabaseClient();
-  const { error } = await supabase
-    .from("content_assignments")
-    .delete()
-    .eq("content_item_id", contentItemId)
-    .eq("audience_type", "selected_circle")
-    .eq("circle_id", circleId)
-    .eq("placement", "circle_dashboard");
-
-  if (error) throw new Error(`Content assignment could not be removed: ${error.message}`);
-}
-
 async function archiveMonthlyQuestionAssignmentMetadata(
   questionId: string,
   circleId: string
@@ -303,19 +306,19 @@ async function archiveMonthlyQuestionAssignmentMetadata(
   }
 }
 
-async function deleteMonthlyQuestionAssignmentMetadata(
+async function restoreMonthlyQuestionAssignmentMetadata(
   questionId: string,
   circleId: string
 ) {
   const supabase = createAdminSupabaseClient();
   const { error } = await supabase
     .from("monthly_question_circle_assignments")
-    .delete()
+    .update({ assignment_status: "active", archived_at: null })
     .eq("monthly_question_id", questionId)
     .eq("circle_id", circleId);
 
   if (error) {
-    throw new Error(`Monthly Question assignment metadata could not be removed: ${error.message}`);
+    throw new Error(`Monthly Question assignment metadata could not be restored: ${error.message}`);
   }
 }
 
@@ -549,4 +552,3 @@ function parseContentItemKind(value: string): ContentItemKind {
 
   throw new Error(`Unsupported content kind: ${value}`);
 }
-import "server-only";

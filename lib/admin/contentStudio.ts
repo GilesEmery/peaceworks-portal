@@ -1,10 +1,12 @@
+import "server-only";
+
 import { createAdminSupabaseClient } from "./authorization";
 import {
   archiveCanonicalAssignment,
   canonicalAssignmentSelect,
   createCanonicalAssignments,
-  deleteCanonicalAssignment,
   resolveCanonicalAssignmentRows,
+  restoreCanonicalAssignment,
   upsertMonthlyQuestionAssignmentMetadata,
 } from "../content/assignments";
 import type { ResolvedCanonicalAssignment } from "../content/assignments";
@@ -503,8 +505,13 @@ export async function archiveAdminContentAssignment(assignmentId: string) {
   return mapContentAssignment(await archiveCanonicalAssignment(assignmentId));
 }
 
+export async function restoreAdminContentAssignment(assignmentId: string) {
+  const result = await restoreCanonicalAssignment(assignmentId);
+  return mapContentAssignment(result.assignment);
+}
+
 export async function deleteAdminContentAssignment(assignmentId: string) {
-  await deleteCanonicalAssignment(assignmentId);
+  await archiveCanonicalAssignment(assignmentId);
 }
 
 export async function createAdminMonthlyQuestion(
@@ -2716,4 +2723,3 @@ function getDefaultMimeType(resourceType: AdminResourceType) {
 function trimText(value: string | null | undefined) {
   return (value || "").trim();
 }
-import "server-only";

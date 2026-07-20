@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 import ResultModal from "../assessment/ResultModal";
-import { requestConfirmation } from "../ui/FeedbackCenter";
+import { requestConfirmation, showFeedback } from "../ui/FeedbackCenter";
 import AdminUsersManager from "./AdminUsersManager";
 import { supabase } from "../../lib/supabase";
 import { routes } from "../../lib/navigation";
@@ -3663,7 +3663,7 @@ function ContentAssignmentPanel({
     await onRefresh();
   }
 
-  async function archiveAssignment(assignmentId: string) {
+  async function unassignContent(assignmentId: string) {
     const result = await adminContentRequest(
       `/api/admin/content/assignments/${assignmentId}`,
       {
@@ -3676,15 +3676,28 @@ function ContentAssignmentPanel({
       return;
     }
 
-    onMessage({ type: "success", text: "Content assignment was archived." });
+    onMessage({ type: "success", text: "Content was unassigned from this audience." });
+    showFeedback({
+      kind: "success",
+      message: "Content unassigned from this audience.",
+      actionLabel: "Undo",
+      onAction: async () => {
+        const restored = await adminContentRequest(
+          `/api/admin/content/assignments/${assignmentId}/restore`,
+          { method: "POST" }
+        );
+        if (!restored.ok) throw new Error(restored.message);
+        await onRefresh();
+      },
+    });
     await onRefresh();
   }
 
-  async function removeAssignment(assignmentId: string) {
+  async function restoreAssignment(assignmentId: string) {
     const result = await adminContentRequest(
-      `/api/admin/content/assignments/${assignmentId}`,
+      `/api/admin/content/assignments/${assignmentId}/restore`,
       {
-        method: "DELETE",
+        method: "POST",
       }
     );
 
@@ -3693,7 +3706,7 @@ function ContentAssignmentPanel({
       return;
     }
 
-    onMessage({ type: "success", text: "Content assignment was removed." });
+    onMessage({ type: "success", text: "Content assignment was restored." });
     await onRefresh();
   }
 
@@ -3842,9 +3855,9 @@ function ContentAssignmentPanel({
       <AssignmentSummary
         assignments={assignments}
         detailed
-        onArchive={archiveAssignment}
+        onArchive={unassignContent}
         onDuplicate={duplicateAssignment}
-        onRemove={removeAssignment}
+        onRestore={restoreAssignment}
       />
     </section>
   );
@@ -3855,13 +3868,13 @@ function AssignmentSummary({
   detailed = false,
   onArchive,
   onDuplicate,
-  onRemove,
+  onRestore,
 }: {
   assignments: AdminContentAssignment[];
   detailed?: boolean;
   onArchive?: (assignmentId: string) => void;
   onDuplicate?: (assignment: AdminContentAssignment) => void;
-  onRemove?: (assignmentId: string) => void;
+  onRestore?: (assignmentId: string) => void;
 }) {
   const activeAssignments = assignments.filter(
     (assignment) => assignment.assignmentStatus === "active"
@@ -3884,7 +3897,7 @@ function AssignmentSummary({
               {formatPlacement(assignment.placement)} ·{" "}
               {formatAssignmentStatus(assignment.assignmentStatus)}
             </span>
-            {detailed && (onArchive || onDuplicate || onRemove) && (
+            {detailed && (onArchive || onDuplicate || onRestore) && (
               <span className="admin-assignment-actions">
                 {assignment.assignmentStatus === "active" && onArchive && (
                   <button
@@ -3892,7 +3905,7 @@ function AssignmentSummary({
                     type="button"
                     onClick={() => onArchive(assignment.id)}
                   >
-                    Archive
+                    Unassign
                   </button>
                 )}
                 {onDuplicate && (
@@ -3904,13 +3917,13 @@ function AssignmentSummary({
                     Duplicate
                   </button>
                 )}
-                {onRemove && (
+                {assignment.assignmentStatus === "archived" && onRestore && (
                   <button
                     className="admin-link-button"
                     type="button"
-                    onClick={() => onRemove(assignment.id)}
+                    onClick={() => onRestore(assignment.id)}
                   >
-                    Remove
+                    Restore
                   </button>
                 )}
               </span>

@@ -612,6 +612,85 @@ left join public.resources r
 left join public.trainings t
   on t.content_item_id = ci.id and ci.content_kind = 'training';
 
+-- Assignment withdrawal health. Every count should be zero. Aggregate-only.
+select count(*) as duplicate_active_assignment_groups
+from (
+  select 1
+  from public.content_assignments
+  where assignment_status = 'active'
+  group by
+    content_item_id,
+    audience_type,
+    coalesce(circle_id::text, ''),
+    coalesce(profile_id::text, ''),
+    placement
+  having count(*) > 1
+) duplicates;
+
+select
+  count(*) filter (
+    where ca.assignment_status not in ('active', 'archived')
+  ) as invalid_content_assignment_statuses
+from public.content_assignments ca;
+
+select
+  count(*) filter (
+    where mqa.assignment_status = 'active'
+      and not exists (
+        select 1
+        from public.monthly_questions mq
+        join public.content_assignments ca
+          on ca.content_item_id = mq.content_item_id
+        where mq.id = mqa.monthly_question_id
+          and ca.audience_type = 'selected_circle'
+          and ca.circle_id = mqa.circle_id
+          and ca.placement = 'circle_dashboard'
+          and ca.assignment_status = 'active'
+      )
+  ) as active_monthly_metadata_without_active_canonical,
+  count(*) filter (
+    where mqa.assignment_status not in ('active', 'archived')
+  ) as invalid_monthly_assignment_statuses
+from public.monthly_question_circle_assignments mqa;
+
+select count(*) as active_canonical_monthly_assignments_without_active_metadata
+from public.content_assignments ca
+join public.content_items ci on ci.id = ca.content_item_id
+join public.monthly_questions mq on mq.content_item_id = ci.id
+where ci.content_kind = 'monthly_question'
+  and ca.audience_type = 'selected_circle'
+  and ca.placement = 'circle_dashboard'
+  and ca.assignment_status = 'active'
+  and not exists (
+    select 1
+    from public.monthly_question_circle_assignments mqa
+    where mqa.monthly_question_id = mq.id
+      and mqa.circle_id = ca.circle_id
+      and mqa.assignment_status = 'active'
+  );
+
+select count(*) as selected_recipient_notes_without_recipients
+from public.circle_notes cn
+where cn.audience_type = 'selected_members'
+  and cn.published_at is not null
+  and not exists (
+    select 1
+    from public.circle_note_recipients cnr
+    where cnr.circle_note_id = cn.id
+  );
+
+select count(*) as note_recipients_without_active_circle_membership
+from public.circle_note_recipients cnr
+join public.circle_notes cn on cn.id = cnr.circle_note_id
+where not exists (
+  select 1
+  from public.circle_memberships cm
+  where cm.circle_id = cn.circle_id
+    and cm.profile_id = cnr.profile_id
+    and cm.status = 'active'
+    and cm.ended_at is null
+);
+
 -- Secure portal messaging healthy result: every count is zero. Aggregate-only.
 select
   count(*) filter (

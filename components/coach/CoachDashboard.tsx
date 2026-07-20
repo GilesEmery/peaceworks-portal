@@ -21,7 +21,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import ResultModal from "../assessment/ResultModal";
-import { requestConfirmation } from "../ui/FeedbackCenter";
+import { requestConfirmation, showFeedback } from "../ui/FeedbackCenter";
 import { supabase } from "../../lib/supabase";
 import { routes } from "../../lib/navigation";
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
@@ -824,7 +824,7 @@ export default function CoachDashboard() {
 
   async function runMonthlyQuestionAction(
     assignment: CoachMonthlyQuestionAssignment,
-    action: "archive" | "remove"
+    action: "archive"
   ) {
     const token = await getAccessToken();
 
@@ -834,11 +834,9 @@ export default function CoachDashboard() {
     }
 
     const response = await fetch(
-      action === "archive"
-        ? `/api/coach/circles/${assignment.circle.id}/monthly-question-assignments/${assignment.id}/archive`
-        : `/api/coach/circles/${assignment.circle.id}/monthly-question-assignments/${assignment.id}`,
+      `/api/coach/circles/${assignment.circle.id}/monthly-question-assignments/${assignment.id}/archive`,
       {
-        method: action === "archive" ? "POST" : "DELETE",
+        method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -849,7 +847,7 @@ export default function CoachDashboard() {
       const errorSnapshot = await logCoachApiError(
         `Coach monthly question assignment ${action} failed`,
         response,
-        action === "archive" ? "POST" : "DELETE"
+        "POST"
       );
       setMessage(errorSnapshot.json?.message || "Monthly Question assignment could not be updated.");
       return false;
@@ -859,7 +857,9 @@ export default function CoachDashboard() {
       message?: string;
     } | null;
 
-    setMessage(payload?.message || "Monthly Question assignment was updated.");
+    const successMessage = payload?.message || "Monthly Question unassigned from this Circle.";
+    setMessage(successMessage);
+    showFeedback({ kind: "success", message: successMessage });
     await refreshMonthlyQuestions(token);
     return true;
   }
@@ -901,6 +901,37 @@ export default function CoachDashboard() {
     } | null;
 
     setMessage(payload?.message || "Resource assigned.");
+    await refreshResources(selectedCircleId, token);
+    return true;
+  }
+
+  async function unassignResourceAssignment(assignmentId: string) {
+    if (!selectedCircleId) return false;
+    const token = await getAccessToken();
+    if (!token) {
+      router.replace(routes.login);
+      return false;
+    }
+
+    const response = await fetch(`/api/coach/circles/${selectedCircleId}/resources`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ assignmentId }),
+    });
+    const payload = (await response.json().catch(() => null)) as {
+      message?: string;
+    } | null;
+    if (!response.ok) {
+      setMessage(payload?.message || "Resource assignment could not be updated.");
+      return false;
+    }
+
+    const successMessage = payload?.message || "Resource was unassigned.";
+    setMessage(successMessage);
+    showFeedback({ kind: "success", message: successMessage });
     await refreshResources(selectedCircleId, token);
     return true;
   }
@@ -1158,6 +1189,7 @@ export default function CoachDashboard() {
                   onSaveMemberNote={saveMemberNote}
                   onSaveMonthlyQuestion={saveMonthlyQuestion}
                   onSaveResourceAssignment={saveResourceAssignment}
+                  onUnassignResourceAssignment={unassignResourceAssignment}
                   onMonthlyQuestionAction={runMonthlyQuestionAction}
                   onWorkspaceChange={openCoachWorkspace}
                 />
@@ -1252,7 +1284,7 @@ function MonthlyQuestionsBoard({
   assignments: CoachMonthlyQuestionAssignment[];
   onAction: (
     assignment: CoachMonthlyQuestionAssignment,
-    action: "archive" | "remove"
+    action: "archive"
   ) => Promise<boolean>;
   onSave: (
     values: MonthlyQuestionFormState,
@@ -1264,10 +1296,6 @@ function MonthlyQuestionsBoard({
     useState<CoachMonthlyQuestion | null>(null);
   const [assigningQuestion, setAssigningQuestion] =
     useState<CoachMonthlyQuestion | null>(null);
-  const [pendingArchive, setPendingArchive] =
-    useState<CoachMonthlyQuestionAssignment | null>(null);
-  const [pendingRemove, setPendingRemove] =
-    useState<CoachMonthlyQuestionAssignment | null>(null);
   const circleAssignments = assignments.filter(
     (assignment) => !focusedCircleId || assignment.circle.id === focusedCircleId
   );
@@ -1330,9 +1358,9 @@ function MonthlyQuestionsBoard({
                   <button
                     className="admin-link-button"
                     type="button"
-                    onClick={() => setPendingArchive(assignment)}
+                    onClick={() => void onAction(assignment, "archive")}
                   >
-                    Archive from This Circle
+                    Unassign from Circle
                   </button>
                 </div>
               )}
@@ -1376,9 +1404,8 @@ function MonthlyQuestionsBoard({
             <MonthlyQuestionAssignmentTile
               assignment={assignment}
               key={assignment.id}
-              onArchive={() => setPendingArchive(assignment)}
+              onArchive={() => void onAction(assignment, "archive")}
               onPreview={() => setSelectedQuestion(assignment.question)}
-              onRemove={() => setPendingRemove(assignment)}
               onReassign={() => setAssigningQuestion(assignment.question)}
             />
           ))}
@@ -1395,34 +1422,6 @@ function MonthlyQuestionsBoard({
             const saved = await onSave(values);
             if (saved) setAssigningQuestion(null);
             return saved;
-          }}
-        />
-      )}
-
-      {pendingArchive && (
-        <MonthlyQuestionAssignmentConfirm
-          actionLabel="Archive"
-          assignment={pendingArchive}
-          description="This preserves the assignment in Circle history and removes it from the current question position."
-          title="Archive from this Circle?"
-          onCancel={() => setPendingArchive(null)}
-          onConfirm={async () => {
-            const archived = await onAction(pendingArchive, "archive");
-            if (archived) setPendingArchive(null);
-          }}
-        />
-      )}
-
-      {pendingRemove && (
-        <MonthlyQuestionAssignmentConfirm
-          actionLabel="Remove Assignment"
-          assignment={pendingRemove}
-          description="This removes only this Circle assignment. It does not delete the source Monthly Question."
-          title="Remove this assignment?"
-          onCancel={() => setPendingRemove(null)}
-          onConfirm={async () => {
-            const removed = await onAction(pendingRemove, "remove");
-            if (removed) setPendingRemove(null);
           }}
         />
       )}
@@ -1489,13 +1488,11 @@ function MonthlyQuestionAssignmentTile({
   assignment,
   onArchive,
   onPreview,
-  onRemove,
   onReassign,
 }: {
   assignment: CoachMonthlyQuestionAssignment;
   onArchive: () => void;
   onPreview: () => void;
-  onRemove: () => void;
   onReassign: () => void;
 }) {
   return (
@@ -1531,12 +1528,7 @@ function MonthlyQuestionAssignmentTile({
           </button>
           {assignment.assignmentStatus !== "archived" && assignment.canArchive && (
             <button className="admin-link-button" type="button" onClick={onArchive}>
-              Archive from This Circle
-            </button>
-          )}
-          {assignment.canRemove && (
-            <button className="admin-link-button danger" type="button" onClick={onRemove}>
-              Remove Assignment
+              Unassign from Circle
             </button>
           )}
         </div>
@@ -1705,51 +1697,18 @@ function MonthlyQuestionReadOnlyContent({
   );
 }
 
-function MonthlyQuestionAssignmentConfirm({
-  actionLabel,
-  assignment,
-  description,
-  title,
-  onCancel,
-  onConfirm,
-}: {
-  actionLabel: string;
-  assignment: CoachMonthlyQuestionAssignment;
-  description: string;
-  title: string;
-  onCancel: () => void;
-  onConfirm: () => Promise<void>;
-}) {
-  return (
-    <div className="coach-confirm-backdrop" role="presentation">
-      <section className="coach-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="monthly-question-assignment-confirm-title">
-        <span className="card-label">{assignment.circle.name}</span>
-        <h4 id="monthly-question-assignment-confirm-title">{title}</h4>
-        <p>{assignment.question.title || shorten(assignment.question.questionText, 120)}</p>
-        <small>{description}</small>
-        <div className="coach-form-actions">
-          <button className="btn btn-secondary" type="button" onClick={onCancel}>
-            Cancel
-          </button>
-          <button className="btn btn-primary" type="button" onClick={() => void onConfirm()}>
-            {actionLabel}
-          </button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
 function CircleResourcesWorkspace({
   message,
   payload,
   selectedCircleName,
   onAssign,
+  onUnassign,
 }: {
   message: string;
   payload: CoachResourcesPayload | null;
   selectedCircleName: string;
   onAssign: (values: ResourceAssignmentFormState) => Promise<boolean>;
+  onUnassign: (assignmentId: string) => Promise<boolean>;
 }) {
   const [search, setSearch] = useState("");
   const [assigningResource, setAssigningResource] = useState<CoachResource | null>(null);
@@ -1782,7 +1741,11 @@ function CircleResourcesWorkspace({
       ) : (
         <div className="coach-monthly-question-grid">
           {assignedResources.map((assignment) => (
-            <ResourceAssignmentTile assignment={assignment} key={assignment.id} />
+            <ResourceAssignmentTile
+              assignment={assignment}
+              key={assignment.id}
+              onUnassign={() => void onUnassign(assignment.id)}
+            />
           ))}
         </div>
       )}
@@ -1828,8 +1791,10 @@ function CircleResourcesWorkspace({
 
 function ResourceAssignmentTile({
   assignment,
+  onUnassign,
 }: {
   assignment: CoachResourceAssignment;
+  onUnassign: () => void;
 }) {
   return (
     <article className="coach-monthly-question-tile published">
@@ -1845,6 +1810,13 @@ function ResourceAssignmentTile({
           {assignment.audienceLabel}
         </small>
         <ResourceOpenButton resource={assignment.resource} />
+        {assignment.canArchive && (
+          <button className="admin-link-button" type="button" onClick={onUnassign}>
+            {assignment.audience === "member"
+              ? "Unassign from Member"
+              : "Unassign from Circle"}
+          </button>
+        )}
       </footer>
     </article>
   );
@@ -2095,6 +2067,7 @@ function CircleWorkspace({
   onSaveMemberNote,
   onSaveMonthlyQuestion,
   onSaveResourceAssignment,
+  onUnassignResourceAssignment,
   onWorkspaceChange,
 }: {
   activeWorkspace: CoachWorkspaceId | null;
@@ -2111,7 +2084,7 @@ function CircleWorkspace({
   onDeleteMemberNote: (profileId: string, noteId: string) => void;
   onMonthlyQuestionAction: (
     assignment: CoachMonthlyQuestionAssignment,
-    action: "archive" | "remove"
+    action: "archive"
   ) => Promise<boolean>;
   onOpenAssessment: (assessmentId: string) => void;
   onOpenMember: (memberId: string) => void;
@@ -2130,6 +2103,7 @@ function CircleWorkspace({
     questionId?: string | null
   ) => Promise<boolean>;
   onSaveResourceAssignment: (values: ResourceAssignmentFormState) => Promise<boolean>;
+  onUnassignResourceAssignment: (assignmentId: string) => Promise<boolean>;
   onWorkspaceChange: (workspaceId: CoachWorkspaceId) => void;
 }) {
   if (!circlePayload) return null;
@@ -2322,6 +2296,7 @@ function CircleWorkspace({
             payload={resourcesPayload}
             selectedCircleName={circle.name}
             onAssign={onSaveResourceAssignment}
+            onUnassign={onUnassignResourceAssignment}
           />
         )}
 

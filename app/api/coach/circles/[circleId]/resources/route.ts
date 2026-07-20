@@ -5,6 +5,7 @@ import {
 import {
   assignCoachResourceToCircle,
   fetchCoachResourcesForCircle,
+  unassignCoachResourceFromCircle,
   type CoachResourceAssignmentInput,
 } from "../../../../../../lib/coach/resources";
 
@@ -83,6 +84,33 @@ export async function POST(
     return Response.json(result);
   } catch (error) {
     return resourceRouteError("coach_resource_assignment_failed", error);
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  context: { params: Promise<{ circleId: string }> }
+) {
+  try {
+    const auth = await requireCoachFromRequest(request);
+    if (!auth.ok) return coachErrorResponse(auth);
+
+    const { circleId } = await context.params;
+    const body = (await request.json()) as { assignmentId?: unknown };
+    const result = await unassignCoachResourceFromCircle(
+      auth,
+      circleId,
+      getString(body.assignmentId)
+    );
+    if (!result.ok) {
+      return Response.json(
+        { ok: false, error: result.code, code: result.code, message: result.message },
+        { status: result.status }
+      );
+    }
+    return Response.json(result);
+  } catch (error) {
+    return resourceRouteError("coach_resource_unassign_failed", error);
   }
 }
 
