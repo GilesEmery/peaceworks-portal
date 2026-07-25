@@ -7549,6 +7549,34 @@ a {
   background: rgba(255, 255, 255, 0.48);
 }
 
+.admin-recipient-search {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.94rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-recipient-search input {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 13px;
+  border: 1px solid rgba(20, 20, 20, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--text);
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.admin-recipient-search input:focus-visible {
+  outline: 3px solid rgba(58, 91, 64, 0.28);
+  outline-offset: 2px;
+}
+
 .admin-assignment-count {
   margin: 0;
   color: var(--muted);

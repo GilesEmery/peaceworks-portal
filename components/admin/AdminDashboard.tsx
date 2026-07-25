@@ -995,7 +995,9 @@ function AdminExpandedWorkspace({
       {activeSection === "content-studio" && (
         <ContentStudioSection usersPayload={usersPayload} />
       )}
-      {activeSection === "communications" && <CommunicationsSection />}
+      {activeSection === "communications" && (
+        <CommunicationsSection usersPayload={usersPayload} />
+      )}
       {activeSection === "reports" && (
         <ReportsSection
           operations={operations}
@@ -2750,7 +2752,11 @@ function TrainingLibrary({
   );
 }
 
-function CommunicationsSection() {
+function CommunicationsSection({
+  usersPayload,
+}: {
+  usersPayload: AdminUsersPayload;
+}) {
   const emptyForm = {
     id: "",
     format: "announcement" as CommunicationFormat,
@@ -2794,6 +2800,7 @@ function CommunicationsSection() {
   const [form, setForm] = useState(emptyForm);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<CommunicationStatus | "all">("all");
+  const [recipientSearch, setRecipientSearch] = useState("");
   const [message, setMessage] = useState<ContentMessage>(null);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
     "loading"
@@ -2920,6 +2927,27 @@ function CommunicationsSection() {
   const requiresCircleTargets = form.audienceScope === "selected_circles";
   const requiresProfileTargets =
     form.audienceScope === "selected_members" || form.audienceScope === "selected_coaches";
+  const recipientQuery = recipientSearch.trim().toLowerCase();
+  const eligibleRecipients = usersPayload.users.filter(
+    (user) =>
+      user.accountStatus === "active" &&
+      (form.audienceScope !== "selected_coaches" || user.roles.includes("coach"))
+  );
+  const visibleRecipients = eligibleRecipients.filter((user) =>
+    [user.firstName, user.lastName, user.email]
+      .join(" ")
+      .toLowerCase()
+      .includes(recipientQuery)
+  );
+
+  function toggleRecipient(profileId: string) {
+    setForm({
+      ...form,
+      profileIds: form.profileIds.includes(profileId)
+        ? form.profileIds.filter((id) => id !== profileId)
+        : [...form.profileIds, profileId],
+    });
+  }
 
   function updateFormat(format: CommunicationFormat) {
     const nextChannels = getDefaultCommunicationChannels(format);
@@ -3373,17 +3401,16 @@ function CommunicationsSection() {
               label="Audience"
               value={form.audienceScope}
               options={getCommunicationAudienceOptions(form.format)}
-              onChange={(audienceScope) => setForm({ ...form, audienceScope })}
+              onChange={(audienceScope) => {
+                setRecipientSearch("");
+                setForm({ ...form, audienceScope, circleIds: [], profileIds: [] });
+              }}
             />
-            {(requiresCircleTargets || requiresProfileTargets) && (
+            {requiresCircleTargets && (
               <ContentInput
-                label={requiresCircleTargets ? "Selected Circle IDs" : "Selected Profile IDs"}
-                value={(requiresCircleTargets ? form.circleIds : form.profileIds).join(", ")}
-                onChange={(value) =>
-                  requiresCircleTargets
-                    ? setForm({ ...form, circleIds: splitIds(value) })
-                    : setForm({ ...form, profileIds: splitIds(value) })
-                }
+                label="Selected Circle IDs"
+                value={form.circleIds.join(", ")}
+                onChange={(value) => setForm({ ...form, circleIds: splitIds(value) })}
               />
             )}
             <ContentInput
@@ -3397,6 +3424,36 @@ function CommunicationsSection() {
               onChange={(visibleUntil) => setForm({ ...form, visibleUntil })}
             />
           </div>
+          {requiresProfileTargets && (
+            <div className="admin-assignment-selector">
+              <label className="admin-recipient-search">
+                <span>Search people</span>
+                <input
+                  type="search"
+                  value={recipientSearch}
+                  onChange={(event) => setRecipientSearch(event.target.value)}
+                  placeholder="Search by first name, last name, or email"
+                />
+              </label>
+              <div className="admin-checkbox-list">
+                {visibleRecipients.map((user) => (
+                  <CircleCheckboxRow
+                    key={user.id}
+                    label={formatCommunicationRecipientName(user)}
+                    description={formatCommunicationRecipientDescription(user)}
+                    checked={form.profileIds.includes(user.id)}
+                    onChange={() => toggleRecipient(user.id)}
+                  />
+                ))}
+                {visibleRecipients.length === 0 && (
+                  <div className="admin-empty">No eligible people match this search.</div>
+                )}
+              </div>
+              <p className="admin-assignment-count">
+                {form.profileIds.length} person{form.profileIds.length === 1 ? "" : "s"} selected
+              </p>
+            </div>
+          )}
         </CommunicationComposerBlock>
 
         <CommunicationComposerBlock title="Publish & Distribute">
@@ -5204,6 +5261,25 @@ function formatManagedUserName(user: AdminManagedProfile) {
     .join(" ");
 
   return name || user.email || "Unnamed profile";
+}
+
+function formatCommunicationRecipientName(user: AdminManagedProfile) {
+  const name = [user.firstName, user.lastName]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" ");
+
+  return name || user.email || `Unnamed member · ${user.id.slice(0, 8)}`;
+}
+
+function formatRecipientRoleContext(user: AdminManagedProfile) {
+  const roles = user.roles.map(formatRoleName).join(", ");
+  return roles || "PeaceWorks member";
+}
+
+function formatCommunicationRecipientDescription(user: AdminManagedProfile) {
+  const hasName = Boolean(user.firstName.trim() || user.lastName.trim());
+  return hasName && user.email ? user.email : formatRecipientRoleContext(user);
 }
 
 function formatCircleUserDescription(user: AdminManagedProfile) {

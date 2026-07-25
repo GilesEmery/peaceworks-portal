@@ -166,7 +166,11 @@ async function resolveAuthEmails(profileIds: string[]) {
 
 function getResendClient() {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) throw new Error("Resend email delivery is not configured.");
+  if (!apiKey) {
+    throw new Error(
+      "Email delivery is not configured for this environment. Add the Resend variables to .env.local and restart the development server."
+    );
+  }
   resendClient ||= new Resend(apiKey);
   return resendClient;
 }
@@ -174,7 +178,11 @@ function getResendClient() {
 function getSenderIdentity() {
   const email = normalizeEmail(process.env.RESEND_FROM_EMAIL || "");
   const name = cleanText(process.env.RESEND_FROM_NAME) || "PeaceWorks";
-  if (!email) throw new Error("RESEND_FROM_EMAIL is not configured with a valid address.");
+  if (!email) {
+    throw new Error(
+      "Email delivery is not configured for this environment. Add a valid RESEND_FROM_EMAIL to .env.local and restart the development server."
+    );
+  }
   return `${name} <${email}>`;
 }
 
