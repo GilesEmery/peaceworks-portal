@@ -2576,23 +2576,25 @@ function ResourceLibrary({
               </section>
             )}
             {assigningResource?.id === resource.id && (
-        <ContentAssignmentPanel
-          content={{
-            id: assigningResource.id,
-            title: assigningResource.title,
-            type: "resource",
-            status: assigningResource.status,
-          }}
-          assignments={assignments.filter(
-            (assignment) =>
-              assignment.contentType === "resource" &&
-              assignment.contentId === assigningResource.id
-          )}
-          usersPayload={usersPayload}
-          onClose={() => setAssigningResource(null)}
-          onMessage={onMessage}
-          onRefresh={onRefresh}
-        />
+              <div className="admin-resource-action-panel">
+                <ContentAssignmentPanel
+                  content={{
+                    id: assigningResource.id,
+                    title: assigningResource.title,
+                    type: "resource",
+                    status: assigningResource.status,
+                  }}
+                  assignments={assignments.filter(
+                    (assignment) =>
+                      assignment.contentType === "resource" &&
+                      assignment.contentId === assigningResource.id
+                  )}
+                  usersPayload={usersPayload}
+                  onClose={() => setAssigningResource(null)}
+                  onMessage={onMessage}
+                  onRefresh={onRefresh}
+                />
+              </div>
             )}
             </div>
           ))}
