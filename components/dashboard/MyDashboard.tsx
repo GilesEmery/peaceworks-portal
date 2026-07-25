@@ -303,7 +303,7 @@ export default function MyDashboard() {
 
           {isCircleMember && monthlyQuestionSection}
 
-          <DashboardSection eyebrow="Peace Assessment" title="Your Peace Profile">
+          <DashboardSection eyebrow="Assessments" title="Insights for Your Journey">
             {latestResult && dashboard.assessment ? (
               <article className="portal-card dashboard-journey-card dashboard-assessment-card">
                 <div>
@@ -487,7 +487,7 @@ function DashboardSection({
       <div className="section-head journey-head">
         <div>
           <div className="eyebrow">{eyebrow}</div>
-          <h2>{title}</h2>
+          <h2 className="dashboard-section-title">{title}</h2>
         </div>
       </div>
       <div className="dashboard-journey-grid dashboard-journey-grid-1">

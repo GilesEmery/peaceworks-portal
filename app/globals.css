@@ -2248,7 +2248,7 @@ a {
   outline-offset: 6px;
 }
 
-.dashboard-section-title {
+.journey-head .dashboard-section-title {
   display: block;
   font-family: var(--font-display);
   font-size: clamp(2rem, 4vw, 3.5rem);
