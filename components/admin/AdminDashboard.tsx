@@ -2876,6 +2876,25 @@ function CommunicationsSection() {
     await loadCommunications();
   }
 
+  async function sendTestEmail() {
+    const result = await adminContentRequest(
+      "/api/admin/content/communications/test-email",
+      {
+        method: "POST",
+        body: {
+          title: form.title,
+          message: form.bodyContent || form.summary,
+        },
+      }
+    );
+
+    setMessage(
+      result.ok
+        ? { type: "success", text: result.message || "Test email accepted for sending." }
+        : { type: "error", text: result.message }
+    );
+  }
+
   const formatOptions: Array<[CommunicationFormat, string]> = [
     ["email", "Email"],
     ["blog_article", "Blog / Article"],
@@ -3024,8 +3043,8 @@ function CommunicationsSection() {
         </div>
         <p>
           Choose the communication format first, then select audience and
-          distribution separately. Email delivery will be available after sender
-          setup is completed.
+          distribution separately. Published Email and Both communications are
+          submitted securely through Resend.
         </p>
       </div>
 
@@ -3388,7 +3407,7 @@ function CommunicationsSection() {
                 label={label}
                 description={
                   channel === "email"
-                    ? "Email delivery is not yet enabled. This selection is preserved for future delivery."
+                    ? "Email will be submitted to eligible recipients when this Communication is published."
                     : channel === "my_dashboard"
                       ? "Site message will appear in the PeaceWorks portal when this Communication is published."
                       : "Create a reusable distribution placement for this Communication."
@@ -3463,9 +3482,9 @@ function CommunicationsSection() {
             Save Draft
           </button>
           {(form.format === "email" || form.channels.includes("email")) && (
-            <span className="admin-muted-copy">
-              Email Preview is available. Sending will be available after sender setup is completed.
-            </span>
+            <button className="btn btn-secondary" type="button" onClick={sendTestEmail}>
+              Send test email to me
+            </button>
           )}
         </div>
       </section>
@@ -4295,7 +4314,7 @@ async function updateContentStatus(
     type: "success",
     text:
       url.includes("/communications/") && status === "published"
-        ? "Communication published. Selected site-message delivery is now available in the PeaceWorks portal. Email delivery was not sent."
+        ? result.message || "Communication was published."
         : "Library item was updated.",
   });
   await onRefresh();
@@ -4350,7 +4369,10 @@ async function deleteContentRecord(
 async function adminContentRequest(
   url: string,
   options: { method: string; body?: unknown }
-): Promise<{ ok: true; url?: string } | { ok: false; message: string }> {
+): Promise<
+  | { ok: true; url?: string; message?: string }
+  | { ok: false; message: string }
+> {
   const token = await getAccessToken();
 
   if (!token) return { ok: false, message: "Admin session is no longer available." };
@@ -4374,7 +4396,11 @@ async function adminContentRequest(
     };
   }
 
-  return { ok: true, url: typeof result.url === "string" ? result.url : undefined };
+  return {
+    ok: true,
+    url: typeof result.url === "string" ? result.url : undefined,
+    message: typeof result.message === "string" ? result.message : undefined,
+  };
 }
 
 function ReportsSection({
@@ -5236,7 +5262,7 @@ function getDefaultCommunicationChannels(format: CommunicationFormat) {
 }
 
 function getCommunicationChannelOptions(format: CommunicationFormat): Array<[string, string]> {
-  const email: Array<[string, string]> = [["email", "Email Preview"]];
+  const email: Array<[string, string]> = [["email", "Email"]];
   const dashboard: Array<[string, string]> = [
     ["my_dashboard", "PeaceWorks Site Message"],
   ];

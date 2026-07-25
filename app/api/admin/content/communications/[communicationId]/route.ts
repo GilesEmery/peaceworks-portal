@@ -8,6 +8,7 @@ import {
   adminErrorResponse,
   requireAdminFromRequest,
 } from "../../../../../../lib/admin/authorization";
+import { formatEmailDeliverySummary } from "../../../../../../lib/communications/email";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,28 @@ export async function PATCH(
           )
         : await updateAdminCommunication(auth.user.id, communicationId, body);
 
-    return Response.json({ ok: true, communication });
+    const portalDelivery =
+      "portalDelivery" in communication
+        ? (communication.portalDelivery as { created: boolean } | null)
+        : null;
+    const emailDelivery =
+      "emailDelivery" in communication
+        ? (communication.emailDelivery as Parameters<typeof formatEmailDeliverySummary>[0] | null)
+        : null;
+    const deliveryMessages = [
+      portalDelivery
+        ? portalDelivery.created
+          ? "Site Message created."
+          : "Site Message was already available."
+        : "",
+      emailDelivery ? formatEmailDeliverySummary(emailDelivery) : "",
+    ].filter(Boolean);
+
+    return Response.json({
+      ok: true,
+      communication,
+      message: deliveryMessages.join(" ") || "Communication was updated.",
+    });
   } catch (error) {
     console.error("Admin communication update failed", error);
 

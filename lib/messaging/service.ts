@@ -397,7 +397,7 @@ export async function deliverCommunicationToPortal(
     return { conversationId: existing.id, created: false };
   }
 
-  const participantIds = await resolveCommunicationAudience(communicationId, communication.audience_scope);
+  const participantIds = await resolveCommunicationAudienceProfileIds(communicationId, communication.audience_scope);
   const activeIds = Array.from(new Set([adminProfileId, ...participantIds]));
   const body = cleanMessageBody(
     communication.body_content || communication.summary || communication.subject || communication.title
@@ -817,7 +817,10 @@ async function insertParticipants(conversationId: string, profileIds: string[], 
   if (error) throw new Error(`Conversation participants could not be saved: ${error.message}`);
 }
 
-async function resolveCommunicationAudience(communicationId: string, audienceScope: string) {
+export async function resolveCommunicationAudienceProfileIds(
+  communicationId: string,
+  audienceScope: string
+) {
   const supabase = createAdminSupabaseClient();
   const { data: targets, error } = await supabase
     .from("communication_audience_targets")
