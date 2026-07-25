@@ -648,9 +648,10 @@ async function resolveDashboardContent(
         (item) => item.content_item_id === assignment.content_item_id
       );
       if (!row) return null;
-      const url =
-        row.external_url ||
-        (row.storage_path ? await createResourceSignedUrl(row.storage_path) : null);
+      const url = await resolveResourceUrl(
+        row.external_url,
+        row.storage_path
+      );
       return {
         id: row.id,
         contentItemId: assignment.content_item_id,
@@ -904,6 +905,15 @@ async function createResourceSignedUrl(path: string) {
     return null;
   }
   return data.signedUrl;
+}
+
+async function resolveResourceUrl(
+  externalUrl: string | null,
+  storagePath: string | null
+) {
+  if (externalUrl) return externalUrl;
+  if (!storagePath) return null;
+  return createResourceSignedUrl(storagePath);
 }
 
 function sortDashboardItems<
