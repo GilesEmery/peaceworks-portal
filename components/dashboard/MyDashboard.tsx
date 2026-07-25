@@ -8,6 +8,7 @@ import SiteHeader from "../layout/SiteHeader";
 import SiteFooter from "../layout/SiteFooter";
 import ResultModal from "../assessment/ResultModal";
 import ExpandableDashboardSection from "./ExpandableDashboardSection";
+import ResourceMediaPlayer from "./ResourceMediaPlayer";
 
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
 import { generatePeacePdf } from "../../lib/generatePeacePdf";
@@ -415,7 +416,8 @@ export default function MyDashboard() {
               items={dashboard.sections.resources}
               renderItem={(resource) => (
                 <article className="portal-card dashboard-journey-card" key={resource.contentItemId}>
-                  {(resource.coverUrl || resource.thumbnailUrl) && (
+                  {(resource.coverUrl || resource.thumbnailUrl) &&
+                    !isPlayableMedia(resource.media.kind) && (
                     <div
                       className="dashboard-tile-media"
                       style={{
@@ -437,21 +439,11 @@ export default function MyDashboard() {
                       </div>
                     )}
                   </div>
-                  {resource.url ? (
-                    <a
-                      className="btn btn-primary"
-                      href={resource.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`Open resource: ${resource.title}`}
-                    >
-                      Open Resource
-                    </a>
-                  ) : (
-                    <button className="btn btn-secondary" type="button" disabled>
-                      Resource Unavailable
-                    </button>
-                  )}
+                  <ResourceMediaPlayer
+                    media={resource.media}
+                    resourceTitle={resource.title}
+                    resourceType={resource.resourceType}
+                  />
                 </article>
               )}
             />
@@ -470,6 +462,15 @@ export default function MyDashboard() {
       )}
     </main>
   );
+}
+
+function isPlayableMedia(kind: string) {
+  return [
+    "video-embed",
+    "video-file",
+    "audio-embed",
+    "audio-file",
+  ].includes(kind);
 }
 
 function DashboardSection({

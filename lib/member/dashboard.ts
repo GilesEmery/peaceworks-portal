@@ -6,6 +6,10 @@ import {
   resolveCanonicalAssignmentRows,
   type ResolvedCanonicalAssignment,
 } from "../content/assignments";
+import {
+  normalizeResourceMedia,
+  type ResourceMedia,
+} from "../resources/media";
 import type { MemberAuthResult } from "./authorization";
 
 export type DashboardCoach = {
@@ -51,7 +55,7 @@ export type DashboardResource = {
   title: string;
   description: string;
   resourceType: string;
-  url: string | null;
+  media: ResourceMedia;
   thumbnailUrl: string | null;
   coverUrl: string | null;
   tags: string[];
@@ -644,15 +648,16 @@ async function resolveDashboardContent(
         (item) => item.content_item_id === assignment.content_item_id
       );
       if (!row) return null;
+      const url =
+        row.external_url ||
+        (row.storage_path ? await createResourceSignedUrl(row.storage_path) : null);
       return {
         id: row.id,
         contentItemId: assignment.content_item_id,
         title: row.title || "",
         description: row.description || "",
         resourceType: row.resource_type || "link",
-        url:
-          row.external_url ||
-          (row.storage_path ? await createResourceSignedUrl(row.storage_path) : null),
+        media: normalizeResourceMedia(row.resource_type || "link", url),
         thumbnailUrl: row.thumbnail_url || null,
         coverUrl: row.cover_image_path
           ? await createResourceSignedUrl(row.cover_image_path)
