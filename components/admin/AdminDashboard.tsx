@@ -71,6 +71,23 @@ type AssignmentPlacement =
   | "trainings_area"
   | "featured_dashboard";
 
+const RESOURCE_TYPE_ORDER = [
+  "video",
+  "audio",
+  "article",
+  "blog",
+  "reflection",
+  "case_study",
+  "downloadable_tool",
+  "worksheet",
+  "guide",
+  "pdf",
+  "document",
+  "image",
+  "link",
+  "other",
+];
+
 type SectionId =
   | "people"
   | "circles"
@@ -2174,6 +2191,8 @@ function ResourceLibrary({
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<ContentStatus | "all">("all");
   const [assigningResource, setAssigningResource] = useState<AdminResource | null>(null);
+  const [editingResourceId, setEditingResourceId] = useState<string | null>(null);
+  const [creatingResource, setCreatingResource] = useState(false);
   const filtered = resources.filter((resource) =>
     (status === "all" || resource.status === status) &&
     [resource.title, resource.description, resource.category, resource.tags.join(" ")]
@@ -2205,6 +2224,8 @@ function ResourceLibrary({
     }
 
     setForm(emptyForm);
+    setCreatingResource(false);
+    setEditingResourceId(null);
     onMessage({ type: "success", text: "Resource was saved." });
     await onRefresh();
   }
@@ -2314,117 +2335,182 @@ function ResourceLibrary({
     onMessage({ type: "success", text: "Cover image was uploaded." });
   }
 
-  return (
-    <ContentRecordLibrary
-      title="Resource Library"
-      subtitle="Create links and reference records that can later be assigned to Circles."
-      search={query}
-      status={status}
-      onSearch={setQuery}
-      onStatusChange={setStatus}
-      form={
-        <>
-          <ContentInput label="Title" value={form.title} onChange={(title) => setForm({ ...form, title })} />
-          <ContentSelect
-            label="Type"
-            value={form.resourceType}
-            options={[
-              ["link", "Link"],
-              ["video", "Video"],
-              ["audio", "Audio"],
-              ["pdf", "PDF"],
-              ["image", "Image"],
-              ["document", "Document"],
-              ["worksheet", "Worksheet"],
-              ["guide", "Guide"],
-              ["article", "Article"],
-              ["blog", "Blog"],
-              ["reflection", "Reflection"],
-              ["case_study", "Case Study"],
-              ["downloadable_tool", "Downloadable Tool"],
-              ["other", "Other"],
-            ]}
-            onChange={(resourceType) =>
-              setForm({
-                ...form,
-                resourceType,
-                externalUrl: "",
-                embedUrl: "",
-                provider: "",
-                storagePath: "",
-                coverImagePath: "",
-                coverImageUrl: "",
-                bodyContent: "",
-                fileName: "",
-                fileSize: null,
-                mimeType: "",
-              })
-            }
+  const resourceForm = (
+    <>
+      <ContentInput label="Title" value={form.title} onChange={(title) => setForm({ ...form, title })} />
+      <ContentSelect
+        label="Type"
+        value={form.resourceType}
+        options={[
+          ["link", "Link"],
+          ["video", "Video"],
+          ["audio", "Audio"],
+          ["pdf", "PDF"],
+          ["image", "Image"],
+          ["document", "Document"],
+          ["worksheet", "Worksheet"],
+          ["guide", "Guide"],
+          ["article", "Article"],
+          ["blog", "Blog"],
+          ["reflection", "Reflection"],
+          ["case_study", "Case Study"],
+          ["downloadable_tool", "Downloadable Tool"],
+          ["other", "Other"],
+        ]}
+        onChange={(resourceType) =>
+          setForm({
+            ...form,
+            resourceType,
+            externalUrl: "",
+            embedUrl: "",
+            provider: "",
+            storagePath: "",
+            coverImagePath: "",
+            coverImageUrl: "",
+            bodyContent: "",
+            fileName: "",
+            fileSize: null,
+            mimeType: "",
+          })
+        }
+      />
+      {!isUploadedType && (
+        <ContentInput
+          label={form.resourceType === "video" ? "Video URL" : form.resourceType === "audio" ? "Audio or Podcast URL" : "URL"}
+          value={form.externalUrl}
+          onChange={(externalUrl) => setForm({ ...form, externalUrl })}
+        />
+      )}
+      {isHostedType && (
+        <ContentInput label="Approved Image URL" value={form.thumbnailUrl} onChange={(thumbnailUrl) => setForm({ ...form, thumbnailUrl })} />
+      )}
+      {isUploadedType && (
+        <label>
+          <span>{getPrimaryUploadLabel(form.resourceType)}</span>
+          <input
+            type="file"
+            accept={getResourceFileAccept(form.resourceType)}
+            onChange={(event) => uploadResourceFile(event.target.files?.[0] || null)}
           />
-          {!isUploadedType && (
-            <ContentInput
-              label={form.resourceType === "video" ? "Video URL" : form.resourceType === "audio" ? "Audio or Podcast URL" : "URL"}
-              value={form.externalUrl}
-              onChange={(externalUrl) => setForm({ ...form, externalUrl })}
-            />
-          )}
-          {isHostedType && (
-            <ContentInput label="Approved Image URL" value={form.thumbnailUrl} onChange={(thumbnailUrl) => setForm({ ...form, thumbnailUrl })} />
-          )}
-          {isUploadedType && (
-            <label>
-              <span>{getPrimaryUploadLabel(form.resourceType)}</span>
-              <input
-                type="file"
-                accept={getResourceFileAccept(form.resourceType)}
-                onChange={(event) => uploadResourceFile(event.target.files?.[0] || null)}
-              />
-              {form.fileName && (
-                <small>
-                  {form.fileName} · {formatFileSize(form.fileSize)}
-                </small>
-              )}
-            </label>
-          )}
-          <label>
-            <span>Thumbnail or Cover Image</span>
-            <input
-              type="file"
-              accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
-              onChange={(event) => uploadCoverImage(event.target.files?.[0] || null)}
-            />
-            <small>
-              Upload an optional image to represent this resource in the library and on member dashboards.
-            </small>
-            {form.coverImagePath && (
-              <button
-                className="admin-link-button"
-                type="button"
-                onClick={() =>
-                  setForm({ ...form, coverImagePath: "", coverImageUrl: "", thumbnailUrl: "" })
-                }
-              >
-                Remove Image
-              </button>
-            )}
-          </label>
-          {isWrittenResourceType(form.resourceType) && (
-            <ContentTextarea
-              label="Body Content"
-              value={form.bodyContent}
-              onChange={(bodyContent) => setForm({ ...form, bodyContent })}
-            />
-          )}
-          <ContentInput label="Category" value={form.category} onChange={(category) => setForm({ ...form, category })} />
-          <ContentInput label="Tags" value={form.tags} onChange={(tags) => setForm({ ...form, tags })} />
-          <ContentTextarea label="Description" value={form.description} onChange={(description) => setForm({ ...form, description })} />
-        </>
-      }
-      onSave={saveResource}
-    >
-      {filtered.map((resource) => (
-        <ContentRecordCard
-          key={resource.id}
+          {form.fileName && <small>{form.fileName} · {formatFileSize(form.fileSize)}</small>}
+        </label>
+      )}
+      <label>
+        <span>Thumbnail or Cover Image</span>
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+          onChange={(event) => uploadCoverImage(event.target.files?.[0] || null)}
+        />
+        <small>Upload an optional image to represent this resource in the library and on member dashboards.</small>
+        {form.coverImagePath && (
+          <button
+            className="admin-link-button"
+            type="button"
+            onClick={() => setForm({ ...form, coverImagePath: "", coverImageUrl: "", thumbnailUrl: "" })}
+          >
+            Remove Image
+          </button>
+        )}
+      </label>
+      {isWrittenResourceType(form.resourceType) && (
+        <ContentTextarea label="Body Content" value={form.bodyContent} onChange={(bodyContent) => setForm({ ...form, bodyContent })} />
+      )}
+      <ContentInput label="Category" value={form.category} onChange={(category) => setForm({ ...form, category })} />
+      <ContentInput label="Tags" value={form.tags} onChange={(tags) => setForm({ ...form, tags })} />
+      <ContentTextarea label="Description" value={form.description} onChange={(description) => setForm({ ...form, description })} />
+    </>
+  );
+
+  const groupedResources = RESOURCE_TYPE_ORDER.map((resourceType) => ({
+    resourceType,
+    resources: filtered.filter((resource) => resource.resourceType === resourceType),
+  })).filter((group) => group.resources.length > 0);
+  const uncategorizedResources = filtered.filter(
+    (resource) => !RESOURCE_TYPE_ORDER.includes(resource.resourceType)
+  );
+  if (uncategorizedResources.length > 0) {
+    groupedResources.push({ resourceType: "uncategorized", resources: uncategorizedResources });
+  }
+
+  function beginCreate() {
+    setForm(emptyForm);
+    setAssigningResource(null);
+    setEditingResourceId(null);
+    setCreatingResource(true);
+  }
+
+  function beginEdit(resource: AdminResource) {
+    setAssigningResource(null);
+    setCreatingResource(false);
+    setEditingResourceId(resource.id);
+    setForm({
+      id: resource.id,
+      title: resource.title,
+      description: resource.description,
+      resourceType: resource.resourceType,
+      provider: resource.provider,
+      externalUrl: resource.externalUrl,
+      embedUrl: resource.embedUrl,
+      storagePath: resource.storagePath,
+      thumbnailUrl: resource.thumbnailUrl,
+      coverImagePath: resource.coverImagePath,
+      coverImageUrl: resource.coverImageUrl,
+      bodyContent: resource.bodyContent,
+      fileName: resource.fileName,
+      fileSize: resource.fileSize,
+      mimeType: resource.mimeType,
+      category: resource.category,
+      tags: resource.tags.join(", "),
+    });
+  }
+
+  return (
+    <div className="admin-content-workspace admin-resource-library">
+      <div className="admin-resource-library-head">
+        <div>
+          <span className="card-label">Resource Library</span>
+          <h3>Manage the resources available across PeaceWorks.</h3>
+        </div>
+        <button className="btn btn-primary" type="button" onClick={beginCreate}>
+          Add Resource
+        </button>
+      </div>
+      {creatingResource && (
+        <section className="admin-content-editor admin-resource-action-panel">
+          <div className="admin-content-editor-head">
+            <div><span className="card-label">New Resource</span><h3>Add Resource</h3></div>
+            <button className="admin-link-button" type="button" onClick={() => setCreatingResource(false)}>Close</button>
+          </div>
+          <div className="admin-content-form-grid">{resourceForm}</div>
+          <button className="btn btn-primary" type="button" onClick={saveResource}>Save</button>
+        </section>
+      )}
+      <ContentLibraryTools
+        search={query}
+        status={status}
+        searchLabel="Search resource library"
+        onSearch={(value) => {
+          setQuery(value);
+          setEditingResourceId(null);
+          setAssigningResource(null);
+        }}
+        onStatusChange={(value) => {
+          setStatus(value);
+          setEditingResourceId(null);
+          setAssigningResource(null);
+        }}
+      />
+      {groupedResources.map((group) => (
+        <section className="admin-resource-type-section" key={group.resourceType}>
+          <div className="admin-resource-type-head">
+            <h3>{formatResourceTypeSection(group.resourceType)}</h3>
+            <span>{group.resources.length} {group.resources.length === 1 ? "resource" : "resources"}</span>
+          </div>
+          <div className="admin-resource-grid">
+          {group.resources.map((resource) => (
+            <div className="admin-resource-grid-entry" key={resource.id}>
+            <ContentRecordCard
           title={resource.title}
           detail={resource.description}
           status={resource.status}
@@ -2442,32 +2528,14 @@ function ResourceLibrary({
               : ""
           }
           coverImageUrl={resource.coverImageUrl || resource.thumbnailUrl}
+          resourceTile
+          selected={editingResourceId === resource.id || assigningResource?.id === resource.id}
           assignments={assignments.filter(
             (assignment) =>
               assignment.contentType === "resource" &&
               assignment.contentId === resource.id
           )}
-          onEdit={() =>
-            setForm({
-              id: resource.id,
-              title: resource.title,
-              description: resource.description,
-              resourceType: resource.resourceType,
-              provider: resource.provider,
-              externalUrl: resource.externalUrl,
-              embedUrl: resource.embedUrl,
-              storagePath: resource.storagePath,
-              thumbnailUrl: resource.thumbnailUrl,
-              coverImagePath: resource.coverImagePath,
-              coverImageUrl: resource.coverImageUrl,
-              bodyContent: resource.bodyContent,
-              fileName: resource.fileName,
-              fileSize: resource.fileSize,
-              mimeType: resource.mimeType,
-              category: resource.category,
-              tags: resource.tags.join(", "),
-            })
-          }
+          onEdit={() => beginEdit(resource)}
           onStatus={(nextStatus) =>
             updateContentStatus(
               `/api/admin/content/resources/${resource.id}`,
@@ -2483,7 +2551,11 @@ function ResourceLibrary({
               onRefresh
             )
           }
-          onAssign={() => setAssigningResource(resource)}
+          onAssign={() => {
+            setCreatingResource(false);
+            setEditingResourceId(null);
+            setAssigningResource(resource);
+          }}
           onDelete={() =>
             deleteContentRecord(
               `/api/admin/content/resources/${resource.id}`,
@@ -2492,9 +2564,18 @@ function ResourceLibrary({
               onRefresh
             )
           }
-        />
-      ))}
-      {assigningResource && (
+            />
+            {editingResourceId === resource.id && (
+              <section className="admin-content-editor admin-resource-action-panel">
+                <div className="admin-content-editor-head">
+                  <div><span className="card-label">Edit Resource</span><h3>{resource.title}</h3></div>
+                  <button className="admin-link-button" type="button" onClick={() => setEditingResourceId(null)}>Close</button>
+                </div>
+                <div className="admin-content-form-grid">{resourceForm}</div>
+                <button className="btn btn-primary" type="button" onClick={saveResource}>Save</button>
+              </section>
+            )}
+            {assigningResource?.id === resource.id && (
         <ContentAssignmentPanel
           content={{
             id: assigningResource.id,
@@ -2512,8 +2593,14 @@ function ResourceLibrary({
           onMessage={onMessage}
           onRefresh={onRefresh}
         />
-      )}
-    </ContentRecordLibrary>
+            )}
+            </div>
+          ))}
+          </div>
+        </section>
+      ))}
+      {filtered.length === 0 && <div className="admin-empty">No resources match these filters.</div>}
+    </div>
   );
 }
 
@@ -3993,6 +4080,8 @@ function ContentRecordCard({
   fileOpenEndpoint,
   coverImageUrl,
   assignments = [],
+  resourceTile = false,
+  selected = false,
   onEdit,
   onStatus,
   onDuplicate,
@@ -4007,6 +4096,8 @@ function ContentRecordCard({
   fileOpenEndpoint?: string;
   coverImageUrl?: string;
   assignments?: AdminContentAssignment[];
+  resourceTile?: boolean;
+  selected?: boolean;
   onEdit: () => void;
   onStatus: (status: ContentStatus) => void;
   onDuplicate?: () => void;
@@ -4024,7 +4115,7 @@ function ContentRecordCard({
   }
 
   return (
-    <article className="admin-content-item">
+    <article className={`admin-content-item${resourceTile ? " admin-resource-tile" : ""}${selected ? " is-selected" : ""}`}>
       <div
         className="admin-resource-cover"
         aria-hidden="true"
@@ -5282,6 +5373,28 @@ function formatPlacement(placement: AssignmentPlacement) {
 
 function isUploadedResourceType(resourceType: string) {
   return ["pdf", "image", "document", "worksheet", "guide", "downloadable_tool"].includes(resourceType);
+}
+
+function formatResourceTypeSection(resourceType: string) {
+  const labels: Record<string, string> = {
+    video: "Videos",
+    audio: "Podcasts & Audio",
+    article: "Articles",
+    blog: "Blogs",
+    reflection: "Reflections",
+    case_study: "Case Studies",
+    downloadable_tool: "Downloadable Tools",
+    worksheet: "Worksheets",
+    guide: "Guides",
+    pdf: "PDFs",
+    document: "Documents",
+    image: "Images",
+    link: "Links",
+    other: "Other",
+    uncategorized: "Uncategorized",
+  };
+
+  return labels[resourceType] || resourceType.replaceAll("_", " ");
 }
 
 function isWrittenResourceType(resourceType: string) {

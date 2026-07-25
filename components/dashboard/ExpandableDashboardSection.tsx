@@ -20,8 +20,8 @@ export default function ExpandableDashboardSection<T>({
   items,
   renderItem,
   collapsedItemCount = 3,
-  expandLabel = `Show all ${title}`,
-  collapseLabel = `Collapse ${title}`,
+  expandLabel = `Show more ${title}`,
+  collapseLabel = `Show fewer ${title}`,
 }: ExpandableDashboardSectionProps<T>) {
   const [expanded, setExpanded] = useState(false);
   const expandable = items.length > collapsedItemCount;
@@ -30,42 +30,13 @@ export default function ExpandableDashboardSection<T>({
 
   if (items.length === 0) return null;
 
-  const heading = (
-    <>
-      {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-      <span className="dashboard-section-title-row">
-        <span className="dashboard-section-title">{title}</span>
-        {expandable && (
-          <span className="dashboard-section-control" aria-hidden="true">
-            <span>{expanded ? "Show Less" : "More"}</span>
-            <span
-              className={`dashboard-section-chevron${expanded ? " is-expanded" : ""}`}
-            >
-              →
-            </span>
-          </span>
-        )}
-      </span>
-    </>
-  );
-
   return (
     <section className="dashboard-journey-section">
       <div className="section-head journey-head">
-        {expandable ? (
-          <button
-            className="dashboard-section-toggle"
-            type="button"
-            aria-expanded={expanded}
-            aria-controls={gridId}
-            aria-label={expanded ? collapseLabel : expandLabel}
-            onClick={() => setExpanded((current) => !current)}
-          >
-            {heading}
-          </button>
-        ) : (
-          <div className="dashboard-section-heading">{heading}</div>
-        )}
+        <div className="dashboard-section-heading">
+          {eyebrow && <span className="eyebrow">{eyebrow}</span>}
+          <span className="dashboard-section-title">{title}</span>
+        </div>
       </div>
       <div
         className={`dashboard-journey-grid dashboard-journey-grid-${Math.min(
@@ -76,6 +47,19 @@ export default function ExpandableDashboardSection<T>({
       >
         {visibleItems.map(renderItem)}
       </div>
+      {expandable && (
+        <button
+          className="dashboard-section-toggle"
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={gridId}
+          aria-label={expanded ? collapseLabel : expandLabel}
+          onClick={() => setExpanded((current) => !current)}
+        >
+          <span aria-hidden="true">{expanded ? "−" : "+"}</span>
+          {expanded ? "Less" : "More"}
+        </button>
+      )}
     </section>
   );
 }
