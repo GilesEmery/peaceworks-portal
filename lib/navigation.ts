@@ -10,6 +10,7 @@ export type RoleNavigationItem = NavigationItem & {
 export const routes = {
   home: "/",
   about: "/about",
+  howItWorks: "/how-it-works",
   roiCalculator: "/roi-calculator",
   join: "/join",
   joinCreditCard: "/join/credit-card",
