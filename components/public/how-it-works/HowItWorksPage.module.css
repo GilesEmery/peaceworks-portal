@@ -120,13 +120,12 @@
 }
 
 .button:hover,
-.entryCard:hover,
 .systemCard:hover {
   transform: translateY(-3px);
 }
 
 .button:focus-visible,
-.textLink:focus-visible {
+.organizationsLink:focus-visible {
   outline: 3px solid rgba(120, 144, 120, 0.55);
   outline-offset: 4px;
 }
@@ -262,10 +261,7 @@
   padding: clamp(82px, 9vw, 132px) 0;
 }
 
-#what-is-the-ros,
-#installation-journey {
-  scroll-margin-top: 118px;
-}
+.anchorTarget { scroll-margin-top: 118px; }
 
 .sectionIntro {
   display: grid;
@@ -291,11 +287,17 @@
   color: var(--muted);
 }
 
-.comparisonSection {
+.comparisonPanel,
+.systemPanel {
+  padding: clamp(38px, 6vw, 72px);
+  overflow: hidden;
+  border: 1px solid rgba(184, 204, 183, 0.16);
+  border-radius: 38px;
   color: #f8f4eb;
   background:
     radial-gradient(circle at 88% 12%, rgba(120, 144, 120, 0.2), transparent 30rem),
     #111411;
+  box-shadow: 0 28px 66px rgba(17, 20, 17, 0.18);
 }
 
 .contrastGrid {
@@ -330,8 +332,7 @@
 
 .technicalPanel h3,
 .relationalPanel h3,
-.systemCard h3,
-.entryCard h3 {
+.systemCard h3 {
   margin-bottom: 15px;
   font-size: clamp(1.8rem, 3vw, 2.6rem);
   font-weight: 500;
@@ -353,11 +354,7 @@
   text-wrap: balance;
 }
 
-.comparisonSection .closingStatement { color: #f8f4eb; }
-
-.pressureSection {
-  background: rgba(255, 255, 255, 0.34);
-}
+.comparisonPanel .closingStatement { color: #f8f4eb; }
 
 .pressureFlow {
   position: relative;
@@ -413,17 +410,9 @@
 }
 
 .pressureCard p,
-.journey p,
-.entryCard p {
+.journey p {
   color: var(--muted);
   font-size: 1rem;
-}
-
-.darkSection {
-  color: #f8f4eb;
-  background:
-    radial-gradient(circle at 85% 15%, rgba(120, 144, 120, 0.22), transparent 28rem),
-    #111411;
 }
 
 .sectionIntroLight .eyebrow { color: var(--ros-sage-light); }
@@ -450,49 +439,6 @@
 .systemCardHeading > span { padding-top: 6px; color: var(--ros-sage-light); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.12em; }
 .systemCard h3 { color: #f8f4eb; }
 .systemCard p { max-width: 590px; margin: 22px 0 0 68px; color: rgba(248, 244, 235, 0.66); font-size: 1rem; }
-
-.entryGrid {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.entryCard {
-  position: relative;
-  z-index: 1;
-  min-height: 300px;
-  padding: 30px;
-  border: 1px solid rgba(17, 20, 17, 0.1);
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.57);
-  box-shadow: 0 14px 34px rgba(17, 20, 17, 0.06);
-  transition: transform 180ms ease;
-}
-
-.entryNumber {
-  display: block;
-  width: 46px;
-  margin-bottom: 36px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid var(--ros-sage);
-  color: var(--ros-sage);
-  font-weight: 700;
-  letter-spacing: 0.12em;
-}
-
-.entryCard strong {
-  display: block;
-  margin-bottom: 14px;
-  color: var(--sage-dark);
-  font-size: 0.78rem;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.journeySection {
-  background: #e9eee7;
-}
 
 .journey {
   display: grid;
@@ -548,81 +494,25 @@
 .journey h3 { color: #f8f4eb; }
 .journey p { max-width: 34ch; color: rgba(248, 244, 235, 0.68); font-size: 1rem; line-height: 1.5; }
 
-.outcomesPanel {
-  padding: clamp(30px, 5vw, 56px);
-  border-radius: 34px;
-  background:
-    radial-gradient(circle at 92% 8%, rgba(120, 144, 120, 0.2), transparent 24rem),
-    #151a15;
-  box-shadow: 0 28px 64px rgba(17, 20, 17, 0.18);
+.organizationsLink {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin: -20px 0 36px;
+  padding: 12px 0;
+  color: var(--sage-dark);
+  font-weight: 700;
 }
 
-.observableSection {
-  color: #f8f4eb;
-  background:
-    radial-gradient(circle at 12% 18%, rgba(120, 144, 120, 0.18), transparent 30rem),
-    #111411;
+.outcomeNote {
+  max-width: 780px;
+  margin: 22px auto 0 !important;
+  color: var(--muted);
+  text-align: center;
 }
 
-.observableSection .outcomesPanel {
-  border: 1px solid rgba(184, 204, 183, 0.16);
-  background:
-    radial-gradient(circle at 92% 8%, rgba(120, 144, 120, 0.18), transparent 24rem),
-    rgba(255, 255, 255, 0.035);
-  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.2);
-}
-
-.outcomesGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 38px;
-  border-top: 1px solid rgba(184, 204, 183, 0.24);
-}
-
-.outcomesGrid article {
-  display: grid;
-  min-height: 132px;
-  grid-template-columns: 42px 1fr;
-  align-items: flex-start;
-  gap: 18px;
-  padding: 28px 0;
-  border-bottom: 1px solid rgba(184, 204, 183, 0.24);
-}
-
-.outcomesGrid article > span { padding-top: 1px; color: var(--ros-sage-light); font-family: var(--font-cormorant), Georgia, serif; font-size: 1.45rem; font-weight: 600; letter-spacing: 0.04em; }
-.outcomesGrid p { color: #f8f4eb; font-family: var(--font-cormorant), Georgia, serif; font-size: clamp(1.45rem, 2.3vw, 1.95rem); font-weight: 600; line-height: 1.25; }
-
-.qualification {
-  display: grid;
-  grid-template-columns: 190px 1fr;
-  width: min(100%, 1040px);
-  gap: 32px;
-  align-items: flex-start;
-  margin: 42px auto 0;
-  padding: clamp(28px, 4vw, 40px);
-  overflow: hidden;
-  border: 1px solid rgba(143, 171, 142, 0.34);
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(184, 204, 183, 0.2), transparent 17rem),
-    #f7f2e8;
-  box-shadow:
-    0 16px 34px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.82);
-}
-
-.qualificationLabel { padding-top: 4px; color: var(--sage-dark); font-size: 0.76rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
-.qualification p { color: var(--text); font-weight: 600; }
-
-.isSection {
-  color: var(--text);
-  background:
-    radial-gradient(circle at 10% 85%, rgba(120, 144, 120, 0.13), transparent 28rem),
-    #eee9df;
-}
 .centeredHeading { display: grid; place-items: center; margin-bottom: 48px; text-align: center; }
 .centeredHeading h2 { max-width: 16ch; }
-.isSection .centeredHeading h2 { color: var(--text); }
 
 .isGrid {
   display: grid;
@@ -658,7 +548,6 @@
 
 .nextSection {
   padding: clamp(80px, 9vw, 128px) 0;
-  background: var(--ros-cream);
 }
 
 .nextPanel {
@@ -678,7 +567,6 @@
 .buttonRow { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-top: 34px; }
 .buttonLight { color: var(--ros-ink); background: #f8f4eb; }
 .buttonOutline { border-color: rgba(255, 255, 255, 0.3); color: #fff; background: transparent; }
-.textLink { display: inline-flex; align-items: center; gap: 8px; padding: 12px; color: #f8f4eb; font-weight: 700; }
 
 @keyframes spin {
   from {
@@ -706,18 +594,19 @@
   }
 
   .heroVisual {
-    display: none;
+    width: min(100%, 700px);
+    min-height: 560px;
+    margin: 0 auto;
   }
 
   .hero {
     min-height: auto;
-    padding: 34px 0 30px;
+    padding: 70px 0 84px;
   }
 }
 
 @media (max-width: 1080px) {
   .pressureFlow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .entryGrid, .outcomesGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .journey { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -733,19 +622,18 @@
   .hero { padding: 56px 0 66px; }
   .hero h1 { max-width: none; font-size: clamp(3.35rem, 15.5vw, 4.7rem); line-height: 0.94; }
   .heroCopy > p { font-size: 1.08rem; }
+  .heroVisual { min-height: 390px; }
   .section { padding: 76px 0; }
   .sectionIntro { margin-bottom: 36px; }
   .sectionIntro h2, .centeredHeading h2, .nextPanel h2 { font-size: clamp(2.55rem, 12vw, 3.6rem); line-height: 1; }
-  .pressureFlow, .systemGrid, .entryGrid, .outcomesGrid { grid-template-columns: 1fr; }
-  .outcomesPanel { padding: 26px 20px; border-radius: 26px; }
-  .pressureCard, .systemCard, .entryCard { min-height: auto; }
+  .pressureFlow, .systemGrid { grid-template-columns: 1fr; }
+  .pressureCard, .systemCard { min-height: auto; }
   .journey { grid-template-columns: 1fr; }
   .journey li { min-height: auto; padding: 28px; }
-  .qualification { grid-template-columns: 1fr; padding: 25px; }
+  .comparisonPanel, .systemPanel { padding: 32px 20px; border-radius: 28px; }
   .nextPanel { padding: 36px 24px; border-radius: 28px; }
   .buttonRow { align-items: stretch; flex-direction: column; }
   .buttonRow > * { width: 100%; }
-  .textLink { justify-content: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -753,7 +641,6 @@
   .orbit2,
   .orbit3 { animation: none; }
   .button,
-  .entryCard,
   .journey li,
   .pressureCard,
   .systemCard { transition: none; }
