@@ -2,7 +2,7 @@
   --ros-ink: #111411;
   --ros-sage: #789078;
   --ros-sage-light: #b8ccb7;
-  --ros-cream: #f5f0e6;
+  --ros-cream: #ecede5;
   position: relative;
   overflow: hidden;
   background: var(--ros-cream);
