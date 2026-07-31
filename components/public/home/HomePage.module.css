@@ -6,6 +6,7 @@
   --home-section-space-mobile: calc(var(--home-major-section-gap-mobile) / 2);
   position: relative;
   overflow: hidden;
+  background: #ecede5;
 }
 
 .homePage::before {
@@ -958,7 +959,7 @@
     radial-gradient(circle at 82% 18%, rgba(184, 204, 183, 0.26), transparent 26%),
     radial-gradient(circle at 14% 80%, rgba(143, 171, 142, 0.16), transparent 28%),
     linear-gradient(135deg, #0f100f 0%, #191d1a 100%);
-  box-shadow: 0 40px 120px rgba(8, 8, 8, 0.24);
+  box-shadow: 0 30px 70px rgba(17, 20, 17, 0.2);
 }
 
 .inviteGrid {

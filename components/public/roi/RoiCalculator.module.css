@@ -6,6 +6,7 @@
   --public-section-space-mobile: calc(var(--public-major-section-gap-mobile) / 2);
   position: relative;
   overflow: hidden;
+  background: #ecede5;
 }
 
 .roiPage::before {
@@ -652,6 +653,7 @@
   background:
     radial-gradient(circle at 84% 18%, rgba(184, 204, 183, 0.22), transparent 26%),
     linear-gradient(135deg, #111 0%, #1a1f1a 100%);
+  box-shadow: 0 30px 70px rgba(17, 20, 17, 0.2);
 }
 
 .advantageShell h2,
