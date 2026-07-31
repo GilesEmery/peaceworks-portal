@@ -2977,10 +2977,26 @@ a {
 }
 
 .site-footer {
+  position: relative;
+  background: #f3f2ec;
   padding: 42px 0 52px;
 }
 
+.site-footer::before {
+  position: absolute;
+  z-index: 0;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 48px;
+  background: linear-gradient(180deg, transparent 0%, #f3f2ec 100%);
+  content: "";
+  pointer-events: none;
+}
+
 .footer-inner {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
