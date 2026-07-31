@@ -397,7 +397,7 @@
 
 .listeningPanel {
   display: flex;
-  min-height: 480px;
+  min-height: 420px;
   flex-direction: column;
   background: rgba(250, 247, 239, 0.76);
 }
@@ -456,7 +456,7 @@
 }
 
 .journeyGrid li {
-  min-height: 315px;
+  min-height: 290px;
   padding: 28px;
   border: 1px solid rgba(184, 204, 183, 0.19);
   border-radius: 27px;

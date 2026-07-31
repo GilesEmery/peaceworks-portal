@@ -504,13 +504,6 @@
   font-weight: 700;
 }
 
-.outcomeNote {
-  max-width: 780px;
-  margin: 22px auto 0 !important;
-  color: var(--muted);
-  text-align: center;
-}
-
 .centeredHeading { display: grid; place-items: center; margin-bottom: 48px; text-align: center; }
 .centeredHeading h2 { max-width: 16ch; }
 

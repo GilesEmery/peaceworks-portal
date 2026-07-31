@@ -8,42 +8,42 @@ import styles from "./OrganizationsPage.module.css";
 const relationalDrag = [
   ["The real conversation happens later.", "Meetings appear aligned while concerns move into hallways, private messages, and assumptions."],
   ["Leadership feels heavier than it should.", "The same unresolved people problems continue consuming attention, energy, and decision-making capacity."],
-  ["Teams protect instead of collaborate.", "Departments guard information, influence, and territory rather than solving shared problems together."],
-  ["Decisions slow and problems repeat.", "Weak trust and unclear ownership create hesitation, avoidance, triangulation, and unfinished conversations."],
+  ["Teams protect instead of collaborate.", "People guard information, influence, and territory rather than solving shared problems together."],
+  ["Decisions slow and problems repeat.", "Weak trust and unclear ownership create hesitation, avoidance, triangulation, and rework."],
 ];
 
 const startingPoints = [
-  ["Leadership Conversation", "Clarify what the organization is carrying", "A focused conversation identifies the pressures, patterns, questions, and readiness shaping the current moment."],
-  ["Leadership Awareness", "Understand patterns under pressure", "The Peace Assessment helps leaders recognize their pressure responses and what others may experience from them."],
-  ["Organizational Listening", "Make the relational environment more visible", "Listening Previews, diagnostics, and Listening Labs surface experiences that may not be visible from the leadership table."],
-  ["Relational Operating System Practice", "Build shared language, tools, and rhythms", "Leaders and teams establish repeatable practices for meetings, decisions, tensions, and everyday organizational life."],
+  ["Leadership Conversation", "Clarify the current situation", "A focused conversation helps leaders identify the pressures, patterns, questions, and possibilities shaping the organization."],
+  ["Leadership Awareness", "Recognize patterns under pressure", "The Peace Assessment helps leaders understand their own responses and what others may experience from them."],
+  ["Organizational Listening", "Make the environment more visible", "Structured listening helps surface experiences and patterns that may not be visible from the leadership table."],
+  ["Relational Operating System Practice", "Build shared organizational capacity", "Leaders and teams begin using common language, practical tools, and repeatable relational practices."],
 ];
 
 const listeningPanels = [
   {
     label: "Listening Preview",
     title: "Experience the PeaceWorks listening posture.",
-    copy: "A short, bounded experience introduces leaders or teams to a curious, honest, and dignifying listening posture.",
-    note: "A Listening Preview is an introduction, not a full organizational diagnosis.",
+    copy: "A short, bounded experience introduces leaders or teams to a more curious, honest, and dignifying way of listening.",
+    note: "An introduction, not a full organizational diagnosis.",
   },
   {
     label: "Cultural Peace Index",
     title: "Create a clearer relational snapshot.",
-    copy: "The Cultural Peace Index offers a relational snapshot across trust, candor, psychological safety, responsibility, and repair capacity.",
-    note: "It is a diagnostic signal for discernment, not a score of an organization’s worth or health.",
+    copy: "A structured diagnostic helps leaders see patterns related to trust, candor, psychological safety, responsibility, and repair capacity.",
+    note: "A signal for discernment, not a judgment of the organization’s worth or health.",
   },
   {
     label: "Listening Lab",
     title: "Listen across the organization with structure and care.",
     copy: "A paid, facilitated process may include leadership discovery, consent-based participation, thematic synthesis, a leadership debrief, and a Relational Health Report.",
-    note: "The purpose is not to identify villains. It is to help the organization see patterns, strengths, tensions, and possibilities more truthfully.",
+    note: "The purpose is to understand patterns and possibilities, not identify villains.",
   },
 ];
 
 const journey = [
-  ["See", "Understand the relational environment, including strengths, tensions, patterns, and readiness."],
-  ["Name", "Create shared language for what happens under pressure without reducing one person to the problem."],
-  ["Practice", "Use practical tools in real conversations, decisions, tensions, and leadership moments."],
+  ["See", "Understand the organization’s strengths, strain, patterns, and readiness."],
+  ["Name", "Create shared language for what people are experiencing and what needs attention."],
+  ["Practice", "Use practical tools in real leadership, team, and organizational situations."],
   ["Rhythm", "Build the practices into meetings, coaching, reflection, and accountability."],
   ["Restore", "Address disruption, take responsibility, repair what is possible, and return to shared work."],
   ["Sustain", "Develop internal ownership so the organization can carry the work forward."],
@@ -53,7 +53,7 @@ const businessOutcomes = [
   ["Tension is named earlier", "Concerns surface before they become entrenched stories, resentment, or avoidance."],
   ["Ownership becomes clearer", "Responsibility replaces some patterns of blame, over-functioning, and triangulation."],
   ["Repair happens sooner", "Disruption is addressed before it settles into long-term distrust."],
-  ["Collaboration strengthens", "Teams work across pressure instead of protecting territory or withholding what others need."],
+  ["Collaboration strengthens", "Teams work across pressure rather than protecting territory or withholding what others need."],
 ];
 
 function SectionIntro({ eyebrow, title, copy, light = false }: { eyebrow: string; title: string; copy?: string; light?: boolean }) {
@@ -74,11 +74,11 @@ export default function OrganizationsPage() {
           <div className={styles.heroCopy}>
             <div className={styles.eyebrow}>PeaceWorks for Organizations</div>
             <h1>Build an organization that can face pressure without losing trust.</h1>
-            <p>Growth, change, difficult decisions, and competing priorities place pressure on people and relationships. PeaceWorks helps leaders and teams recognize that pressure earlier, engage tension more honestly, repair disruption, and return to healthier work.</p>
-            <p className={styles.heroSecondary}>We help organizations establish a Relational Operating System—a shared way to navigate the work between people when the pressure is real.</p>
+            <p>Growth, change, difficult decisions, and competing priorities place strain on people and relationships. Left unaddressed, that strain weakens communication, slows decisions, and makes leadership heavier.</p>
+            <p className={styles.heroSecondary}>PeaceWorks helps leaders and teams build a shared way to recognize what is happening, work through it responsibly, and return to healthier work together.</p>
             <div className={styles.buttonRow}>
               <a className={`${styles.button} ${styles.buttonDark}`} href="#how-we-work">Explore How We Work <ArrowDown aria-hidden="true" size={18} /></a>
-              <Link className={`${styles.button} ${styles.buttonLight}`} href={routes.howItWorks}>Explore the Relational Operating System</Link>
+              <Link className={`${styles.button} ${styles.buttonLight}`} href={routes.howItWorks}>Understand the System</Link>
             </div>
           </div>
           <div className={styles.heroVisual} aria-hidden="true">
@@ -97,7 +97,7 @@ export default function OrganizationsPage() {
 
       <section className={styles.section}>
         <div className={styles.container}>
-          <SectionIntro eyebrow="Relational Drag" title="The strain between people eventually becomes a business problem." copy="It appears in polite meetings where concerns move elsewhere, recurring leadership burdens, guarded teams, and decisions slowed by weak trust." />
+          <SectionIntro eyebrow="Relational Drag" title="The strain between people eventually reaches the work." copy="It rarely begins as one dramatic event. More often, it accumulates through unfinished conversations, guarded teams, unclear ownership, and recurring leadership burdens." />
           <div className={styles.editorialGrid}>{relationalDrag.map(([title, copy], index) => <article className={styles.editorialRow} key={title}><span>{String(index + 1).padStart(2, "0")}</span><div><h3>{title}</h3><p>{copy}</p></div></article>)}</div>
           <p className={styles.closingStatement}>Relational drag is the hidden friction that weakens trust, slows decisions, and makes leadership heavier.</p>
         </div>
@@ -105,14 +105,14 @@ export default function OrganizationsPage() {
 
       <section className={styles.section}>
         <div className={`${styles.container} ${styles.darkPanel}`}>
-          <SectionIntro light eyebrow="A Practical System" title="PeaceWorks strengthens the operating system beneath the strategy." copy="Technical systems organize goals, roles, and execution. PeaceWorks strengthens how people listen, speak honestly, navigate conflict, repair disruption, and return to shared work." />
+          <SectionIntro light eyebrow="A Practical System" title="Strengthen the system beneath the strategy." copy="PeaceWorks helps leaders and teams develop a shared way to listen, speak honestly, navigate difficult moments, take responsibility, and rebuild trust when the work between people breaks down." />
           <Link className={styles.systemLink} href={routes.howItWorks}>Explore How It Works <ArrowRight aria-hidden="true" size={17} /></Link>
         </div>
       </section>
 
       <section className={`${styles.section} ${styles.anchorTarget}`} id="how-we-work">
         <div className={styles.container}>
-          <SectionIntro eyebrow="Ways to Begin" title="Organizations do not all need the same starting point." copy="Some leaders begin with a specific tension. Others want to understand the culture more clearly, form their leadership team, or establish a broader organizational practice. PeaceWorks begins by listening before recommending a path." />
+          <SectionIntro eyebrow="Ways to Begin" title="Start with what the organization is carrying now." copy="PeaceWorks begins by listening. The right starting point depends on the organization’s immediate concerns, readiness, and desired level of engagement." />
           <div className={styles.startGrid}>{startingPoints.map(([title, role, copy], index) => <article className={styles.startCard} key={title}><span className={styles.cardNumber}>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><strong>{role}</strong><p>{copy}</p></article>)}</div>
           <p className={styles.closingStatement}>We begin by understanding the organization and choosing one responsible next step.</p>
         </div>
@@ -120,7 +120,7 @@ export default function OrganizationsPage() {
 
       <section className={`${styles.section} ${styles.anchorTarget}`} id="organizational-listening">
         <div className={`${styles.container} ${styles.listeningShell}`}>
-          <SectionIntro eyebrow="Organizational Listening" title="Before prescribing change, understand what people are actually carrying." copy="PeaceWorks creates structured ways to hear experience across roles and levels of power without turning listening into blame or an uncontained complaint process." />
+          <SectionIntro eyebrow="Organizational Listening" title="Understand what people are actually carrying." copy="PeaceWorks creates structured ways to hear experience across roles and levels of power without turning listening into blame, performance, or an uncontained complaint process." />
           <div className={styles.listeningGrid}>{listeningPanels.map((panel) => <article className={styles.listeningPanel} key={panel.label}><span className={styles.panelLabel}>{panel.label}</span><h3>{panel.title}</h3><p>{panel.copy}</p><p className={styles.panelNote}>{panel.note}</p></article>)}</div>
           <aside className={styles.groundedNote}><span>Responsible listening</span><p>Every engagement is shaped by context, power, consent, confidentiality, psychological safety, and responsible scope.</p></aside>
         </div>
@@ -128,7 +128,7 @@ export default function OrganizationsPage() {
 
       <section className={styles.section}>
         <div className={styles.container}>
-          <SectionIntro eyebrow="How the Work Develops" title="From relational strain to sustainable practice." copy="The work follows a clear path while remaining responsive to context, trust, power, and readiness." />
+          <SectionIntro eyebrow="How the Work Develops" title="From insight to sustainable practice." copy="The pace and starting point may differ, but the work follows a clear progression." />
           <ol className={styles.journeyGrid}>{journey.map(([title, copy], index) => <li key={title}><span className={styles.journeyNumber}>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{copy}</p></li>)}</ol>
           <p className={styles.closingStatement}>The aim is not dependence on PeaceWorks. It is growing internal capacity for truth, responsibility, repair, and return.</p>
         </div>
@@ -136,10 +136,10 @@ export default function OrganizationsPage() {
 
       <section className={`${styles.section} ${styles.anchorTarget}`} id="business-case">
         <div className={`${styles.container} ${styles.businessPanel}`}>
-          <SectionIntro light eyebrow="The Business Case" title="Relational health shapes operational health." copy="Relational practices do not replace strategy, accountability, or difficult decisions. They help people carry those responsibilities with greater clarity and ownership when pressure is high." />
+          <SectionIntro light eyebrow="The Business Case" title="Relational health shapes operational health." copy="PeaceWorks does not replace strategy, accountability, sound management, or difficult decisions. It helps people carry those responsibilities with greater clarity, ownership, and trust." />
           <div className={styles.businessGrid}>{businessOutcomes.map(([title, copy], index) => <article key={title}><span>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
-          <div className={styles.roiCallout}><div><h3>Make the hidden cost of relational drag more visible.</h3><p>The calculator is a planning tool, not a guarantee of business results.</p></div><Link className={`${styles.button} ${styles.buttonCream}`} href={routes.roiCalculator}>Explore the Relational ROI Calculator <ArrowRight aria-hidden="true" size={18} /></Link></div>
-          <aside className={styles.scopeNote}>PeaceWorks is for leaders willing to practice, not simply observe. It is not a substitute for therapy, legal counsel, formal investigation, crisis intervention, or required HR processes.</aside>
+          <div className={styles.roiCallout}><div><h3>Make the hidden cost of relational drag more visible.</h3><p>The calculator is a planning and reflection tool, not a guarantee of business results.</p></div><Link className={`${styles.button} ${styles.buttonCream}`} href={routes.roiCalculator}>Explore the Relational ROI Calculator <ArrowRight aria-hidden="true" size={18} /></Link></div>
+          <aside className={styles.scopeNote}>PeaceWorks is designed for leaders willing to practice, not simply observe. It does not replace therapy, legal counsel, formal investigation, crisis intervention, or required HR processes.</aside>
         </div>
       </section>
 
