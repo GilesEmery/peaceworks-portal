@@ -96,7 +96,7 @@ export default function OrganizationsPage() {
       </section>
 
       <section className={styles.section}>
-        <div className={styles.container}>
+        <div className={`${styles.container} ${styles.relationalDragPanel}`}>
           <SectionIntro eyebrow="Relational Drag" title="The strain between people eventually reaches the work." copy="It rarely begins as one dramatic event. More often, it accumulates through unfinished conversations, guarded teams, unclear ownership, and recurring leadership burdens." />
           <div className={styles.editorialGrid}>{relationalDrag.map(([title, copy], index) => <article className={styles.editorialRow} key={title}><span>{String(index + 1).padStart(2, "0")}</span><div><h3>{title}</h3><p>{copy}</p></div></article>)}</div>
           <p className={styles.closingStatement}>Relational drag is the hidden friction that weakens trust, slows decisions, and makes leadership heavier.</p>

@@ -42,7 +42,7 @@
 .hero {
   position: relative;
   display: grid;
-  min-height: calc(100svh - 96px);
+  min-height: 680px;
   align-items: center;
   padding: 42px 0 34px;
 }
@@ -258,7 +258,7 @@
 
 .section {
   position: relative;
-  padding: clamp(82px, 9vw, 132px) 0;
+  padding: clamp(60px, 6vw, 88px) 0;
 }
 
 .anchorTarget { scroll-margin-top: 118px; }
@@ -266,7 +266,7 @@
 .sectionIntro {
   display: grid;
   max-width: 1040px;
-  margin-bottom: 50px;
+  margin-bottom: 42px;
 }
 
 .sectionIntro h2,
@@ -344,7 +344,7 @@
 
 .closingStatement {
   max-width: 900px;
-  margin: 42px auto 0 !important;
+  margin: 34px auto 0 !important;
   color: var(--text);
   font-family: var(--font-cormorant), Georgia, serif;
   font-size: clamp(1.65rem, 2.8vw, 2.35rem) !important;
@@ -498,7 +498,7 @@
   display: inline-flex;
   gap: 8px;
   align-items: center;
-  margin: -20px 0 36px;
+  margin: -14px 0 30px;
   padding: 12px 0;
   color: var(--sage-dark);
   font-weight: 700;
@@ -540,7 +540,7 @@
 .isGrid li::before { position: absolute; top: 0.66em; left: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--ros-sage); content: ""; }
 
 .nextSection {
-  padding: clamp(80px, 9vw, 128px) 0;
+  padding: clamp(60px, 6vw, 88px) 0;
 }
 
 .nextPanel {
@@ -594,7 +594,7 @@
 
   .hero {
     min-height: auto;
-    padding: 70px 0 84px;
+    padding: 54px 0 56px;
   }
 }
 
@@ -612,12 +612,12 @@
 @media (max-width: 600px) {
   .container { width: min(var(--max), calc(100% - 28px)); }
   .page p, .page li { font-size: 1.02rem; }
-  .hero { padding: 56px 0 66px; }
+  .hero { padding: 38px 0 46px; }
   .hero h1 { max-width: none; font-size: clamp(3.35rem, 15.5vw, 4.7rem); line-height: 0.94; }
   .heroCopy > p { font-size: 1.08rem; }
   .heroVisual { min-height: 390px; }
-  .section { padding: 76px 0; }
-  .sectionIntro { margin-bottom: 36px; }
+  .section, .nextSection { padding: 56px 0; }
+  .sectionIntro { margin-bottom: 34px; }
   .sectionIntro h2, .centeredHeading h2, .nextPanel h2 { font-size: clamp(2.55rem, 12vw, 3.6rem); line-height: 1; }
   .pressureFlow, .systemGrid { grid-template-columns: 1fr; }
   .pressureCard, .systemCard { min-height: auto; }
