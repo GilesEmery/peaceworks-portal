@@ -11,6 +11,7 @@ export const routes = {
   home: "/",
   about: "/about",
   howItWorks: "/how-it-works",
+  organizations: "/organizations",
   roiCalculator: "/roi-calculator",
   join: "/join",
   joinCreditCard: "/join/credit-card",
