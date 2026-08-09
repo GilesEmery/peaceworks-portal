@@ -71,7 +71,9 @@ export default function PwaBottomNav({
           aria-controls="pwa-more-menu"
           onClick={onMoreToggle}
         >
-          <Menu aria-hidden="true" />
+          <span className={styles.navIcon}>
+            <Menu aria-hidden="true" />
+          </span>
           <span>More</span>
         </button>
       </div>
