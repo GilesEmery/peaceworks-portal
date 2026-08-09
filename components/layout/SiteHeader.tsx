@@ -8,6 +8,8 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { useCurrentUserNavigation } from "../../hooks/useCurrentUserNavigation";
 import { usePwaInstall } from "../../hooks/usePwaInstall";
+import { useCompactPwaViewport } from "../../hooks/useCompactPwaViewport";
+import { useStandalonePwa } from "../../hooks/useStandalonePwa";
 import {
   assessmentNavigation,
   dashboardLoginHref,
@@ -22,6 +24,7 @@ import { supabase } from "../../lib/supabase";
 import AssessmentsDropdown from "./AssessmentsDropdown";
 import IosInstallInstructions from "../pwa/IosInstallInstructions";
 import MessagesNavigationLink from "./MessagesNavigationLink";
+import PwaAppShell from "../pwa/PwaAppShell";
 
 type SiteHeaderProps = {
   showSignOut?: boolean;
@@ -49,6 +52,8 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
     initials,
   } = useCurrentUserNavigation();
   const pwaInstall = usePwaInstall();
+  const isStandalonePwa = useStandalonePwa();
+  const isCompactPwaViewport = useCompactPwaViewport();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -152,6 +157,23 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
 
   function handleMobileLinkClick() {
     closeMobileMenu({ returnFocus: false });
+  }
+
+  if (
+    isAuthenticated &&
+    isStandalonePwa &&
+    isCompactPwaViewport &&
+    isPwaPortalPath(pathname)
+  ) {
+    return (
+      <PwaAppShell
+        displayName={displayName}
+        isAdmin={isAdmin}
+        canViewCoachDashboard={canViewCoachDashboard}
+        canViewProjectDashboard={canViewProjectDashboard}
+        onSignOut={handleSignOut}
+      />
+    );
   }
 
   return (
@@ -497,6 +519,22 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
       />
     </header>
   );
+}
+
+function isPwaPortalPath(pathname: string) {
+  return [
+    routes.myDashboard,
+    routes.messages,
+    routes.circle,
+    routes.account,
+    routes.settings,
+    routes.assessments,
+    routes.peaceAssessment,
+    routes.legacyDashboard,
+    routes.coach,
+    routes.project,
+    routes.admin,
+  ].some((route) => isActivePath(pathname, route));
 }
 
 function getFocusableElements(container: HTMLElement | null) {
