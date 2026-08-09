@@ -62,6 +62,7 @@ export type DashboardResource = {
   visibleFrom: string | null;
   visibleUntil: string | null;
   placement: string;
+  circle: { id: string; name: string } | null;
 };
 
 export type DashboardTraining = {
@@ -75,6 +76,7 @@ export type DashboardTraining = {
   visibleFrom: string | null;
   visibleUntil: string | null;
   placement: string;
+  circle: { id: string; name: string } | null;
 };
 
 export type DashboardNoteSource = "circle" | "member";
@@ -667,6 +669,12 @@ async function resolveDashboardContent(
         visibleFrom: assignment.visible_from,
         visibleUntil: assignment.visible_until,
         placement: assignment.placement || "",
+        circle: assignment.circle_id
+          ? {
+              id: assignment.circle_id,
+              name: circleNames.get(assignment.circle_id) || "",
+            }
+          : null,
       };
     })
   );
@@ -689,6 +697,12 @@ async function resolveDashboardContent(
         visibleFrom: assignment.visible_from,
         visibleUntil: assignment.visible_until,
         placement: assignment.placement || "",
+        circle: assignment.circle_id
+          ? {
+              id: assignment.circle_id,
+              name: circleNames.get(assignment.circle_id) || "",
+            }
+          : null,
       };
     })
     .filter((item): item is DashboardTraining => Boolean(item));

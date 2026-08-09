@@ -75,8 +75,7 @@ export default function PwaAppShell({
             priority
           />
           <span>
-            <strong>PeaceWorks</strong>
-            <small>{getPageTitle(pathname)}</small>
+            <strong>{getPageTitle(pathname)}</strong>
           </span>
         </Link>
       </header>
@@ -102,12 +101,14 @@ export default function PwaAppShell({
 }
 
 function getPageTitle(pathname: string) {
+  if (isActivePath(pathname, routes.myDashboard)) return "Home";
   if (isActivePath(pathname, routes.messages)) return "Messages";
   if (isActivePath(pathname, routes.circle)) return "Circle";
   if (isActivePath(pathname, routes.assessments)) return "Practice";
+  if (isActivePath(pathname, routes.peaceAssessment)) return "Assessments";
   if (isActivePath(pathname, routes.account)) return "Account";
   if (isActivePath(pathname, routes.coach)) return "Coach";
   if (isActivePath(pathname, routes.project)) return "Project";
   if (isActivePath(pathname, routes.admin)) return "Admin";
-  return "Your Journey";
+  return "PeaceWorks";
 }

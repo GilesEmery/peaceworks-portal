@@ -13,24 +13,31 @@
 .brand {
   display: flex;
   width: fit-content;
-  min-height: 48px;
+  min-width: 0;
+  min-height: 52px;
+  max-width: 100%;
   align-items: center;
-  gap: 9px;
-  padding: 5px 12px 5px 7px;
-  border: 1px solid rgba(248, 244, 235, 0.14);
-  border-radius: 18px;
-  background: rgba(248, 244, 235, 0.06);
+  gap: 12px;
+  padding: 2px 4px;
   color: #f8f4eb;
 }
 
 .brand img {
-  width: 38px;
-  height: 38px;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
   filter: brightness(0) saturate(100%) invert(94%) sepia(11%) saturate(277%) hue-rotate(341deg) brightness(105%) contrast(94%);
 }
-.brand span { display: grid; gap: 1px; }
-.brand strong { font-size: 1.08rem; line-height: 1; }
-.brand small { color: #b8ccb7; font-size: 0.82rem; line-height: 1.1; }
+.brand span { min-width: 0; }
+.brand strong {
+  display: block;
+  overflow: hidden;
+  font-size: clamp(1.28rem, 5vw, 1.55rem);
+  font-weight: 600;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .bottomBar {
   position: fixed;

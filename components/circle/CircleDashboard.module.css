@@ -1,0 +1,199 @@
+.shell {
+  min-height: calc(100svh - 96px);
+  padding: 38px 0 88px;
+  background: #ecede5;
+}
+
+.identity {
+  max-width: 920px;
+  padding: clamp(24px, 4vw, 42px);
+  border: 1px solid rgba(32, 40, 32, 0.1);
+  border-radius: 30px;
+  background: rgba(248, 244, 235, 0.72);
+  box-shadow: 0 18px 48px rgba(32, 40, 32, 0.08);
+}
+
+.identity h1 {
+  margin: 9px 0 18px;
+  font-size: clamp(2.7rem, 7vw, 5.4rem);
+  font-weight: 500;
+  line-height: 0.94;
+  letter-spacing: -0.045em;
+}
+
+.identityDetail {
+  display: grid;
+  gap: 7px;
+  max-width: 720px;
+}
+
+.identityDetail + .identityDetail {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(32, 40, 32, 0.1);
+}
+
+.identityDetail p {
+  margin: 0;
+  color: #4a514a;
+  font-size: 1.08rem;
+  line-height: 1.5;
+}
+
+.identityDetail strong {
+  color: #202820;
+}
+
+.section {
+  margin-top: 46px;
+}
+
+.section > header {
+  margin-bottom: 18px;
+}
+
+.section > header h2,
+.connection h2 {
+  margin: 7px 0 0;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.singleColumn {
+  max-width: 920px;
+}
+
+.panel,
+.connection,
+.status {
+  border: 1px solid rgba(32, 40, 32, 0.1);
+  border-radius: 25px;
+  background: rgba(248, 244, 235, 0.82);
+  box-shadow: 0 12px 34px rgba(32, 40, 32, 0.06);
+}
+
+.panel {
+  display: flex;
+  min-height: 250px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 25px;
+}
+
+.panel h2,
+.panel h3 {
+  margin: 9px 0 12px;
+  color: #202820;
+  font-weight: 500;
+  line-height: 1.06;
+}
+
+.panel h2 {
+  max-width: 24ch;
+  font-size: clamp(1.85rem, 4vw, 2.8rem);
+}
+
+.panel h3 {
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+}
+
+.panel p {
+  margin: 0;
+  color: #4a514a;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.panel small {
+  color: #5a665b;
+}
+
+.question {
+  min-height: 0;
+  border-color: rgba(101, 125, 103, 0.28);
+  background:
+    radial-gradient(circle at 92% 8%, rgba(184, 204, 183, 0.28), transparent 30%),
+    #f8f4eb;
+}
+
+.supportingCopy {
+  margin-top: 14px !important;
+  padding-top: 14px;
+  border-top: 1px solid rgba(32, 40, 32, 0.1);
+}
+
+.reflectionState {
+  margin-top: 16px !important;
+  color: #5a7a5c !important;
+  font-weight: 700;
+}
+
+.connection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 46px;
+  padding: 26px;
+}
+
+.connection p {
+  margin: 10px 0 0;
+  color: #4a514a;
+}
+
+.status {
+  max-width: 760px;
+  padding: 28px;
+}
+
+.status h1 {
+  margin: 10px 0;
+  font-size: clamp(2rem, 5vw, 3.3rem);
+  font-weight: 500;
+  line-height: 1;
+}
+
+@media (max-width: 760px) {
+  .shell {
+    padding: 24px 0 54px;
+  }
+
+  .identity {
+    padding: 24px;
+    border-radius: 24px;
+  }
+
+  .section,
+  .connection {
+    margin-top: 34px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel {
+    min-height: 0;
+    padding: 22px;
+  }
+
+  .connection {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .connection :global(.btn) {
+    width: 100%;
+  }
+}
