@@ -120,3 +120,19 @@ export function isAssessmentPath(pathname: string) {
     isActivePath(pathname, routes.peaceAssessment)
   );
 }
+
+export function isPwaPortalPath(pathname: string) {
+  return [
+    routes.myDashboard,
+    routes.messages,
+    routes.circle,
+    routes.account,
+    routes.settings,
+    routes.assessments,
+    routes.peaceAssessment,
+    routes.legacyDashboard,
+    routes.coach,
+    routes.project,
+    routes.admin,
+  ].some((route) => isActivePath(pathname, route));
+}

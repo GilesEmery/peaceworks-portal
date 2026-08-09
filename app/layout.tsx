@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import PwaRegistration from "../components/pwa/PwaRegistration";
+import PwaShellProvider from "../components/pwa/PwaShellProvider";
 import FeedbackCenter from "../components/ui/FeedbackCenter";
 import "./globals.css";
 
@@ -54,7 +55,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <PwaRegistration />
-        {children}
+        <PwaShellProvider>{children}</PwaShellProvider>
         <FeedbackCenter />
       </body>
     </html>

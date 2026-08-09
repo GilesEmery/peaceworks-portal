@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 
 type NavigatorWithStandalone = Navigator & { standalone?: boolean };
 
+export type StandalonePwaMode = "unknown" | "browser" | "standalone";
+
 export function useStandalonePwa() {
-  const [isStandalonePwa, setIsStandalonePwa] = useState(false);
+  const [mode, setMode] = useState<StandalonePwaMode>("unknown");
 
   useEffect(() => {
     const standaloneQuery = window.matchMedia("(display-mode: standalone)");
@@ -14,7 +16,9 @@ export function useStandalonePwa() {
       const isIosStandalone = Boolean(
         (navigator as NavigatorWithStandalone).standalone
       );
-      setIsStandalonePwa(isIosStandalone || standaloneQuery.matches);
+      setMode(
+        isIosStandalone || standaloneQuery.matches ? "standalone" : "browser"
+      );
     }
 
     updateStandaloneState();
@@ -25,5 +29,5 @@ export function useStandalonePwa() {
     };
   }, []);
 
-  return isStandalonePwa;
+  return mode;
 }

@@ -6,10 +6,7 @@ import { UserRound } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-import { useCurrentUserNavigation } from "../../hooks/useCurrentUserNavigation";
 import { usePwaInstall } from "../../hooks/usePwaInstall";
-import { useCompactPwaViewport } from "../../hooks/useCompactPwaViewport";
-import { useStandalonePwa } from "../../hooks/useStandalonePwa";
 import {
   assessmentNavigation,
   dashboardLoginHref,
@@ -20,11 +17,10 @@ import {
   roleAccountNavigation,
   routes,
 } from "../../lib/navigation";
-import { supabase } from "../../lib/supabase";
 import AssessmentsDropdown from "./AssessmentsDropdown";
 import IosInstallInstructions from "../pwa/IosInstallInstructions";
 import MessagesNavigationLink from "./MessagesNavigationLink";
-import PwaAppShell from "../pwa/PwaAppShell";
+import { usePwaShell } from "../pwa/PwaShellProvider";
 
 type SiteHeaderProps = {
   showSignOut?: boolean;
@@ -42,6 +38,7 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
   const [mobileAssessmentsOpen, setMobileAssessmentsOpen] = useState(() =>
     isAssessmentPath(pathname)
   );
+  const { mode: pwaShellMode, navigation, signOut } = usePwaShell();
   const {
     authEmail,
     isAuthenticated,
@@ -50,10 +47,8 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
     canViewProjectDashboard,
     displayName,
     initials,
-  } = useCurrentUserNavigation();
+  } = navigation;
   const pwaInstall = usePwaInstall();
-  const isStandalonePwa = useStandalonePwa();
-  const isCompactPwaViewport = useCompactPwaViewport();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -118,9 +113,8 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
   }, [mobileMenuOpen]);
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
+    await signOut();
     setMobileMenuOpen(false);
-    router.push(routes.login);
   }
 
   function goTo(path: string) {
@@ -159,22 +153,7 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
     closeMobileMenu({ returnFocus: false });
   }
 
-  if (
-    isAuthenticated &&
-    isStandalonePwa &&
-    isCompactPwaViewport &&
-    isPwaPortalPath(pathname)
-  ) {
-    return (
-      <PwaAppShell
-        displayName={displayName}
-        isAdmin={isAdmin}
-        canViewCoachDashboard={canViewCoachDashboard}
-        canViewProjectDashboard={canViewProjectDashboard}
-        onSignOut={handleSignOut}
-      />
-    );
-  }
+  if (pwaShellMode === "compact" || pwaShellMode === "unknown") return null;
 
   return (
     <header className="site-header">
@@ -519,22 +498,6 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
       />
     </header>
   );
-}
-
-function isPwaPortalPath(pathname: string) {
-  return [
-    routes.myDashboard,
-    routes.messages,
-    routes.circle,
-    routes.account,
-    routes.settings,
-    routes.assessments,
-    routes.peaceAssessment,
-    routes.legacyDashboard,
-    routes.coach,
-    routes.project,
-    routes.admin,
-  ].some((route) => isActivePath(pathname, route));
 }
 
 function getFocusableElements(container: HTMLElement | null) {

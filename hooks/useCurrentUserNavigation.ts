@@ -22,6 +22,7 @@ export type CurrentUserNavigationState = {
   canViewProjectDashboard: boolean;
   displayName: string;
   initials: string;
+  isLoading: boolean;
   reload: () => Promise<void>;
 };
 
@@ -33,6 +34,7 @@ export function useCurrentUserNavigation(): CurrentUserNavigationState {
   const [isAdmin, setIsAdmin] = useState(false);
   const [canViewCoachDashboard, setCanViewCoachDashboard] = useState(false);
   const [canViewProjectDashboard, setCanViewProjectDashboard] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const loadProfile = useCallback(async function loadProfile() {
     const [
@@ -46,6 +48,7 @@ export function useCurrentUserNavigation(): CurrentUserNavigationState {
 
     if (!user) {
       resetNavigationState();
+      setIsLoading(false);
       return;
     }
 
@@ -64,6 +67,7 @@ export function useCurrentUserNavigation(): CurrentUserNavigationState {
       setIsAdmin(false);
       setCanViewCoachDashboard(false);
       setCanViewProjectDashboard(false);
+      setIsLoading(false);
       return;
     }
 
@@ -73,6 +77,7 @@ export function useCurrentUserNavigation(): CurrentUserNavigationState {
       await supabase.auth.signOut();
       resetNavigationState();
       router.replace(routes.login);
+      setIsLoading(false);
       return;
     }
 
@@ -82,6 +87,7 @@ export function useCurrentUserNavigation(): CurrentUserNavigationState {
       setIsAdmin(false);
       setCanViewCoachDashboard(false);
       setCanViewProjectDashboard(false);
+      setIsLoading(false);
       return;
     }
 
@@ -106,6 +112,7 @@ export function useCurrentUserNavigation(): CurrentUserNavigationState {
       Boolean(coachResult?.isCoach || (coachResponse.ok && coachResult?.isAdmin))
     );
     setCanViewProjectDashboard(Boolean(projectResult?.isProjectManager));
+    setIsLoading(false);
   }, [router]);
 
   useEffect(() => {
@@ -152,6 +159,7 @@ export function useCurrentUserNavigation(): CurrentUserNavigationState {
     canViewProjectDashboard,
     displayName,
     initials,
+    isLoading,
     reload: loadProfile,
   };
 
