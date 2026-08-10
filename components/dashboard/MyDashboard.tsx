@@ -219,6 +219,7 @@ export default function MyDashboard() {
                 )}
               </span>
               <h3>{question.question}</h3>
+              {question.authorName && <p className="content-byline">By {question.authorName}</p>}
               {question.coachIntroduction && (
                 <p className="dashboard-coach-introduction">
                   {question.coachIntroduction}
@@ -390,6 +391,7 @@ export default function MyDashboard() {
                   <div>
                     <span className="card-label">{training.category || "Training"}</span>
                     <h3>{training.title}</h3>
+                    {training.authorName && <p className="content-byline">By {training.authorName}</p>}
                     {training.description && <p>{training.description}</p>}
                     {training.duration && <small>{training.duration}</small>}
                   </div>
@@ -430,6 +432,7 @@ export default function MyDashboard() {
                   <div>
                     <span className="card-label">{formatLabel(resource.resourceType)}</span>
                     <h3>{resource.title}</h3>
+                    {resource.authorName && <p className="content-byline">By {resource.authorName}</p>}
                     {resource.description && <p>{resource.description}</p>}
                     {resource.tags.length > 0 && (
                       <div className="dashboard-result-tags">

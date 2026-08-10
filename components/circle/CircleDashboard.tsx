@@ -170,6 +170,7 @@ export default function CircleDashboard() {
                       {formatQuestionLabel(question.questionMonth, question.questionYear)}
                     </span>
                     <h2>{question.question}</h2>
+                    {question.authorName && <p className="content-byline">By {question.authorName}</p>}
                     {question.coachIntroduction && <p>{question.coachIntroduction}</p>}
                     {question.openingReflection && (
                       <p className={styles.supportingCopy}>{question.openingReflection}</p>
@@ -200,6 +201,7 @@ export default function CircleDashboard() {
                   <div>
                     <span className="card-label">{training.circle?.name}</span>
                     <h3>{training.title}</h3>
+                    {training.authorName && <p className="content-byline">By {training.authorName}</p>}
                     {training.description && <p>{training.description}</p>}
                     {training.duration && <small>{training.duration}</small>}
                   </div>
@@ -220,6 +222,7 @@ export default function CircleDashboard() {
                   <div>
                     <span className="card-label">{resource.circle?.name}</span>
                     <h3>{resource.title}</h3>
+                    {resource.authorName && <p className="content-byline">By {resource.authorName}</p>}
                     {resource.description && <p>{resource.description}</p>}
                   </div>
                   <ResourceMediaPlayer

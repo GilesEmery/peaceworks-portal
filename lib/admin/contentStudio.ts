@@ -13,6 +13,7 @@ import type { ResolvedCanonicalAssignment } from "../content/assignments";
 import type { ContentItemKind } from "../content/registry";
 import { deliverCommunicationToPortal } from "../messaging/service";
 import { deliverCommunicationEmail } from "../communications/email";
+import { resolveContentAuthor } from "../content/authors";
 import {
   fetchEligibleCommunicationSenders,
   normalizeReplyToEmails,
@@ -67,6 +68,8 @@ export type AdminMonthlyQuestion = {
   category: string;
   theme: string;
   questionNumber: string;
+  authorProfileId: string;
+  authorName: string;
   assignedCircleCount: number;
   currentUseCount: number;
   publishedAt: string | null;
@@ -92,6 +95,8 @@ export type AdminResource = {
   mimeType: string;
   category: string;
   tags: string[];
+  authorProfileId: string;
+  authorName: string;
   status: AdminContentStatus;
   publishedAt: string | null;
   createdAt: string | null;
@@ -105,6 +110,8 @@ export type AdminTraining = {
   coverImageUrl: string;
   category: string;
   estimatedDuration: string;
+  authorProfileId: string;
+  authorName: string;
   status: AdminContentStatus;
   publishedAt: string | null;
   createdAt: string | null;
@@ -127,6 +134,7 @@ export type AdminCommunication = {
   senderName: string;
   replyToEmails: string[];
   visibleAuthorName: string;
+  authorProfileId: string;
   headerImagePath: string;
   headerImageUrl: string;
   thumbnailImagePath: string;
@@ -242,6 +250,8 @@ export type MonthlyQuestionValues = {
   category: string;
   theme: string;
   questionNumber?: string | null;
+  authorProfileId?: string;
+  authorName?: string;
 };
 
 export type ResourceValues = {
@@ -259,6 +269,8 @@ export type ResourceValues = {
   mimeType?: string;
   category: string;
   tags: string[];
+  authorProfileId?: string;
+  authorName?: string;
 };
 
 export type TrainingValues = {
@@ -267,6 +279,8 @@ export type TrainingValues = {
   coverImageUrl: string;
   category: string;
   estimatedDuration: string;
+  authorProfileId?: string;
+  authorName?: string;
 };
 
 export type CommunicationValues = {
@@ -284,6 +298,7 @@ export type CommunicationValues = {
   replyToEmails?: string[];
   replyToEmail?: string;
   visibleAuthorName?: string;
+  authorProfileId?: string;
   headerImagePath?: string;
   thumbnailImagePath?: string;
   useHeaderAsThumbnail?: boolean;
@@ -318,6 +333,8 @@ type MonthlyQuestionRow = {
   category?: string | null;
   theme?: string | null;
   question_number: string | null;
+  author_profile_id: string | null;
+  author_name: string | null;
   published_at: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -342,6 +359,8 @@ type ContentResourceRow = {
   mime_type?: string | null;
   category: string | null;
   tags: unknown;
+  author_profile_id: string | null;
+  author_name: string | null;
   status: string | null;
   published_at: string | null;
   created_at: string | null;
@@ -356,6 +375,8 @@ type TrainingRow = {
   cover_image_url: string | null;
   category: string | null;
   estimated_duration: string | null;
+  author_profile_id: string | null;
+  author_name: string | null;
   status: string | null;
   published_at: string | null;
   created_at: string | null;
@@ -377,6 +398,8 @@ type CommunicationRow = {
   sender_id?: string | null;
   reply_to_email?: string | null;
   visible_author_name?: string | null;
+  author_profile_id?: string | null;
+  author_name?: string | null;
   header_image_path?: string | null;
   thumbnail_image_path?: string | null;
   image_alt_text?: string | null;
@@ -420,7 +443,7 @@ type CommunicationNewsletterSectionRow = {
 type ContentAssignmentRow = ResolvedCanonicalAssignment;
 
 const monthlyQuestionSelect =
-  "id,content_item_id,title,opening_reflection,question_text,guidance,discussion_prompts,status,category,theme,question_number,published_at,created_at,updated_at";
+  "id,content_item_id,title,opening_reflection,question_text,guidance,discussion_prompts,status,category,theme,question_number,author_profile_id,author_name,published_at,created_at,updated_at";
 
 export async function fetchAdminContentStudio(): Promise<AdminContentStudioPayload> {
   const [monthlyQuestions, resources, trainings, communications, communicationSenders, assignments] = await Promise.all([
@@ -517,6 +540,7 @@ export async function createAdminMonthlyQuestion(
   values: MonthlyQuestionValues
 ) {
   const cleaned = cleanMonthlyQuestion(values);
+  const author = await resolveContentAuthor(values);
   const supabase = createAdminSupabaseClient();
   const now = new Date().toISOString();
   const { data, error } = await supabase
@@ -530,6 +554,8 @@ export async function createAdminMonthlyQuestion(
       category: cleaned.category || null,
       theme: cleaned.theme || null,
       question_number: cleaned.questionNumber || null,
+      author_profile_id: author.authorProfileId || null,
+      author_name: author.authorName || null,
       status: "draft",
       created_by: adminUserId,
       updated_by: adminUserId,
@@ -549,6 +575,7 @@ export async function updateAdminMonthlyQuestion(
   values: MonthlyQuestionValues
 ) {
   const cleaned = cleanMonthlyQuestion(values);
+  const author = await resolveContentAuthor(values);
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("monthly_questions")
@@ -561,6 +588,8 @@ export async function updateAdminMonthlyQuestion(
       category: cleaned.category || null,
       theme: cleaned.theme || null,
       question_number: cleaned.questionNumber || null,
+      author_profile_id: author.authorProfileId || null,
+      author_name: author.authorName || null,
       updated_by: adminUserId,
       updated_at: new Date().toISOString(),
     })
@@ -639,6 +668,8 @@ export async function duplicateAdminMonthlyQuestion(
       category: row.category || null,
       theme: row.theme || null,
       question_number: row.question_number,
+      author_profile_id: row.author_profile_id,
+      author_name: row.author_name,
       status: "draft",
       created_by: adminUserId,
       updated_by: adminUserId,
@@ -690,6 +721,7 @@ export async function createAdminResource(
   values: ResourceValues
 ) {
   const cleaned = cleanResource(values);
+  const author = await resolveContentAuthor(values);
   const supabase = createAdminSupabaseClient();
   const now = new Date().toISOString();
   const { data, error } = await supabase
@@ -710,6 +742,8 @@ export async function createAdminResource(
       mime_type: cleaned.mimeType || null,
       category: cleaned.category || null,
       tags: cleaned.tags,
+      author_profile_id: author.authorProfileId || null,
+      author_name: author.authorName || null,
       status: "draft",
       created_by: adminUserId,
       updated_by: adminUserId,
@@ -729,6 +763,7 @@ export async function updateAdminResource(
   values: ResourceValues
 ) {
   const cleaned = cleanResource(values);
+  const author = await resolveContentAuthor(values);
   const supabase = createAdminSupabaseClient();
   const { data: existing } = await supabase
     .from("resources")
@@ -753,6 +788,8 @@ export async function updateAdminResource(
       mime_type: cleaned.mimeType || null,
       category: cleaned.category || null,
       tags: cleaned.tags,
+      author_profile_id: author.authorProfileId || null,
+      author_name: author.authorName || null,
       updated_by: adminUserId,
       updated_at: new Date().toISOString(),
     })
@@ -867,6 +904,8 @@ export async function duplicateAdminResource(adminUserId: string, resourceId: st
       mime_type: row.mime_type,
       category: row.category,
       tags: normalizeStringArray(row.tags),
+      author_profile_id: row.author_profile_id,
+      author_name: row.author_name,
       status: "draft",
       created_by: adminUserId,
       updated_by: adminUserId,
@@ -885,6 +924,7 @@ export async function createAdminTraining(
   values: TrainingValues
 ) {
   const cleaned = cleanTraining(values);
+  const author = await resolveContentAuthor(values);
   const supabase = createAdminSupabaseClient();
   const now = new Date().toISOString();
   const { data, error } = await supabase
@@ -895,6 +935,8 @@ export async function createAdminTraining(
       cover_image_url: cleaned.coverImageUrl || null,
       category: cleaned.category || null,
       estimated_duration: cleaned.estimatedDuration || null,
+      author_profile_id: author.authorProfileId || null,
+      author_name: author.authorName || null,
       status: "draft",
       created_by: adminUserId,
       updated_by: adminUserId,
@@ -914,6 +956,7 @@ export async function updateAdminTraining(
   values: TrainingValues
 ) {
   const cleaned = cleanTraining(values);
+  const author = await resolveContentAuthor(values);
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("trainings")
@@ -923,6 +966,8 @@ export async function updateAdminTraining(
       cover_image_url: cleaned.coverImageUrl || null,
       category: cleaned.category || null,
       estimated_duration: cleaned.estimatedDuration || null,
+      author_profile_id: author.authorProfileId || null,
+      author_name: author.authorName || null,
       updated_by: adminUserId,
       updated_at: new Date().toISOString(),
     })
@@ -985,6 +1030,8 @@ export async function duplicateAdminTraining(adminUserId: string, trainingId: st
       cover_image_url: row.cover_image_url,
       category: row.category,
       estimated_duration: row.estimated_duration,
+      author_profile_id: row.author_profile_id,
+      author_name: row.author_name,
       status: "draft",
       created_by: adminUserId,
       updated_by: adminUserId,
@@ -1020,6 +1067,8 @@ export async function createAdminCommunication(
       sender_id: cleaned.senderId || null,
       reply_to_email: serializeReplyToEmails(cleaned.replyToEmails) || null,
       visible_author_name: cleaned.visibleAuthorName || null,
+      author_profile_id: cleaned.authorProfileId || null,
+      author_name: cleaned.visibleAuthorName || null,
       header_image_path: cleaned.headerImagePath || null,
       thumbnail_image_path: cleaned.thumbnailImagePath || null,
       image_alt_text: cleaned.imageAltText || null,
@@ -1069,6 +1118,8 @@ export async function updateAdminCommunication(
       sender_id: cleaned.senderId || null,
       reply_to_email: serializeReplyToEmails(cleaned.replyToEmails) || null,
       visible_author_name: cleaned.visibleAuthorName || null,
+      author_profile_id: cleaned.authorProfileId || null,
+      author_name: cleaned.visibleAuthorName || null,
       header_image_path: cleaned.headerImagePath || null,
       thumbnail_image_path: cleaned.thumbnailImagePath || null,
       image_alt_text: cleaned.imageAltText || null,
@@ -1275,16 +1326,16 @@ async function deleteStoragePathIfUnreferenced(storagePath: string, exceptResour
 }
 
 const resourceSelect =
-  "id,content_item_id,title,description,resource_type,provider,external_url,embed_url,storage_path,thumbnail_url,cover_image_path,body_content,source_communication_id,file_name,file_size,mime_type,category,tags,status,published_at,created_at,updated_at";
+  "id,content_item_id,title,description,resource_type,provider,external_url,embed_url,storage_path,thumbnail_url,cover_image_path,body_content,source_communication_id,file_name,file_size,mime_type,category,tags,author_profile_id,author_name,status,published_at,created_at,updated_at";
 
 const trainingSelect =
-  "id,content_item_id,title,description,cover_image_url,category,estimated_duration,status,published_at,created_at,updated_at";
+  "id,content_item_id,title,description,cover_image_url,category,estimated_duration,author_profile_id,author_name,status,published_at,created_at,updated_at";
 
 const resourceStorageBucket = "peaceworks-resources";
 const communicationStorageBucket = "peaceworks-communications";
 
 const communicationSelect =
-  "id,format,title,subject,preview_text,summary,body_content,communication_type,channel,dashboard_presentation,audience_scope,sender_id,reply_to_email,visible_author_name,header_image_path,thumbnail_image_path,image_alt_text,category,tags,visible_from,visible_until,status,published_at,created_at,updated_at";
+  "id,format,title,subject,preview_text,summary,body_content,communication_type,channel,dashboard_presentation,audience_scope,sender_id,reply_to_email,visible_author_name,author_profile_id,author_name,header_image_path,thumbnail_image_path,image_alt_text,category,tags,visible_from,visible_until,status,published_at,created_at,updated_at";
 
 async function fetchMonthlyQuestions() {
   const supabase = createAdminSupabaseClient();
@@ -1426,6 +1477,8 @@ function mapMonthlyQuestion(
     category: row.category || "",
     theme: row.theme || "",
     questionNumber: row.question_number || "",
+    authorProfileId: row.author_profile_id || "",
+    authorName: row.author_name || "",
     assignedCircleCount: assignmentCounts.get(row.id) || 0,
     currentUseCount: activeAssignmentCounts.get(row.id) || 0,
     publishedAt: row.published_at,
@@ -1455,6 +1508,8 @@ async function mapResource(row: ContentResourceRow): Promise<AdminResource> {
     mimeType: row.mime_type || "",
     category: row.category || "",
     tags: normalizeStringArray(row.tags),
+    authorProfileId: row.author_profile_id || "",
+    authorName: row.author_name || "",
     status: parseStatus(row.status),
     publishedAt: row.published_at,
     createdAt: row.created_at,
@@ -1470,6 +1525,8 @@ function mapTraining(row: TrainingRow): AdminTraining {
     coverImageUrl: row.cover_image_url || "",
     category: row.category || "",
     estimatedDuration: row.estimated_duration || "",
+    authorProfileId: row.author_profile_id || "",
+    authorName: row.author_name || "",
     status: parseStatus(row.status),
     publishedAt: row.published_at,
     createdAt: row.created_at,
@@ -1503,7 +1560,8 @@ async function mapCommunication(row: CommunicationRow): Promise<AdminCommunicati
     senderId: row.sender_id || "",
     senderName: sender?.displayName || "",
     replyToEmails: parseStoredReplyToEmails(row.reply_to_email || sender?.email || ""),
-    visibleAuthorName: row.visible_author_name || "",
+    visibleAuthorName: row.author_name || row.visible_author_name || "",
+    authorProfileId: row.author_profile_id || "",
     headerImagePath: row.header_image_path || "",
     headerImageUrl: row.header_image_path
       ? await createSignedCommunicationImageUrl(row.header_image_path)
@@ -1644,6 +1702,10 @@ async function cleanCommunication(values: CommunicationValues) {
   const sender = senderId ? await resolveCommunicationSender(senderId) : null;
   const needsEmailSender =
     format === "email" || format === "newsletter" || channels.includes("email");
+  const author = await resolveContentAuthor({
+    authorProfileId: values.authorProfileId,
+    authorName: values.visibleAuthorName,
+  });
 
   if (!title) throw new Error("A title is required.");
   if ((format === "email" || format === "newsletter") && !subject) {
@@ -1683,7 +1745,8 @@ async function cleanCommunication(values: CommunicationValues) {
     replyToEmails: sender
       ? normalizeReplyToEmails(values.replyToEmails || values.replyToEmail, sender.email)
       : [],
-    visibleAuthorName: trimText(values.visibleAuthorName).slice(0, 140),
+    authorProfileId: author.authorProfileId,
+    visibleAuthorName: author.authorName,
     headerImagePath,
     thumbnailImagePath,
     imageAltText: trimText(values.imageAltText).slice(0, 500),
@@ -2129,6 +2192,8 @@ async function upsertCommunicationResource(
     mime_type: null,
     category: input.resourceCategory || input.category || null,
     tags: input.resourceTags,
+    author_profile_id: input.authorProfileId || null,
+    author_name: input.visibleAuthorName || null,
     status: input.resourceStatus,
     updated_by: adminUserId,
     updated_at: now,

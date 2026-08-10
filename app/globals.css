@@ -7612,6 +7612,30 @@ a {
   font-size: 1rem;
 }
 
+.admin-author-selector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-author-selector > small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+}
+
+.content-byline {
+  margin: 4px 0 10px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-style: italic;
+}
+
+@media (max-width: 680px) {
+  .admin-author-selector {
+    grid-template-columns: 1fr;
+  }
+}
+
 .admin-assignment-summary {
   display: grid;
   gap: 10px;

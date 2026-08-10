@@ -47,6 +47,7 @@ export type DashboardMonthlyQuestion = {
   placement: string;
   circle: { id: string; name: string } | null;
   coachIntroduction: string | null;
+  authorName: string;
 };
 
 export type DashboardResource = {
@@ -63,6 +64,7 @@ export type DashboardResource = {
   visibleUntil: string | null;
   placement: string;
   circle: { id: string; name: string } | null;
+  authorName: string;
 };
 
 export type DashboardTraining = {
@@ -77,6 +79,7 @@ export type DashboardTraining = {
   visibleUntil: string | null;
   placement: string;
   circle: { id: string; name: string } | null;
+  authorName: string;
 };
 
 export type DashboardNoteSource = "circle" | "member";
@@ -504,7 +507,7 @@ async function resolveDashboardContent(
         ? supabase
             .from("monthly_questions")
             .select(
-              "id,content_item_id,title,theme,question_text,opening_reflection,discussion_prompts,guidance,category,question_number,status"
+              "id,content_item_id,title,theme,question_text,opening_reflection,discussion_prompts,guidance,category,question_number,author_name,status"
             )
             .in(
               "content_item_id",
@@ -516,7 +519,7 @@ async function resolveDashboardContent(
         ? supabase
             .from("resources")
             .select(
-              "id,content_item_id,title,description,resource_type,external_url,storage_path,thumbnail_url,cover_image_path,tags,status"
+              "id,content_item_id,title,description,resource_type,external_url,storage_path,thumbnail_url,cover_image_path,tags,author_name,status"
             )
             .in(
               "content_item_id",
@@ -528,7 +531,7 @@ async function resolveDashboardContent(
         ? supabase
             .from("trainings")
             .select(
-              "id,content_item_id,title,description,category,estimated_duration,cover_image_url,status"
+              "id,content_item_id,title,description,category,estimated_duration,cover_image_url,author_name,status"
             )
             .in(
               "content_item_id",
@@ -640,6 +643,7 @@ async function resolveDashboardContent(
         coachIntroduction: assignment.circle_id
           ? assignmentMetadata?.coachIntroduction || null
           : null,
+        authorName: row.author_name || "",
       };
     })
     .filter((item): item is DashboardMonthlyQuestion => Boolean(item));
@@ -675,6 +679,7 @@ async function resolveDashboardContent(
               name: circleNames.get(assignment.circle_id) || "",
             }
           : null,
+        authorName: row.author_name || "",
       };
     })
   );
@@ -703,6 +708,7 @@ async function resolveDashboardContent(
               name: circleNames.get(assignment.circle_id) || "",
             }
           : null,
+        authorName: row.author_name || "",
       };
     })
     .filter((item): item is DashboardTraining => Boolean(item));

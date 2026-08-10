@@ -270,6 +270,7 @@ function MonthlyQuestionDetail({
         {isCircleMember ? "Circle Member Monthly Question" : "Monthly Question"}
       </span>
       <h1>{question.title || "This Month's Question"}</h1>
+      {question.authorName && <p className="content-byline">By {question.authorName}</p>}
       {(question.theme || question.category) && (
         <p className="eyebrow">{question.theme || question.category}</p>
       )}
@@ -363,6 +364,7 @@ function TrainingDetail({
       )}
       <span className="card-label">{training.category || "Training"}</span>
       <h1>{training.title}</h1>
+      {training.authorName && <p className="content-byline">By {training.authorName}</p>}
       {training.duration && <p className="eyebrow">{training.duration}</p>}
       {training.description && <p>{training.description}</p>}
       <button className="btn btn-secondary" type="button" onClick={onBack}>

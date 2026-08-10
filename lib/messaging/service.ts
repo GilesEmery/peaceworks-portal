@@ -371,7 +371,7 @@ export async function deliverCommunicationToPortal(
       supabase
         .from("communications")
         .select(
-          "id,title,subject,summary,body_content,audience_scope,status,visible_from,visible_until"
+          "id,title,subject,summary,body_content,audience_scope,author_name,visible_author_name,status,visible_from,visible_until"
         )
         .eq("id", communicationId)
         .single(),
@@ -399,9 +399,11 @@ export async function deliverCommunicationToPortal(
 
   const participantIds = await resolveCommunicationAudienceProfileIds(communicationId, communication.audience_scope);
   const activeIds = Array.from(new Set([adminProfileId, ...participantIds]));
-  const body = cleanMessageBody(
+  const contentBody = cleanMessageBody(
     communication.body_content || communication.summary || communication.subject || communication.title
   );
+  const authorName = cleanTitle(communication.author_name || communication.visible_author_name || "");
+  const body = authorName ? `By ${authorName}\n\n${contentBody}` : contentBody;
   if (!body) throw new Error("A site message requires message content.");
 
   const { data: conversation, error: conversationError } = await supabase

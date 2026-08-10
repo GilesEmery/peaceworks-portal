@@ -115,6 +115,8 @@ type AdminMonthlyQuestion = {
   category: string;
   theme: string;
   questionNumber: string;
+  authorProfileId: string;
+  authorName: string;
   assignedCircleCount: number;
   currentUseCount: number;
   publishedAt: string | null;
@@ -140,6 +142,8 @@ type AdminResource = {
   mimeType: string;
   category: string;
   tags: string[];
+  authorProfileId: string;
+  authorName: string;
   status: ContentStatus;
   publishedAt: string | null;
   createdAt: string | null;
@@ -153,6 +157,8 @@ type AdminTraining = {
   coverImageUrl: string;
   category: string;
   estimatedDuration: string;
+  authorProfileId: string;
+  authorName: string;
   status: ContentStatus;
   publishedAt: string | null;
   createdAt: string | null;
@@ -175,6 +181,7 @@ type AdminCommunication = {
   senderName: string;
   replyToEmails: string[];
   visibleAuthorName: string;
+  authorProfileId: string;
   headerImagePath: string;
   headerImageUrl: string;
   thumbnailImagePath: string;
@@ -1891,6 +1898,8 @@ function MonthlyQuestionLibrary({
     questionText: "",
     guidance: "",
     discussionPrompts: "",
+    authorProfileId: "",
+    authorName: "",
   };
   const [form, setForm] = useState(emptyForm);
   const [query, setQuery] = useState("");
@@ -1925,6 +1934,8 @@ function MonthlyQuestionLibrary({
       questionText: question.questionText,
       guidance: question.guidance,
       discussionPrompts: question.discussionPrompts.join("\n"),
+      authorProfileId: question.authorProfileId,
+      authorName: question.authorName,
     });
   }
 
@@ -1950,6 +1961,8 @@ function MonthlyQuestionLibrary({
             .split("\n")
             .map((item) => item.trim())
             .filter(Boolean),
+          authorProfileId: form.authorProfileId,
+          authorName: form.authorName,
         },
       }
     );
@@ -1993,6 +2006,14 @@ function MonthlyQuestionLibrary({
           <ContentInput label="Title" value={form.title} onChange={(title) => setForm({ ...form, title })} />
           <ContentInput label="Category" value={form.category} onChange={(category) => setForm({ ...form, category })} />
           <ContentInput label="Theme" value={form.theme} onChange={(theme) => setForm({ ...form, theme })} />
+          <AuthorSelector
+            usersPayload={usersPayload}
+            authorProfileId={form.authorProfileId}
+            authorName={form.authorName}
+            onChange={(authorProfileId, authorName) =>
+              setForm({ ...form, authorProfileId, authorName })
+            }
+          />
           <ContentInput
             label="Question Number (optional, e.g. Question 1 or Question 2A)"
             value={form.questionNumber}
@@ -2116,6 +2137,7 @@ function MonthlyQuestionCard({
             question.questionNumber,
             question.category,
             question.theme,
+            question.authorName ? `By ${question.authorName}` : "",
           ]
             .filter(Boolean)
             .join(" · ") || "No category"}{" "}
@@ -2187,6 +2209,8 @@ function ResourceLibrary({
     mimeType: "",
     category: "",
     tags: "",
+    authorProfileId: "",
+    authorName: "",
   };
   const [form, setForm] = useState(emptyForm);
   const [query, setQuery] = useState("");
@@ -2418,6 +2442,14 @@ function ResourceLibrary({
         <ContentTextarea label="Body Content" value={form.bodyContent} onChange={(bodyContent) => setForm({ ...form, bodyContent })} />
       )}
       <ContentInput label="Category" value={form.category} onChange={(category) => setForm({ ...form, category })} />
+      <AuthorSelector
+        usersPayload={usersPayload}
+        authorProfileId={form.authorProfileId}
+        authorName={form.authorName}
+        onChange={(authorProfileId, authorName) =>
+          setForm({ ...form, authorProfileId, authorName })
+        }
+      />
       <ContentInput label="Tags" value={form.tags} onChange={(tags) => setForm({ ...form, tags })} />
       <ContentTextarea label="Description" value={form.description} onChange={(description) => setForm({ ...form, description })} />
     </>
@@ -2463,6 +2495,8 @@ function ResourceLibrary({
       mimeType: resource.mimeType,
       category: resource.category,
       tags: resource.tags.join(", "),
+      authorProfileId: resource.authorProfileId,
+      authorName: resource.authorName,
     });
   }
 
@@ -2521,6 +2555,7 @@ function ResourceLibrary({
             resource.category,
             resource.fileName,
             resource.tags.join(", "),
+            resource.authorName ? `By ${resource.authorName}` : "",
           ]}
           externalUrl={resource.externalUrl}
           fileOpenEndpoint={
@@ -2627,6 +2662,8 @@ function TrainingLibrary({
     coverImageUrl: "",
     category: "",
     estimatedDuration: "",
+    authorProfileId: "",
+    authorName: "",
   };
   const [form, setForm] = useState(emptyForm);
   const [query, setQuery] = useState("");
@@ -2673,6 +2710,14 @@ function TrainingLibrary({
         <>
           <ContentInput label="Title" value={form.title} onChange={(title) => setForm({ ...form, title })} />
           <ContentInput label="Category" value={form.category} onChange={(category) => setForm({ ...form, category })} />
+          <AuthorSelector
+            usersPayload={usersPayload}
+            authorProfileId={form.authorProfileId}
+            authorName={form.authorName}
+            onChange={(authorProfileId, authorName) =>
+              setForm({ ...form, authorProfileId, authorName })
+            }
+          />
           <ContentInput label="Estimated Duration" value={form.estimatedDuration} onChange={(estimatedDuration) => setForm({ ...form, estimatedDuration })} />
           <ContentInput label="Cover Image Reference" value={form.coverImageUrl} onChange={(coverImageUrl) => setForm({ ...form, coverImageUrl })} />
           <ContentTextarea label="Description" value={form.description} onChange={(description) => setForm({ ...form, description })} />
@@ -2686,7 +2731,11 @@ function TrainingLibrary({
           title={training.title}
           detail={training.description}
           status={training.status}
-          meta={[training.category, training.estimatedDuration]}
+          meta={[
+            training.category,
+            training.estimatedDuration,
+            training.authorName ? `By ${training.authorName}` : "",
+          ]}
           assignments={assignments.filter(
             (assignment) =>
               assignment.contentType === "training" &&
@@ -2700,6 +2749,8 @@ function TrainingLibrary({
               coverImageUrl: training.coverImageUrl,
               category: training.category,
               estimatedDuration: training.estimatedDuration,
+              authorProfileId: training.authorProfileId,
+              authorName: training.authorName,
             })
           }
           onStatus={(nextStatus) =>
@@ -2771,6 +2822,7 @@ function CommunicationsSection({
     senderId: "",
     replyToEmails: [] as string[],
     visibleAuthorName: "",
+    authorProfileId: "",
     headerImagePath: "",
     headerImageUrl: "",
     thumbnailImagePath: "",
@@ -2924,6 +2976,7 @@ function CommunicationsSection({
     form.format === "newsletter" ||
     form.channels.includes("email");
   const showArticleFields = form.format === "blog_article";
+  const showAuthorField = form.format !== "email" && form.format !== "newsletter";
   const showNewsletterSections = form.format === "newsletter";
   const showDashboardPresentation =
     form.format === "announcement" || form.format === "dashboard_message";
@@ -3183,13 +3236,18 @@ function CommunicationsSection({
                 />
               </>
             )}
+            {showAuthorField && (
+              <AuthorSelector
+                usersPayload={usersPayload}
+                authorProfileId={form.authorProfileId}
+                authorName={form.visibleAuthorName}
+                onChange={(authorProfileId, visibleAuthorName) =>
+                  setForm({ ...form, authorProfileId, visibleAuthorName })
+                }
+              />
+            )}
             {showArticleFields && (
               <>
-                <ContentInput
-                  label="Author"
-                  value={form.visibleAuthorName}
-                  onChange={(visibleAuthorName) => setForm({ ...form, visibleAuthorName })}
-                />
                 <ContentInput
                   label="Category"
                   value={form.category}
@@ -3735,6 +3793,9 @@ function CommunicationsSection({
                   communication.communicationType,
                   communication.channel,
                   communication.audienceScope,
+                  communication.visibleAuthorName
+                    ? `By ${communication.visibleAuthorName}`
+                    : "",
                 ]}
                 onEdit={() => {
                   setCircleSearch("");
@@ -3756,6 +3817,7 @@ function CommunicationsSection({
                     senderId: communication.senderId,
                     replyToEmails: communication.replyToEmails,
                     visibleAuthorName: communication.visibleAuthorName,
+                    authorProfileId: communication.authorProfileId,
                     headerImagePath: communication.headerImagePath,
                     headerImageUrl: communication.headerImageUrl,
                     thumbnailImagePath: communication.thumbnailImagePath,
@@ -4477,6 +4539,61 @@ function ContentInput({
       <span>{label}</span>
       <input value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
+  );
+}
+
+function AuthorSelector({
+  usersPayload,
+  authorProfileId,
+  authorName,
+  onChange,
+}: {
+  usersPayload: AdminUsersPayload;
+  authorProfileId: string;
+  authorName: string;
+  onChange: (authorProfileId: string, authorName: string) => void;
+}) {
+  const people = usersPayload.users
+    .filter((user) => user.accountStatus === "active" && (user.firstName || user.lastName))
+    .sort(
+      (a, b) =>
+        Number(b.id === usersPayload.currentAdminId) - Number(a.id === usersPayload.currentAdminId) ||
+        formatManagedUserName(a).localeCompare(formatManagedUserName(b))
+    );
+
+  return (
+    <div className="admin-author-selector">
+      <label>
+        <span>Author</span>
+        <select
+          value={authorProfileId}
+          onChange={(event) => {
+            const profileId = event.target.value;
+            const person = people.find((user) => user.id === profileId);
+            onChange(profileId, person ? formatManagedUserName(person) : authorName);
+          }}
+        >
+          <option value="">Custom author or no author</option>
+          {people.map((person) => (
+            <option key={person.id} value={person.id}>
+              {formatManagedUserName(person)}
+              {person.id === usersPayload.currentAdminId ? " (you)" : ""}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        <span>Author name</span>
+        <input
+          type="text"
+          value={authorName}
+          maxLength={140}
+          placeholder="Select a person or enter a custom name"
+          onChange={(event) => onChange("", event.target.value)}
+        />
+      </label>
+      <small>Optional public byline. This does not change the publisher or email sender.</small>
+    </div>
   );
 }
 
