@@ -323,7 +323,8 @@ async function restoreMonthlyQuestionAssignmentMetadata(
 }
 
 export async function resolveCanonicalAssignmentRows(
-  rows: CanonicalAssignmentRow[]
+  rows: CanonicalAssignmentRow[],
+  options: { missingSource?: "throw" | "skip" } = {}
 ): Promise<ResolvedCanonicalAssignment[]> {
   const rowsByKind = new Map<ContentItemKind, CanonicalAssignmentRow[]>();
 
@@ -360,11 +361,18 @@ export async function resolveCanonicalAssignmentRows(
     })
   );
 
-  return rows.map((row) => {
+  return rows.flatMap((row) => {
     const contentItem = normalizeContentItem(row.content_item);
     const sourceId = sourceIds.get(row.content_item_id);
 
     if (!contentItem || !sourceId) {
+      if (options.missingSource === "skip") {
+        console.warn("Ignoring canonical assignment without a source record", {
+          assignmentId: row.id,
+          contentItemId: row.content_item_id,
+        });
+        return [];
+      }
       throw new Error(`Canonical assignment ${row.id} has no source record.`);
     }
 
@@ -381,11 +389,11 @@ export async function resolveCanonicalAssignmentRows(
     const { content_item: _contentItem, ...assignment } = row;
     void _contentItem;
 
-    return {
+    return [{
       ...assignment,
       content_kind: contentItem.content_kind,
       source_id: sourceId,
-    };
+    }];
   });
 }
 

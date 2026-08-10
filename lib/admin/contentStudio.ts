@@ -839,12 +839,29 @@ export async function deleteAdminResource(resourceId: string) {
   const supabase = createAdminSupabaseClient();
   const { data: existing } = await supabase
     .from("resources")
-    .select("storage_path, cover_image_path")
+    .select("content_item_id, storage_path, cover_image_path")
     .eq("id", resourceId)
     .maybeSingle();
   const { error } = await supabase.from("resources").delete().eq("id", resourceId);
 
   if (error) throw new Error(`Resource could not be deleted: ${error.message}`);
+
+  if (existing?.content_item_id) {
+    const { error: assignmentError } = await supabase
+      .from("content_assignments")
+      .update({
+        assignment_status: "archived",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("content_item_id", existing.content_item_id)
+      .eq("assignment_status", "active");
+
+    if (assignmentError) {
+      throw new Error(
+        `Deleted Resource assignments could not be archived: ${assignmentError.message}`
+      );
+    }
+  }
 
   await cleanupDeletedResourceFiles(
     resourceId,

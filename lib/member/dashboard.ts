@@ -367,7 +367,8 @@ export async function fetchMemberDashboard(
   const resolvedAssignments = await resolveCanonicalAssignmentRows(
     (assignmentsResponse.data || []) as unknown as Parameters<
       typeof resolveCanonicalAssignmentRows
-    >[0]
+    >[0],
+    { missingSource: "skip" }
   );
   const activeCircleIds = new Set(circles.map((circle) => circle.id));
   const matchingAssignments = deduplicateAssignments(
