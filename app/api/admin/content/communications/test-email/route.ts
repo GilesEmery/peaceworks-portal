@@ -8,16 +8,26 @@ export async function POST(request: Request) {
   if (!auth.ok) return adminErrorResponse(auth);
 
   try {
-    const body = (await request.json()) as { title?: string; message?: string };
+    const body = (await request.json()) as {
+      title?: string;
+      message?: string;
+      senderId?: string;
+      replyToEmails?: string[];
+    };
     const title = body.title?.trim() || "PeaceWorks test email";
     const message = body.message?.trim();
     if (!message) {
       return Response.json({ ok: false, message: "Enter a message before sending a test email." }, { status: 400 });
     }
+    if (!body.senderId) {
+      return Response.json({ ok: false, message: "Choose a sender before sending a test email." }, { status: 400 });
+    }
     const delivery = await sendCommunicationTestEmail({
       recipientEmail: auth.email,
       title,
       message,
+      senderId: body.senderId,
+      replyToEmails: body.replyToEmails || [],
     });
     if (delivery.failed > 0 || delivery.accepted !== 1) {
       return Response.json({ ok: false, message: formatEmailDeliverySummary(delivery) }, { status: 502 });

@@ -13,6 +13,13 @@ import type { ResolvedCanonicalAssignment } from "../content/assignments";
 import type { ContentItemKind } from "../content/registry";
 import { deliverCommunicationToPortal } from "../messaging/service";
 import { deliverCommunicationEmail } from "../communications/email";
+import {
+  fetchEligibleCommunicationSenders,
+  normalizeReplyToEmails,
+  parseStoredReplyToEmails,
+  resolveCommunicationSender,
+  serializeReplyToEmails,
+} from "../communications/senders";
 
 export type AdminContentStatus = "draft" | "published" | "archived";
 export type AdminContentType = ContentItemKind;
@@ -118,7 +125,7 @@ export type AdminCommunication = {
   audienceScope: string;
   senderId: string;
   senderName: string;
-  replyToEmail: string;
+  replyToEmails: string[];
   visibleAuthorName: string;
   headerImagePath: string;
   headerImageUrl: string;
@@ -183,8 +190,7 @@ export type CommunicationNewsletterSection = {
 export type CommunicationSender = {
   id: string;
   displayName: string;
-  verifiedFromEmail: string;
-  replyToEmail: string;
+  email: string;
   senderType: string;
   profileId: string;
   isDefault: boolean;
@@ -275,6 +281,7 @@ export type CommunicationValues = {
   audienceScope: string;
   dashboardPresentation?: string;
   senderId?: string;
+  replyToEmails?: string[];
   replyToEmail?: string;
   visibleAuthorName?: string;
   headerImagePath?: string;
@@ -381,16 +388,6 @@ type CommunicationRow = {
   published_at: string | null;
   created_at: string | null;
   updated_at: string | null;
-};
-
-type CommunicationSenderRow = {
-  id: string;
-  display_name: string | null;
-  verified_from_email: string | null;
-  reply_to_email: string | null;
-  sender_type: string | null;
-  profile_id: string | null;
-  is_default: boolean | null;
 };
 
 type CommunicationLinkRow = {
@@ -1021,7 +1018,7 @@ export async function createAdminCommunication(
       dashboard_presentation: cleaned.dashboardPresentation,
       audience_scope: cleaned.audienceScope,
       sender_id: cleaned.senderId || null,
-      reply_to_email: cleaned.replyToEmail || null,
+      reply_to_email: serializeReplyToEmails(cleaned.replyToEmails) || null,
       visible_author_name: cleaned.visibleAuthorName || null,
       header_image_path: cleaned.headerImagePath || null,
       thumbnail_image_path: cleaned.thumbnailImagePath || null,
@@ -1070,7 +1067,7 @@ export async function updateAdminCommunication(
       dashboard_presentation: cleaned.dashboardPresentation,
       audience_scope: cleaned.audienceScope,
       sender_id: cleaned.senderId || null,
-      reply_to_email: cleaned.replyToEmail || null,
+      reply_to_email: serializeReplyToEmails(cleaned.replyToEmails) || null,
       visible_author_name: cleaned.visibleAuthorName || null,
       header_image_path: cleaned.headerImagePath || null,
       thumbnail_image_path: cleaned.thumbnailImagePath || null,
@@ -1487,7 +1484,7 @@ async function mapCommunication(row: CommunicationRow): Promise<AdminCommunicati
       fetchCommunicationChannels(row.id),
       fetchCommunicationAudienceTargets(row.id),
       fetchCommunicationNewsletterSections(row.id),
-      row.sender_id ? fetchCommunicationSender(row.sender_id) : Promise.resolve(null),
+      row.sender_id ? resolveCommunicationSender(row.sender_id) : Promise.resolve(null),
       fetchLinkedResourceId(row.id),
     ]);
 
@@ -1505,7 +1502,7 @@ async function mapCommunication(row: CommunicationRow): Promise<AdminCommunicati
     audienceScope: row.audience_scope || "all_members",
     senderId: row.sender_id || "",
     senderName: sender?.displayName || "",
-    replyToEmail: row.reply_to_email || sender?.replyToEmail || "",
+    replyToEmails: parseStoredReplyToEmails(row.reply_to_email || sender?.email || ""),
     visibleAuthorName: row.visible_author_name || "",
     headerImagePath: row.header_image_path || "",
     headerImageUrl: row.header_image_path
@@ -1644,7 +1641,7 @@ async function cleanCommunication(values: CommunicationValues) {
       : "email"
     : "dashboard";
   const senderId = trimText(values.senderId);
-  const sender = senderId ? await fetchCommunicationSender(senderId) : null;
+  const sender = senderId ? await resolveCommunicationSender(senderId) : null;
   const needsEmailSender =
     format === "email" || format === "newsletter" || channels.includes("email");
 
@@ -1683,9 +1680,9 @@ async function cleanCommunication(values: CommunicationValues) {
     dashboardPresentation: parseDashboardPresentation(values.dashboardPresentation),
     audienceScope: parseCommunicationAudience(values.audienceScope),
     senderId: sender?.id || "",
-    replyToEmail: sender
-      ? trimText(values.replyToEmail).slice(0, 240) || sender.replyToEmail
-      : "",
+    replyToEmails: sender
+      ? normalizeReplyToEmails(values.replyToEmails || values.replyToEmail, sender.email)
+      : [],
     visibleAuthorName: trimText(values.visibleAuthorName).slice(0, 140),
     headerImagePath,
     thumbnailImagePath,
@@ -1911,52 +1908,11 @@ function validateHttpsUrl(value: string) {
   }
 }
 
-async function fetchCommunicationSender(
-  senderId: string
-): Promise<CommunicationSender | null> {
-  const supabase = createAdminSupabaseClient();
-  const { data, error } = await supabase
-    .from("communication_senders")
-    .select("id,display_name,verified_from_email,reply_to_email,sender_type,profile_id,is_default")
-    .eq("id", senderId)
-    .eq("is_active", true)
-    .maybeSingle();
-
-  if (error) throw new Error(`Communication sender could not be loaded: ${error.message}`);
-  if (!data) return null;
-
-  const row = data as CommunicationSenderRow;
-
-  return {
-    id: row.id,
-    displayName: row.display_name || "Unnamed sender",
-    verifiedFromEmail: row.verified_from_email || "",
-    replyToEmail: row.reply_to_email || "",
-    senderType: row.sender_type || "person",
-    profileId: row.profile_id || "",
-    isDefault: Boolean(row.is_default),
-  };
-}
-
 async function fetchCommunicationSenders() {
-  const supabase = createAdminSupabaseClient();
-  const { data, error } = await supabase
-    .from("communication_senders")
-    .select("id,display_name,verified_from_email,reply_to_email,sender_type,profile_id,is_default")
-    .eq("is_active", true)
-    .order("is_default", { ascending: false })
-    .order("display_name", { ascending: true });
-
-  if (error) throw new Error(`Communication senders could not be loaded: ${error.message}`);
-
-  return ((data || []) as CommunicationSenderRow[]).map((row) => ({
-    id: row.id,
-    displayName: row.display_name || "Unnamed sender",
-    verifiedFromEmail: row.verified_from_email || "",
-    replyToEmail: row.reply_to_email || "",
-    senderType: row.sender_type || "person",
-    profileId: row.profile_id || "",
-    isDefault: Boolean(row.is_default),
+  const senders = await fetchEligibleCommunicationSenders();
+  return senders.map((sender) => ({
+    ...sender,
+    senderType: "person",
   }));
 }
 

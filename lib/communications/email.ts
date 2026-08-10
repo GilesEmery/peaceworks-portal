@@ -4,6 +4,11 @@ import { Resend } from "resend";
 
 import { createAdminSupabaseClient } from "../admin/authorization";
 import { resolveCommunicationAudienceProfileIds } from "../messaging/service";
+import {
+  normalizeReplyToEmails,
+  parseStoredReplyToEmails,
+  resolveCommunicationSender,
+} from "./senders";
 
 const SITE_URL = "https://peaceworks.network";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,6 +20,7 @@ type CommunicationEmailRow = {
   summary: string | null;
   body_content: string | null;
   audience_scope: string | null;
+  sender_id: string | null;
   reply_to_email: string | null;
   status: string | null;
 };
@@ -36,7 +42,7 @@ export async function deliverCommunicationEmail(
     await Promise.all([
       supabase
         .from("communications")
-        .select("id,title,summary,body_content,audience_scope,reply_to_email,status")
+        .select("id,title,summary,body_content,audience_scope,sender_id,reply_to_email,status")
         .eq("id", communicationId)
         .single(),
       supabase
@@ -69,6 +75,8 @@ export async function sendCommunicationTestEmail(input: {
   recipientEmail: string;
   title: string;
   message: string;
+  senderId: string;
+  replyToEmails: string[];
 }) {
   const recipient = normalizeEmail(input.recipientEmail);
   if (!recipient) throw new Error("Your Admin account does not have a valid email address.");
@@ -79,7 +87,8 @@ export async function sendCommunicationTestEmail(input: {
     summary: null,
     body_content: input.message,
     audience_scope: "admins",
-    reply_to_email: null,
+    sender_id: input.senderId,
+    reply_to_email: JSON.stringify(normalizeReplyToEmails(input.replyToEmails)),
     status: "published",
   });
 }
@@ -106,7 +115,11 @@ async function sendPeaceWorksEmails(
   communication: CommunicationEmailRow
 ): Promise<CommunicationEmailDeliveryResult> {
   const client = getResendClient();
-  const sender = getSenderIdentity();
+  const selectedSender = communication.sender_id
+    ? await resolveCommunicationSender(communication.sender_id)
+    : null;
+  if (!selectedSender) throw new Error("The selected email sender is no longer eligible.");
+  const sender = getSenderIdentity(selectedSender.displayName);
   const title = cleanText(communication.title) || "A message from PeaceWorks";
   const message = cleanText(communication.body_content || communication.summary) || title;
   const uniqueRecipients = Array.from(
@@ -126,7 +139,10 @@ async function sendPeaceWorksEmails(
           subject: title,
           text: buildPlainText(title, message),
           html: buildHtml(title, message),
-          replyTo: normalizeEmail(communication.reply_to_email || "") || undefined,
+          replyTo: normalizeReplyToEmails(
+            parseStoredReplyToEmails(communication.reply_to_email),
+            selectedSender.email
+          ),
         })
       )
     );
@@ -175,15 +191,19 @@ function getResendClient() {
   return resendClient;
 }
 
-function getSenderIdentity() {
+function getSenderIdentity(displayName: string) {
   const email = normalizeEmail(process.env.RESEND_FROM_EMAIL || "");
-  const name = cleanText(process.env.RESEND_FROM_NAME) || "PeaceWorks";
+  const name = cleanHeaderDisplayName(displayName || process.env.RESEND_FROM_NAME) || "PeaceWorks";
   if (!email) {
     throw new Error(
       "Email delivery is not configured for this environment. Add a valid RESEND_FROM_EMAIL to .env.local and restart the development server."
     );
   }
   return `${name} <${email}>`;
+}
+
+function cleanHeaderDisplayName(value: string | null | undefined) {
+  return cleanText(value).replace(/[\r\n<>\"]/g, "").replace(/\s+/g, " ").slice(0, 140);
 }
 
 function buildPlainText(title: string, message: string) {

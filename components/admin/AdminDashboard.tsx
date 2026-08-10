@@ -173,7 +173,7 @@ type AdminCommunication = {
   audienceScope: string;
   senderId: string;
   senderName: string;
-  replyToEmail: string;
+  replyToEmails: string[];
   visibleAuthorName: string;
   headerImagePath: string;
   headerImageUrl: string;
@@ -214,8 +214,7 @@ type AdminCommunication = {
 type AdminCommunicationSender = {
   id: string;
   displayName: string;
-  verifiedFromEmail: string;
-  replyToEmail: string;
+  email: string;
   senderType: string;
   profileId: string;
   isDefault: boolean;
@@ -2770,7 +2769,7 @@ function CommunicationsSection({
     dashboardPresentation: "standard",
     audienceScope: "all_members",
     senderId: "",
-    replyToEmail: "",
+    replyToEmails: [] as string[],
     visibleAuthorName: "",
     headerImagePath: "",
     headerImageUrl: "",
@@ -2802,6 +2801,8 @@ function CommunicationsSection({
   const [status, setStatus] = useState<CommunicationStatus | "all">("all");
   const [circleSearch, setCircleSearch] = useState("");
   const [recipientSearch, setRecipientSearch] = useState("");
+  const [replyToInput, setReplyToInput] = useState("");
+  const [replyToCustomized, setReplyToCustomized] = useState(false);
   const [message, setMessage] = useState<ContentMessage>(null);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
     "loading"
@@ -2882,6 +2883,8 @@ function CommunicationsSection({
     setForm(emptyForm);
     setCircleSearch("");
     setRecipientSearch("");
+    setReplyToInput("");
+    setReplyToCustomized(false);
     setMessage({ type: "success", text: "Communication was saved." });
     await loadCommunications();
   }
@@ -2894,6 +2897,8 @@ function CommunicationsSection({
         body: {
           title: form.title,
           message: form.bodyContent || form.summary,
+          senderId: form.senderId,
+          replyToEmails: form.replyToEmails,
         },
       }
     );
@@ -2969,6 +2974,19 @@ function CommunicationsSection({
         ? form.circleIds.filter((id) => id !== circleId)
         : [...form.circleIds, circleId],
     });
+  }
+
+  function addReplyTo(emailValue: string) {
+    const email = emailValue.trim().toLowerCase();
+    if (!email || form.replyToEmails.includes(email) || form.replyToEmails.length >= 5) return;
+    setForm({ ...form, replyToEmails: [...form.replyToEmails, email] });
+    setReplyToInput("");
+    setReplyToCustomized(true);
+  }
+
+  function removeReplyTo(email: string) {
+    setForm({ ...form, replyToEmails: form.replyToEmails.filter((item) => item !== email) });
+    setReplyToCustomized(true);
   }
 
   function updateFormat(format: CommunicationFormat) {
@@ -3120,6 +3138,8 @@ function CommunicationsSection({
                 setForm(emptyForm);
                 setCircleSearch("");
                 setRecipientSearch("");
+                setReplyToInput("");
+                setReplyToCustomized(false);
               }}
             >
               New Communication
@@ -3265,13 +3285,13 @@ function CommunicationsSection({
           <CommunicationComposerBlock title="Sender">
             <div className="admin-content-form-grid">
               <ContentSelect
-                label="From"
+                label="Sender"
                 value={form.senderId}
                 options={[
                   ["", "Choose sender"],
                   ...senders.map((sender) => [
                     sender.id,
-                    `${sender.displayName} (${sender.verifiedFromEmail})`,
+                    `${sender.displayName} (${sender.email})`,
                   ] as [string, string]),
                 ]}
                 onChange={(senderId) => {
@@ -3279,19 +3299,88 @@ function CommunicationsSection({
                   setForm({
                     ...form,
                     senderId,
-                    replyToEmail: sender?.replyToEmail || "",
+                    replyToEmails: replyToCustomized
+                      ? form.replyToEmails
+                      : sender?.email
+                        ? [sender.email]
+                        : [],
                   });
                 }}
               />
-              <ContentInput
-                label="Reply-To"
-                value={form.replyToEmail}
-                onChange={(replyToEmail) => setForm({ ...form, replyToEmail })}
-              />
+            </div>
+            <div className="admin-assignment-selector">
+              <div>
+                <strong>Reply-To</strong>
+                <p className="admin-muted-copy">
+                  Replies will go to these addresses. Add up to five recipients.
+                </p>
+              </div>
+              <div className="admin-content-actions">
+                {form.replyToEmails.map((email) => (
+                  <button
+                    className="admin-filter-chip active"
+                    key={email}
+                    type="button"
+                    onClick={() => removeReplyTo(email)}
+                    aria-label={`Remove ${email} from Reply-To`}
+                  >
+                    {email} ×
+                  </button>
+                ))}
+              </div>
+              <div className="admin-content-form-grid">
+                <label>
+                  <span>Add person</span>
+                  <select
+                    value=""
+                    onChange={(event) => addReplyTo(event.target.value)}
+                    disabled={form.replyToEmails.length >= 5}
+                  >
+                    <option value="">Choose an authorized person</option>
+                    {senders
+                      .filter((sender) => !form.replyToEmails.includes(sender.email))
+                      .map((sender) => (
+                        <option key={sender.id} value={sender.email}>
+                          {sender.displayName} ({sender.email})
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Add email address</span>
+                  <input
+                    type="email"
+                    value={replyToInput}
+                    onChange={(event) => setReplyToInput(event.target.value)}
+                    placeholder="name@example.com"
+                    disabled={form.replyToEmails.length >= 5}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter") return;
+                      event.preventDefault();
+                      if (event.currentTarget.reportValidity()) addReplyTo(replyToInput);
+                    }}
+                  />
+                </label>
+              </div>
+              <button
+                className="admin-link-button"
+                type="button"
+                disabled={!replyToInput || form.replyToEmails.length >= 5}
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "email";
+                  input.value = replyToInput;
+                  if (input.checkValidity()) addReplyTo(replyToInput);
+                  else setMessage({ type: "error", text: "Enter a valid Reply-To email address." });
+                }}
+              >
+                Add Reply-To
+              </button>
             </div>
             {selectedSender && (
               <p className="admin-muted-copy">
-                From address and Reply-To are stored separately for future email delivery.
+                Recipients will see {selectedSender.displayName} with the configured PeaceWorks
+                sending address. The sending mailbox cannot be changed here.
               </p>
             )}
           </CommunicationComposerBlock>
@@ -3650,6 +3739,8 @@ function CommunicationsSection({
                 onEdit={() => {
                   setCircleSearch("");
                   setRecipientSearch("");
+                  setReplyToInput("");
+                  setReplyToCustomized(communication.replyToEmails.length > 0);
                   setForm({
                     id: communication.id,
                     title: communication.title,
@@ -3663,7 +3754,7 @@ function CommunicationsSection({
                     dashboardPresentation: communication.dashboardPresentation,
                     audienceScope: communication.audienceScope,
                     senderId: communication.senderId,
-                    replyToEmail: communication.replyToEmail,
+                    replyToEmails: communication.replyToEmails,
                     visibleAuthorName: communication.visibleAuthorName,
                     headerImagePath: communication.headerImagePath,
                     headerImageUrl: communication.headerImageUrl,
