@@ -135,7 +135,9 @@ export default function CircleDashboard() {
   const notes = dashboard.sections.notes.filter(
     (note) => note.circle && circleIds.has(note.circle.id)
   );
-  const posts = dashboard.sections.posts.filter((post) => circleIds.has(post.circle.id));
+  const posts = (dashboard.sections.posts || []).filter((post) =>
+    circleIds.has(post.circle.id)
+  );
 
   return (
     <section className={styles.shell}>

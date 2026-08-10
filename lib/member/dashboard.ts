@@ -381,7 +381,7 @@ export async function fetchMemberDashboard(
   const [contentSections, notes, posts] = await Promise.all([
     resolveDashboardContent(matchingAssignments, circleNames, memberId),
     fetchMemberVisibleNotes(memberId, activeCircleIds, circleNames),
-    fetchMemberVisiblePosts(activeCircleIds, circleNames, now),
+    fetchMemberVisiblePostsSafely(activeCircleIds, circleNames, now),
   ]);
   const sections = { ...contentSections, notes, posts };
   const roles = (rolesResponse.data || []).map((role) => role.name);
@@ -537,6 +537,19 @@ async function fetchMemberVisiblePosts(
       };
     })
     .sort((a, b) => String(b.publishedAt || "").localeCompare(String(a.publishedAt || "")));
+}
+
+async function fetchMemberVisiblePostsSafely(
+  activeCircleIds: Set<string>,
+  circleNames: Map<string, string>,
+  now: string
+) {
+  try {
+    return await fetchMemberVisiblePosts(activeCircleIds, circleNames, now);
+  } catch (error) {
+    console.error("Optional Circle post aggregation failed", error);
+    return [];
+  }
 }
 
 function matchesMemberAudience(

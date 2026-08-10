@@ -192,6 +192,7 @@ export default function MyDashboard() {
   }
 
   const isCircleMember = dashboard.member.roles.includes("circle_member");
+  const circlePosts = dashboard.sections.posts || [];
   const monthlyQuestionSection =
     dashboard.sections.monthlyQuestions.length > 0 ? (
       <ExpandableDashboardSection
@@ -370,12 +371,12 @@ export default function MyDashboard() {
 
           {notesSection}
 
-          {dashboard.sections.posts.length > 0 && (
+          {circlePosts.length > 0 && (
             <ExpandableDashboardSection
               sectionId="circle-posts"
               eyebrow="From PeaceWorks"
               title="For Your Circle"
-              items={dashboard.sections.posts}
+              items={circlePosts}
               renderItem={(post) => (
                 <article className="portal-card dashboard-journey-card" key={post.id}>
                   <div>
