@@ -82,6 +82,23 @@ export type DashboardTraining = {
   authorName: string;
 };
 
+export type DashboardPost = {
+  id: string;
+  title: string;
+  excerpt: string;
+  format: string;
+  authorName: string;
+  publishedAt: string | null;
+  circle: { id: string; name: string };
+  detailHref: string;
+};
+
+export type DashboardPostDetail = DashboardPost & {
+  body: string;
+  category: string;
+  tags: string[];
+};
+
 export type DashboardNoteSource = "circle" | "member";
 
 export type DashboardNoteLink = {
@@ -167,6 +184,7 @@ export type MemberDashboardResponse = {
     notes: DashboardNote[];
     resources: DashboardResource[];
     trainings: DashboardTraining[];
+    posts: DashboardPost[];
   };
 };
 
@@ -360,11 +378,12 @@ export async function fetchMemberDashboard(
     )
   );
   const circleNames = new Map(circles.map((circle) => [circle.id, circle.name]));
-  const [contentSections, notes] = await Promise.all([
+  const [contentSections, notes, posts] = await Promise.all([
     resolveDashboardContent(matchingAssignments, circleNames, memberId),
     fetchMemberVisibleNotes(memberId, activeCircleIds, circleNames),
+    fetchMemberVisiblePosts(activeCircleIds, circleNames, now),
   ]);
-  const sections = { ...contentSections, notes };
+  const sections = { ...contentSections, notes, posts };
   const roles = (rolesResponse.data || []).map((role) => role.name);
   const assessment = assessmentResponse.data;
 
@@ -425,6 +444,101 @@ export async function fetchMemberDashboard(
   };
 }
 
+export async function fetchMemberDashboardPostDetail(
+  auth: Extract<MemberAuthResult, { ok: true }>,
+  communicationId: string
+): Promise<DashboardPostDetail | null> {
+  const dashboard = await fetchMemberDashboard(auth);
+  const post = dashboard.sections.posts.find((item) => item.id === communicationId);
+  if (!post) return null;
+
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("communications")
+    .select("body_content,summary,category,tags")
+    .eq("id", communicationId)
+    .eq("status", "published")
+    .maybeSingle();
+  if (error) throw new Error(`Member post detail failed: ${error.message}`);
+  if (!data) return null;
+
+  return {
+    ...post,
+    body: data.body_content || data.summary || "",
+    category: data.category || "",
+    tags: normalizeStrings(data.tags),
+  };
+}
+
+async function fetchMemberVisiblePosts(
+  activeCircleIds: Set<string>,
+  circleNames: Map<string, string>,
+  now: string
+): Promise<DashboardPost[]> {
+  const circleIds = Array.from(activeCircleIds);
+  if (circleIds.length === 0) return [];
+
+  const supabase = createAdminSupabaseClient();
+  const { data: targets, error: targetError } = await supabase
+    .from("communication_audience_targets")
+    .select("communication_id,circle_id")
+    .eq("audience_type", "selected_circle")
+    .in("circle_id", circleIds);
+  if (targetError) throw new Error(`Circle post targets failed: ${targetError.message}`);
+
+  const communicationIds = Array.from(
+    new Set((targets || []).map((target) => target.communication_id))
+  );
+  if (communicationIds.length === 0) return [];
+
+  const [{ data: channels, error: channelError }, { data: communications, error: postError }] =
+    await Promise.all([
+      supabase
+        .from("communication_channels")
+        .select("communication_id,channel")
+        .in("communication_id", communicationIds)
+        .in("channel", ["circle_dashboards", "my_dashboard"]),
+      supabase
+        .from("communications")
+        .select(
+          "id,title,summary,body_content,format,author_name,visible_author_name,status,published_at,visible_from,visible_until"
+        )
+        .in("id", communicationIds)
+        .in("format", ["blog_article", "circle_update", "announcement", "dashboard_message"])
+        .eq("status", "published"),
+    ]);
+  if (channelError || postError) {
+    throw new Error(`Circle posts could not be loaded: ${channelError?.message || postError?.message}`);
+  }
+
+  const enabledIds = new Set((channels || []).map((channel) => channel.communication_id));
+  const circleIdByCommunication = new Map(
+    (targets || []).map((target) => [target.communication_id, target.circle_id])
+  );
+
+  return (communications || [])
+    .filter(
+      (post) =>
+        enabledIds.has(post.id) &&
+        (!post.visible_from || post.visible_from <= now) &&
+        (!post.visible_until || post.visible_until >= now)
+    )
+    .map((post) => {
+      const circleId = circleIdByCommunication.get(post.id) || "";
+      return {
+        id: post.id,
+        title: post.title || "PeaceWorks update",
+        excerpt: excerpt(post.summary || post.body_content || ""),
+        format: post.format || "announcement",
+        authorName: post.author_name || post.visible_author_name || "",
+        publishedAt: post.published_at,
+        circle: { id: circleId, name: circleNames.get(circleId) || "Your Circle" },
+        detailHref: `/my-dashboard/posts/${post.id}`,
+      };
+    })
+    .sort((a, b) => String(b.publishedAt || "").localeCompare(String(a.publishedAt || "")));
+}
+
 function matchesMemberAudience(
   assignment: ResolvedCanonicalAssignment,
   memberId: string,
@@ -482,7 +596,7 @@ async function resolveDashboardContent(
   assignments: ResolvedCanonicalAssignment[],
   circleNames: Map<string, string>,
   memberId: string
-): Promise<Omit<MemberDashboardResponse["sections"], "notes">> {
+): Promise<Omit<MemberDashboardResponse["sections"], "notes" | "posts">> {
   const supabase = createAdminSupabaseClient();
   const byKind = {
     monthly_question: assignments.filter(
@@ -963,6 +1077,11 @@ function normalizeStrings(value: unknown) {
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
     : [];
+}
+
+function excerpt(value: string) {
+  const text = value.replace(/\s+/g, " ").trim();
+  return text.length > 220 ? `${text.slice(0, 217).trimEnd()}...` : text;
 }
 
 function normalizeScores(value: unknown) {

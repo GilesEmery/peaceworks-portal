@@ -370,6 +370,33 @@ export default function MyDashboard() {
 
           {notesSection}
 
+          {dashboard.sections.posts.length > 0 && (
+            <ExpandableDashboardSection
+              sectionId="circle-posts"
+              eyebrow="From PeaceWorks"
+              title="For Your Circle"
+              items={dashboard.sections.posts}
+              renderItem={(post) => (
+                <article className="portal-card dashboard-journey-card" key={post.id}>
+                  <div>
+                    <span className="card-label">{formatLabel(post.format)}</span>
+                    <h3>{post.title}</h3>
+                    {post.authorName && <p className="content-byline">By {post.authorName}</p>}
+                    {post.excerpt && <p>{post.excerpt}</p>}
+                    <small>{post.circle.name}</small>
+                  </div>
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    onClick={() => router.push(post.detailHref)}
+                  >
+                    Read
+                  </button>
+                </article>
+              )}
+            />
+          )}
+
           {dashboard.sections.trainings.length > 0 && (
             <ExpandableDashboardSection
               sectionId="trainings"

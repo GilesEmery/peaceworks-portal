@@ -135,6 +135,7 @@ export default function CircleDashboard() {
   const notes = dashboard.sections.notes.filter(
     (note) => note.circle && circleIds.has(note.circle.id)
   );
+  const posts = dashboard.sections.posts.filter((post) => circleIds.has(post.circle.id));
 
   return (
     <section className={styles.shell}>
@@ -187,6 +188,24 @@ export default function CircleDashboard() {
                   <Link className="btn btn-primary" href={`/my-dashboard/monthly-questions/${question.assignmentId}`}>
                     {question.hasReflection ? "Continue Reflection" : "Reflect"}
                   </Link>
+                </article>
+              ))}
+            </div>
+          </CircleSection>
+        )}
+
+        {posts.length > 0 && (
+          <CircleSection eyebrow="From PeaceWorks" title="Circle Posts">
+            <div className={styles.grid}>
+              {posts.map((post) => (
+                <article className={styles.panel} key={post.id}>
+                  <div>
+                    <span className="card-label">{formatPostLabel(post.format)}</span>
+                    <h3>{post.title}</h3>
+                    {post.authorName && <p className="content-byline">By {post.authorName}</p>}
+                    {post.excerpt && <p>{post.excerpt}</p>}
+                  </div>
+                  <Link className="btn btn-secondary" href={post.detailHref}>Read</Link>
                 </article>
               ))}
             </div>
@@ -299,6 +318,13 @@ function CircleSection({
 function formatQuestionLabel(month: number | null, year: number | null) {
   const period = formatMonthlyQuestionPeriod(month, year);
   return period ? period.toUpperCase() : "MONTHLY QUESTION";
+}
+
+function formatPostLabel(format: string) {
+  if (format === "blog_article") return "Blog Post";
+  if (format === "circle_update") return "Circle Update";
+  if (format === "dashboard_message") return "Dashboard Message";
+  return "Announcement";
 }
 
 function formatDate(value: string) {
