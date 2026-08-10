@@ -2800,6 +2800,7 @@ function CommunicationsSection({
   const [form, setForm] = useState(emptyForm);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<CommunicationStatus | "all">("all");
+  const [circleSearch, setCircleSearch] = useState("");
   const [recipientSearch, setRecipientSearch] = useState("");
   const [message, setMessage] = useState<ContentMessage>(null);
   const [loadState, setLoadState] = useState<"loading" | "ready" | "error">(
@@ -2879,6 +2880,8 @@ function CommunicationsSection({
     }
 
     setForm(emptyForm);
+    setCircleSearch("");
+    setRecipientSearch("");
     setMessage({ type: "success", text: "Communication was saved." });
     await loadCommunications();
   }
@@ -2927,6 +2930,16 @@ function CommunicationsSection({
   const requiresCircleTargets = form.audienceScope === "selected_circles";
   const requiresProfileTargets =
     form.audienceScope === "selected_members" || form.audienceScope === "selected_coaches";
+  const circleQuery = circleSearch.trim().toLowerCase();
+  const selectableCircles = usersPayload.circles.filter(
+    (circle) => circle.status === "active" || form.circleIds.includes(circle.id)
+  );
+  const visibleCircles = selectableCircles.filter((circle) =>
+    [circle.name, circle.description]
+      .join(" ")
+      .toLowerCase()
+      .includes(circleQuery)
+  );
   const recipientQuery = recipientSearch.trim().toLowerCase();
   const eligibleRecipients = usersPayload.users.filter(
     (user) =>
@@ -2946,6 +2959,15 @@ function CommunicationsSection({
       profileIds: form.profileIds.includes(profileId)
         ? form.profileIds.filter((id) => id !== profileId)
         : [...form.profileIds, profileId],
+    });
+  }
+
+  function toggleCircle(circleId: string) {
+    setForm({
+      ...form,
+      circleIds: form.circleIds.includes(circleId)
+        ? form.circleIds.filter((id) => id !== circleId)
+        : [...form.circleIds, circleId],
     });
   }
 
@@ -3091,7 +3113,15 @@ function CommunicationsSection({
             <h3>{form.id ? "Edit communication" : "Create communication"}</h3>
           </div>
           {form.id && (
-            <button className="admin-link-button" type="button" onClick={() => setForm(emptyForm)}>
+            <button
+              className="admin-link-button"
+              type="button"
+              onClick={() => {
+                setForm(emptyForm);
+                setCircleSearch("");
+                setRecipientSearch("");
+              }}
+            >
               New Communication
             </button>
           )}
@@ -3402,17 +3432,11 @@ function CommunicationsSection({
               value={form.audienceScope}
               options={getCommunicationAudienceOptions(form.format)}
               onChange={(audienceScope) => {
+                setCircleSearch("");
                 setRecipientSearch("");
                 setForm({ ...form, audienceScope, circleIds: [], profileIds: [] });
               }}
             />
-            {requiresCircleTargets && (
-              <ContentInput
-                label="Selected Circle IDs"
-                value={form.circleIds.join(", ")}
-                onChange={(value) => setForm({ ...form, circleIds: splitIds(value) })}
-              />
-            )}
             <ContentInput
               label="Visible From"
               value={form.visibleFrom}
@@ -3424,6 +3448,60 @@ function CommunicationsSection({
               onChange={(visibleUntil) => setForm({ ...form, visibleUntil })}
             />
           </div>
+          {requiresCircleTargets && (
+            <div
+              className="admin-assignment-selector"
+              role="group"
+              aria-labelledby="communication-circle-selector-label"
+            >
+              <label className="admin-recipient-search">
+                <span id="communication-circle-selector-label">Search Circles</span>
+                <input
+                  type="search"
+                  value={circleSearch}
+                  onChange={(event) => setCircleSearch(event.target.value)}
+                  placeholder="Search circles by name"
+                />
+              </label>
+              <div className="admin-checkbox-list">
+                {visibleCircles.map((circle) => {
+                  const coachNames = circle.coachIds
+                    .map((coachId) =>
+                      usersPayload.coaches.find((coach) => coach.id === coachId)?.name
+                    )
+                    .filter(Boolean)
+                    .join(", ");
+                  const isActive = circle.status === "active";
+
+                  return (
+                    <CircleCheckboxRow
+                      key={circle.id}
+                      label={circle.name}
+                      description={
+                        isActive
+                          ? coachNames
+                            ? `Coach${circle.coachIds.length === 1 ? "" : "es"}: ${coachNames}`
+                            : "Active Circle"
+                          : `${circle.status || "Inactive"} Circle · existing target only`
+                      }
+                      checked={form.circleIds.includes(circle.id)}
+                      onChange={() => toggleCircle(circle.id)}
+                    />
+                  );
+                })}
+                {visibleCircles.length === 0 && (
+                  <div className="admin-empty">
+                    {selectableCircles.length === 0
+                      ? "No active Circles are available."
+                      : "No Circles match this search."}
+                  </div>
+                )}
+              </div>
+              <p className="admin-assignment-count" aria-live="polite">
+                {form.circleIds.length} Circle{form.circleIds.length === 1 ? "" : "s"} selected
+              </p>
+            </div>
+          )}
           {requiresProfileTargets && (
             <div className="admin-assignment-selector">
               <label className="admin-recipient-search">
@@ -3569,7 +3647,9 @@ function CommunicationsSection({
                   communication.channel,
                   communication.audienceScope,
                 ]}
-                onEdit={() =>
+                onEdit={() => {
+                  setCircleSearch("");
+                  setRecipientSearch("");
                   setForm({
                     id: communication.id,
                     title: communication.title,
@@ -3621,8 +3701,8 @@ function CommunicationsSection({
                     resourceCategory: communication.category,
                     resourceTags: communication.tags,
                     resourceStatus: "draft",
-                  })
-                }
+                  });
+                }}
                 onStatus={(nextStatus) =>
                   updateContentStatus(
                     `/api/admin/content/communications/${communication.id}`,
@@ -5373,13 +5453,6 @@ function getCommunicationAudienceOptions(format: CommunicationFormat): Array<[st
 }
 
 function splitTags(value: string) {
-  return value
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function splitIds(value: string) {
   return value
     .split(",")
     .map((item) => item.trim())
