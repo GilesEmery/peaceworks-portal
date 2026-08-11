@@ -10,6 +10,7 @@ import {
 } from "../../data/peaceAssessmentQuestions";
 import {
   calculatePeaceAssessmentResult,
+  resolveSecondaryIdentityType,
   type AssessmentAnswers,
   type PeaceAssessmentResult,
 } from "../../lib/peaceAssessmentScoring";
@@ -238,9 +239,15 @@ export default function PeaceAssessmentPage() {
   function openLatestResult() {
     if (!latestResult) return;
 
-    const secondaryIdentityType =
-      latestResult.secondary_identity_type ||
-      getSecondaryIdentityType(latestResult.scores, latestResult.identity_type);
+    const secondaryIdentityType = resolveSecondaryIdentityType(
+      latestResult.scores,
+      latestResult.identity_type,
+      latestResult.secondary_identity_type
+    );
+    if (!secondaryIdentityType) {
+      console.error("Latest Peace Assessment has no resolvable secondary identity.");
+      return;
+    }
     const expandedProfile = buildPeaceReportProfile({
       identityAnchor: latestResult.identity_type,
       secondaryPeaceStrategy: secondaryIdentityType,
@@ -467,16 +474,4 @@ export default function PeaceAssessmentPage() {
       )}
     </main>
   );
-}
-
-function getSecondaryIdentityType(
-  scores: PeaceAssessmentResult["scores"],
-  primary: PeaceAssessmentResult["identityType"]
-) {
-  const entries = (["Performance", "Prestige", "Prosperity"] as const)
-    .filter((key) => key !== primary)
-    .map((key) => [key, scores[key]] as const)
-    .sort(([, a], [, b]) => b - a);
-
-  return entries[0]?.[0] || primary;
 }

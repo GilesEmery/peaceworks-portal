@@ -13,8 +13,7 @@ type PdfReportProps = {
 export default function PdfReport({ result }: PdfReportProps) {
   const expandedProfile = buildPeaceReportProfile({
     identityAnchor: result.identityType,
-    secondaryPeaceStrategy:
-      result.secondaryIdentityType || result.identityType,
+    secondaryPeaceStrategy: result.secondaryIdentityType,
     pressureResponse: result.responseType,
     processingStyle: result.processingStyle,
   });

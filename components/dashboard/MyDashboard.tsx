@@ -10,7 +10,10 @@ import ResultModal from "../assessment/ResultModal";
 import ExpandableDashboardSection from "./ExpandableDashboardSection";
 import ResourceMediaPlayer from "./ResourceMediaPlayer";
 
-import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
+import {
+  resolveSecondaryIdentityType,
+  type PeaceAssessmentResult,
+} from "../../lib/peaceAssessmentScoring";
 import { generatePeacePdf } from "../../lib/generatePeacePdf";
 import { peaceAssessmentProfiles } from "../../data/peaceAssessmentProfiles";
 import {
@@ -43,12 +46,17 @@ export default function MyDashboard() {
   const [modalResult, setModalResult] = useState<PeaceAssessmentResult | null>(null);
   const [printPending, setPrintPending] = useState(false);
 
-  const latestExpandedProfile = latestResult
+  const latestSecondaryIdentityType = latestResult
+    ? resolveSecondaryIdentityType(
+        latestResult.scores,
+        latestResult.identityType,
+        latestResult.secondaryIdentityType
+      )
+    : null;
+  const latestExpandedProfile = latestResult && latestSecondaryIdentityType
     ? buildPeaceReportProfile({
         identityAnchor: latestResult.identityType,
-        secondaryPeaceStrategy:
-          latestResult.secondaryIdentityType ||
-          getSecondaryIdentityType(latestResult.scores, latestResult.identityType),
+        secondaryPeaceStrategy: latestSecondaryIdentityType,
         pressureResponse: latestResult.responseType,
         processingStyle: latestResult.processingStyle,
       })
@@ -139,9 +147,15 @@ export default function MyDashboard() {
   function openResultModal() {
     if (!latestResult) return;
 
-    const secondaryIdentityType =
-      latestResult.secondaryIdentityType ||
-      getSecondaryIdentityType(latestResult.scores, latestResult.identityType);
+    const secondaryIdentityType = resolveSecondaryIdentityType(
+      latestResult.scores,
+      latestResult.identityType,
+      latestResult.secondaryIdentityType
+    );
+    if (!secondaryIdentityType) {
+      console.error("Dashboard assessment has no resolvable secondary identity.");
+      return;
+    }
 
     const profileKey = `${latestResult.identityType}|${latestResult.responseType}|${latestResult.processingStyle}`;
     const profileContent = peaceAssessmentProfiles[profileKey];
@@ -555,23 +569,4 @@ function formatMonthlyQuestionTileLabel(
   if (period) return `${period.toUpperCase()} · MONTHLY QUESTION`;
   if (number) return number.toUpperCase();
   return "MONTHLY QUESTION";
-}
-
-function getSecondaryIdentityType(
-  scores: PeaceAssessmentResult["scores"] | null | undefined,
-  primary: string
-): PeaceAssessmentResult["identityType"] {
-  const identityKeys: PeaceAssessmentResult["identityType"][] = [
-    "Performance",
-    "Prestige",
-    "Prosperity",
-  ];
-
-  return identityKeys
-    .filter((key) => key !== primary)
-    .map((key) => ({
-      key,
-      value: Number(scores?.[key] ?? 0),
-    }))
-    .sort((a, b) => b.value - a.value)[0].key;
 }

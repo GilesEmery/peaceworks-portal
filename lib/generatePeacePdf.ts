@@ -10,13 +10,14 @@ export async function generatePeacePdf(fileName: string) {
     return;
   }
 
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: "#ffffff",
-  });
+  const pages = Array.from(element.querySelectorAll<HTMLElement>(".pdf-page"));
 
-  const imgData = canvas.toDataURL("image/png");
+  if (pages.length === 0) {
+    showFeedback({ kind: "error", message: "PDF report pages not found." });
+    return;
+  }
+
+  await document.fonts?.ready;
 
   const pdf = new jsPDF({
     orientation: "portrait",
@@ -24,27 +25,17 @@ export async function generatePeacePdf(fileName: string) {
     format: "letter",
   });
 
-  const pdfWidth = 8.5;
-  const pdfHeight = 11;
+  for (const [index, page] of pages.entries()) {
+    const canvas = await html2canvas(page, {
+      scale: 1.5,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      logging: false,
+    });
+    const imageData = canvas.toDataURL("image/jpeg", 0.86);
 
-  const imgWidth = pdfWidth;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-  let heightLeft = imgHeight;
-  let position = 0;
-
-  pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-
-  heightLeft -= pdfHeight;
-
-  while (heightLeft > 0) {
-    position -= pdfHeight;
-
-    pdf.addPage();
-
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-
-    heightLeft -= pdfHeight;
+    if (index > 0) pdf.addPage();
+    pdf.addImage(imageData, "JPEG", 0, 0, 8.5, 11, undefined, "FAST");
   }
 
   pdf.save(fileName);

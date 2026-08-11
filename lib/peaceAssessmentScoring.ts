@@ -8,6 +8,18 @@ import {
   peaceAssessmentProfiles,
   type PeaceProfileContent,
 } from "../data/peaceAssessmentProfiles";
+import {
+  resolveIdentityTypes,
+  type IdentityType,
+} from "./assessmentIdentity";
+
+export {
+  identityTypes,
+  isIdentityType,
+  resolveIdentityTypes,
+  resolveSecondaryIdentityType,
+} from "./assessmentIdentity";
+export type { IdentityType } from "./assessmentIdentity";
 
 export type AssessmentAnswer = Partial<QuestionOption> & {
   selected?: QuestionOption[];
@@ -20,7 +32,6 @@ export type AssessmentAnswers = Record<number, AssessmentAnswer>;
 
 export type PeaceAssessmentScores = Record<ScoreKey, number>;
 
-export type IdentityType = "Performance" | "Prestige" | "Prosperity";
 export type ResponseType = "Push" | "Prove" | "Please" | "PullAway";
 export type ProcessingStyle = "Internal" | "External";
 export type CapacityStage =
@@ -87,17 +98,10 @@ export function calculatePeaceAssessmentResult(
     applyScores(scores, answer.scores);
   });
 
-  const identityType = pickTop(
+  const { identityType, secondaryIdentityType } = resolveIdentityTypes(
     scores,
-    ["Performance", "Prestige", "Prosperity"],
-    answers[12]
-  ) as IdentityType;
-
-  const secondaryIdentityType = pickSecond(
-    scores,
-    ["Performance", "Prestige", "Prosperity"],
-    identityType
-  ) as IdentityType;
+    answers[12]?.scores
+  );
 
   const responseType = pickTop(
     scores,
@@ -166,22 +170,6 @@ function pickTop<T extends ScoreKey>(
   }
 
   return tied[0];
-}
-
-function pickSecond<T extends ScoreKey>(
-  scores: PeaceAssessmentScores,
-  keys: T[],
-  firstKey: T
-): T {
-  const sorted = keys
-    .filter((key) => key !== firstKey)
-    .map((key) => ({
-      key,
-      value: scores[key],
-    }))
-    .sort((a, b) => b.value - a.value);
-
-  return sorted[0].key;
 }
 
 function getCapacityStage(score: number): CapacityStage {

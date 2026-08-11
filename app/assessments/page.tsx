@@ -12,7 +12,10 @@ import {
 } from "../../data/peaceReport";
 import { routes } from "../../lib/navigation";
 import { supabase } from "../../lib/supabase";
-import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
+import {
+  resolveSecondaryIdentityType,
+  type PeaceAssessmentResult,
+} from "../../lib/peaceAssessmentScoring";
 
 type AssessmentStatus = "Not started" | "Results available";
 
@@ -130,9 +133,15 @@ export default function AssessmentsPage() {
   );
 
   function openPeaceResult(result: PeaceAssessmentRow) {
-    const secondaryIdentityType =
-      result.secondary_identity_type ||
-      getSecondaryIdentityType(result.scores, result.identity_type);
+    const secondaryIdentityType = resolveSecondaryIdentityType(
+      result.scores,
+      result.identity_type,
+      result.secondary_identity_type
+    );
+    if (!secondaryIdentityType) {
+      console.error("Peace Assessment has no resolvable secondary identity.");
+      return;
+    }
     const expandedProfile = buildPeaceReportProfile({
       identityAnchor: result.identity_type,
       secondaryPeaceStrategy: secondaryIdentityType,
@@ -257,18 +266,6 @@ export default function AssessmentsPage() {
       )}
     </main>
   );
-}
-
-function getSecondaryIdentityType(
-  scores: PeaceAssessmentResult["scores"],
-  primary: PeaceAssessmentResult["identityType"]
-) {
-  const entries = (["Performance", "Prestige", "Prosperity"] as const)
-    .filter((key) => key !== primary)
-    .map((key) => [key, scores[key]] as const)
-    .sort(([, a], [, b]) => b - a);
-
-  return entries[0]?.[0] || primary;
 }
 
 function formatAssessmentDate(value: string) {

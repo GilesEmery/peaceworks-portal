@@ -11,6 +11,7 @@ import {
   type ResourceMedia,
 } from "../resources/media";
 import type { MemberAuthResult } from "./authorization";
+import { resolveSecondaryIdentityType } from "../peaceAssessmentScoring";
 
 export type DashboardCoach = {
   id: string;
@@ -401,19 +402,7 @@ export async function fetchMemberDashboard(
       roles,
     },
     assessment: assessment
-      ? {
-          hasCompletedAssessment: true,
-          latestResultId: assessment.id,
-          completedAt: assessment.created_at,
-          peaceProfile: assessment.peace_profile || "",
-          basePattern: assessment.base_pattern || "",
-          identityType: assessment.identity_type || "",
-          secondaryIdentityType: assessment.secondary_identity_type || null,
-          responseType: assessment.response_type || "",
-          processingStyle: assessment.processing_style || "",
-          capacityStage: assessment.capacity_stage || "",
-          scores: normalizeScores(assessment.scores),
-        }
+      ? buildDashboardAssessment(assessment)
       : null,
     circles,
     directCoaches: (directAssignmentsResponse.data || [])
@@ -1096,6 +1085,46 @@ function normalizeStrings(value: unknown) {
 function excerpt(value: string) {
   const text = value.replace(/\s+/g, " ").trim();
   return text.length > 220 ? `${text.slice(0, 217).trimEnd()}...` : text;
+}
+
+function buildDashboardAssessment(assessment: {
+  id: string;
+  created_at: string | null;
+  peace_profile: string | null;
+  base_pattern: string | null;
+  identity_type: string | null;
+  secondary_identity_type: string | null;
+  response_type: string | null;
+  processing_style: string | null;
+  capacity_stage: string | null;
+  scores: unknown;
+}): NonNullable<MemberDashboardResponse["assessment"]> {
+  const scores = normalizeScores(assessment.scores);
+  const secondaryIdentityType = resolveSecondaryIdentityType(
+    scores,
+    assessment.identity_type,
+    assessment.secondary_identity_type
+  );
+
+  if (!secondaryIdentityType) {
+    console.error("Dashboard assessment has no resolvable secondary identity", {
+      assessmentId: assessment.id,
+    });
+  }
+
+  return {
+    hasCompletedAssessment: true,
+    latestResultId: assessment.id,
+    completedAt: assessment.created_at,
+    peaceProfile: assessment.peace_profile || "",
+    basePattern: assessment.base_pattern || "",
+    identityType: assessment.identity_type || "",
+    secondaryIdentityType,
+    responseType: assessment.response_type || "",
+    processingStyle: assessment.processing_style || "",
+    capacityStage: assessment.capacity_stage || "",
+    scores,
+  };
 }
 
 function normalizeScores(value: unknown) {

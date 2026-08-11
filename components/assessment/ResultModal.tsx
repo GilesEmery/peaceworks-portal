@@ -20,7 +20,7 @@ export default function ResultModal({
 }: ResultModalProps) {
   const expandedProfile = buildPeaceReportProfile({
     identityAnchor: result.identityType,
-    secondaryPeaceStrategy: result.secondaryIdentityType || result.identityType,
+    secondaryPeaceStrategy: result.secondaryIdentityType,
     pressureResponse: result.responseType,
     processingStyle: result.processingStyle,
   });

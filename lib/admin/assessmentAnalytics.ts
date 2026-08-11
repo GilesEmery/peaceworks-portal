@@ -1,9 +1,13 @@
-import { getPeaceMainType } from "../../data/peaceReport";
+import {
+  buildPeaceReportProfile,
+  getPeaceMainType,
+} from "../../data/peaceReport";
 import { peaceAssessmentProfiles } from "../../data/peaceAssessmentProfiles";
 import type {
   PeaceAssessmentResult,
   PeaceAssessmentScores,
 } from "../peaceAssessmentScoring";
+import { resolveSecondaryIdentityType } from "../peaceAssessmentScoring";
 import type {
   AdminAssessmentRow,
   AdminProfileRow,
@@ -114,6 +118,19 @@ export function buildAdminAnalytics({
         assessment.identity_type!,
         assessment.response_type!
       );
+      const secondaryIdentityType = resolveSecondaryIdentityType(
+        assessment.scores,
+        assessment.identity_type,
+        assessment.secondary_identity_type
+      );
+      const expandedProfile = secondaryIdentityType
+        ? buildPeaceReportProfile({
+            identityAnchor: assessment.identity_type!,
+            secondaryPeaceStrategy: secondaryIdentityType,
+            pressureResponse: assessment.response_type!,
+            processingStyle: assessment.processing_style!,
+          })
+        : null;
 
       return {
         assessmentId: assessment.id,
@@ -123,10 +140,10 @@ export function buildAdminAnalytics({
         email: user?.email || "Unknown email",
         assessmentName: "Peace Assessment" as const,
         profileType,
-        profileTitle: assessment.peace_profile || profileType,
+        profileTitle: expandedProfile?.title || assessment.peace_profile || profileType,
         originalProfileDescriptor: assessment.base_pattern || "",
         peaceAnchor: assessment.identity_type!,
-        secondaryStrategy: assessment.secondary_identity_type || "",
+        secondaryStrategy: secondaryIdentityType || "",
         pressureResponse: formatPressureResponse(assessment.response_type!),
         processingStyle: assessment.processing_style!,
         completionDate: getAssessmentCompletionDate(assessment),
@@ -241,12 +258,27 @@ export function buildResultFromAssessmentRow(
     return null;
   }
 
-  const secondaryIdentityType =
-    assessment.secondary_identity_type || assessment.identity_type;
+  const secondaryIdentityType = resolveSecondaryIdentityType(
+    assessment.scores,
+    assessment.identity_type,
+    assessment.secondary_identity_type
+  );
+  if (!secondaryIdentityType) {
+    console.error("Assessment has no resolvable secondary identity", {
+      assessmentId: assessment.id,
+    });
+    return null;
+  }
   const profileKey = `${assessment.identity_type}|${assessment.response_type}|${assessment.processing_style}`;
   const profileContent =
     peaceAssessmentProfiles[profileKey] ||
     peaceAssessmentProfiles["Performance|Prove|Internal"];
+  const expandedProfile = buildPeaceReportProfile({
+    identityAnchor: assessment.identity_type,
+    secondaryPeaceStrategy: secondaryIdentityType,
+    pressureResponse: assessment.response_type,
+    processingStyle: assessment.processing_style,
+  });
 
   return {
     scores: normalizeScores(assessment.scores),
@@ -257,7 +289,8 @@ export function buildResultFromAssessmentRow(
     capacityStage:
       (assessment.capacity_stage as PeaceAssessmentResult["capacityStage"]) ||
       "Established",
-    peaceProfile: assessment.peace_profile || profileContent.profileName,
+    peaceProfile:
+      expandedProfile?.title || assessment.peace_profile || profileContent.profileName,
     basePattern: assessment.base_pattern || profileContent.baseName,
     profileContent,
   };
