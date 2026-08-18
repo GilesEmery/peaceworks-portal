@@ -63,3 +63,42 @@ test("canonical sent state is loaded on edit and preserved by later saves", asyn
   const studioSource = await readFile(contentStudioUrl, "utf8");
   assert.match(studioSource, /statusByChannel\.get\(channel\) \|\| "draft"/);
 });
+
+test("successful email send resets only when no portal draft remains", async () => {
+  const source = await readFile(adminDashboardUrl, "utf8");
+  assert.match(source, /action === "send-email"[\s\S]*shouldResetComposerAfterEmailSend/);
+  assert.match(source, /resetComposer\(\{ preserveMessage: true \}\)/);
+  assert.match(source, /else \{[\s\S]*id: communication\.id,[\s\S]*channelStatuses/);
+});
+
+test("new communication clears all composer-local recipient state", async () => {
+  const source = await readFile(adminDashboardUrl, "utf8");
+  const resetStart = source.indexOf("function resetComposer");
+  const reset = source.slice(
+    resetStart,
+    source.indexOf("const filtered", resetStart)
+  );
+  assert.match(reset, /setForm\(emptyForm\)/);
+  assert.match(reset, /setExternalRecipientInput\(""\)/);
+  assert.match(reset, /setCircleSearch\(""\)/);
+  assert.match(reset, /setRecipientSearch\(""\)/);
+  assert.match(source, /onClick=\{\(\) => resetComposer\(\)\}/);
+});
+
+test("composer actions and portal fields are driven by selected channels", async () => {
+  const source = await readFile(adminDashboardUrl, "utf8");
+  assert.match(source, /const hasEmailChannel = form\.channels\.includes\("email"\)/);
+  assert.match(source, /const hasPortalChannel = form\.channels\.includes\("my_dashboard"\)/);
+  assert.match(source, /\{hasEmailChannel && \([\s\S]*label="Subject"/);
+  assert.match(source, /\{hasEmailChannel && \([\s\S]*runChannelAction\("send-email"\)/);
+  assert.match(source, /\{hasPortalChannel && form\.channelStatuses\.my_dashboard !== "active" && \([\s\S]*Publish to Portal/);
+  assert.match(source, /\{hasPortalChannel && \([\s\S]*label="Visible From"[\s\S]*label="Visible Until"/);
+  assert.match(source, /hasPortalChannel[\s\S]*"Site Message Audience"[\s\S]*"Internal Email Recipients"/);
+});
+
+test("history shows only statuses for channels actually selected", async () => {
+  const source = await readFile(adminDashboardUrl, "utf8");
+  assert.match(source, /communication\.channels\.includes\("email"\)[\s\S]*`Email:/);
+  assert.match(source, /communication\.channels\.includes\("my_dashboard"\)[\s\S]*`Site Message:/);
+  assert.match(source, /communication\.channels\.includes\("email"\) && communication\.sentAt/);
+});

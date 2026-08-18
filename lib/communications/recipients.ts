@@ -81,3 +81,12 @@ export function getEmailActionLabel(channelStatus: string | undefined, isSending
   if (channelStatus === "failed") return "Retry Email";
   return "Send Email";
 }
+
+export function shouldResetComposerAfterEmailSend(
+  channels: string[],
+  channelStatuses: Record<string, string>
+) {
+  return !(
+    channels.includes("my_dashboard") && channelStatuses.my_dashboard !== "active"
+  );
+}

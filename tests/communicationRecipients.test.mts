@@ -7,8 +7,36 @@ import {
   getEmailActionLabel,
   mergeRecipientEmails,
   normalizeRecipientEmail,
+  shouldResetComposerAfterEmailSend,
   summarizeRecipientEmails,
 } from "../lib/communications/recipients.ts";
+
+test("composer resets after email only or when every selected channel is complete", () => {
+  assert.equal(shouldResetComposerAfterEmailSend(["email"], { email: "sent" }), true);
+  assert.equal(
+    shouldResetComposerAfterEmailSend(["email", "my_dashboard"], {
+      email: "sent",
+      my_dashboard: "active",
+    }),
+    true
+  );
+});
+
+test("composer stays on a communication with unfinished portal work", () => {
+  assert.equal(
+    shouldResetComposerAfterEmailSend(["email", "my_dashboard"], {
+      email: "sent",
+      my_dashboard: "draft",
+    }),
+    false
+  );
+});
+
+test("external-only email uses the same email-only reset decision", () => {
+  const recipients = summarizeRecipientEmails([], ["outside@example.com"]);
+  assert.equal(recipients.total, 1);
+  assert.equal(shouldResetComposerAfterEmailSend(["email"], { email: "sent" }), true);
+});
 
 test("external recipient addresses are normalized and deduplicated", () => {
   assert.deepEqual(cleanExternalRecipientEmails([" Outside@Example.com ", "outside@example.com"]), [

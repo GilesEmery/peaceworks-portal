@@ -33,6 +33,7 @@ import { routes } from "../../lib/navigation";
 import {
   buildEmailSendConfirmation,
   getEmailActionLabel,
+  shouldResetComposerAfterEmailSend,
   summarizeRecipientEmails,
 } from "../../lib/communications/recipients";
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
@@ -224,6 +225,7 @@ type AdminCommunication = {
   publishedAt: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  sentAt: string | null;
 };
 
 type AdminCommunicationSender = {
@@ -2911,6 +2913,16 @@ function CommunicationsSection({
     void Promise.resolve().then(loadCommunications);
   }, []);
 
+  function resetComposer(options: { preserveMessage?: boolean } = {}) {
+    setForm(emptyForm);
+    setCircleSearch("");
+    setRecipientSearch("");
+    setExternalRecipientInput("");
+    setReplyToInput("");
+    setReplyToCustomized(false);
+    if (!options.preserveMessage) setMessage(null);
+  }
+
   const filtered = communications.filter((communication) =>
     (status === "all" || communication.status === status) &&
     [
@@ -2944,11 +2956,7 @@ function CommunicationsSection({
       return;
     }
 
-    setForm(emptyForm);
-    setCircleSearch("");
-    setRecipientSearch("");
-    setReplyToInput("");
-    setReplyToCustomized(false);
+    resetComposer({ preserveMessage: true });
     setMessage({ type: "success", text: "Communication was saved." });
     await loadCommunications();
   }
@@ -2982,11 +2990,19 @@ function CommunicationsSection({
       }
       const communication = result.communication as AdminCommunication | undefined;
       if (communication) {
-        setForm((current) => ({
-          ...current,
-          id: communication.id,
-          channelStatuses: communication.channelStatuses || {},
-        }));
+        const channelStatuses = communication.channelStatuses || {};
+        if (
+          action === "send-email" &&
+          shouldResetComposerAfterEmailSend(communication.channels, channelStatuses)
+        ) {
+          resetComposer({ preserveMessage: true });
+        } else {
+          setForm((current) => ({
+            ...current,
+            id: communication.id,
+            channelStatuses,
+          }));
+        }
       }
       setMessage({ type: "success", text: result.message || "Communication channel updated." });
       await loadCommunications();
@@ -3032,8 +3048,11 @@ function CommunicationsSection({
   const showArticleFields = form.format === "blog_article";
   const showAuthorField = form.format !== "email" && form.format !== "newsletter";
   const showNewsletterSections = form.format === "newsletter";
+  const hasEmailChannel = form.channels.includes("email");
+  const hasPortalChannel = form.channels.includes("my_dashboard");
   const showDashboardPresentation =
-    form.format === "announcement" || form.format === "dashboard_message";
+    hasPortalChannel &&
+    (form.format === "announcement" || form.format === "dashboard_message");
   const showMedia =
     form.format !== "email" ||
     form.channels.includes("my_dashboard") ||
@@ -3078,12 +3097,12 @@ function CommunicationsSection({
     form.subject.trim() && (form.bodyContent.trim() || form.summary.trim()) && form.senderId
   );
   const canSendEmail =
-    form.channels.includes("email") &&
+    hasEmailChannel &&
     form.channelStatuses.email !== "sent" &&
     emailContentIsReady &&
     emailRecipientSummary.total > 0;
   const canPublishToPortal =
-    form.channels.includes("my_dashboard") &&
+    hasPortalChannel &&
     form.channelStatuses.my_dashboard !== "active" &&
     internalRecipientProfiles.length > 0;
 
@@ -3281,13 +3300,7 @@ function CommunicationsSection({
             <button
               className="admin-link-button"
               type="button"
-              onClick={() => {
-                setForm(emptyForm);
-                setCircleSearch("");
-                setRecipientSearch("");
-                setReplyToInput("");
-                setReplyToCustomized(false);
-              }}
+              onClick={() => resetComposer()}
             >
               New Communication
             </button>
@@ -3316,7 +3329,7 @@ function CommunicationsSection({
               value={form.title}
               onChange={(title) => setForm({ ...form, title })}
             />
-            {(form.format === "email" || form.format === "newsletter") && (
+            {hasEmailChannel && (
               <>
                 <ContentInput
                   label="Subject"
@@ -3374,7 +3387,7 @@ function CommunicationsSection({
               onChange={(summary) => setForm({ ...form, summary })}
             />
             <ContentTextarea
-              label={form.format === "email" ? "Email Body" : "Body Content"}
+              label={hasEmailChannel && !hasPortalChannel ? "Email Body" : "Body Content"}
               value={form.bodyContent}
               onChange={(bodyContent) => setForm({ ...form, bodyContent })}
               hint="Blank lines create paragraphs. Formatting: ## heading, **bold**, *italic*, - list, 1. numbered list, and [link text](https://example.com)."
@@ -3667,10 +3680,16 @@ function CommunicationsSection({
           </div>
         </CommunicationComposerBlock>
 
-        <CommunicationComposerBlock title="Audience">
+        <CommunicationComposerBlock title={hasPortalChannel ? "Audience" : "Email Recipients"}>
           <div className="admin-content-form-grid">
             <ContentSelect
-              label="Internal / Site Message Audience"
+              label={
+                hasPortalChannel
+                  ? hasEmailChannel
+                    ? "Email and Site Message Audience"
+                    : "Site Message Audience"
+                  : "Internal Email Recipients"
+              }
               value={form.audienceScope}
               options={getCommunicationAudienceOptions(form.format)}
               onChange={(audienceScope) => {
@@ -3679,16 +3698,20 @@ function CommunicationsSection({
                 setForm({ ...form, audienceScope, circleIds: [], profileIds: [] });
               }}
             />
-            <ContentInput
-              label="Visible From"
-              value={form.visibleFrom}
-              onChange={(visibleFrom) => setForm({ ...form, visibleFrom })}
-            />
-            <ContentInput
-              label="Visible Until"
-              value={form.visibleUntil}
-              onChange={(visibleUntil) => setForm({ ...form, visibleUntil })}
-            />
+            {hasPortalChannel && (
+              <>
+                <ContentInput
+                  label="Visible From"
+                  value={form.visibleFrom}
+                  onChange={(visibleFrom) => setForm({ ...form, visibleFrom })}
+                />
+                <ContentInput
+                  label="Visible Until"
+                  value={form.visibleUntil}
+                  onChange={(visibleUntil) => setForm({ ...form, visibleUntil })}
+                />
+              </>
+            )}
           </div>
           {requiresCircleTargets && (
             <div
@@ -3774,7 +3797,7 @@ function CommunicationsSection({
               </p>
             </div>
           )}
-          {form.channels.includes("email") && (
+          {hasEmailChannel && (
             <div className="admin-assignment-selector">
               <p className="admin-assignment-count">
                 External email recipients are email-only and never receive Site Messages.
@@ -3893,7 +3916,7 @@ function CommunicationsSection({
           <button className="btn btn-secondary" type="button" onClick={saveCommunication}>
             Save Draft
           </button>
-          {form.channels.includes("email") && (
+          {hasEmailChannel && (
             <button
               className="btn btn-primary"
               type="button"
@@ -3903,12 +3926,12 @@ function CommunicationsSection({
               {getEmailActionLabel(form.channelStatuses.email, isSendingEmail)}
             </button>
           )}
-          {form.channels.includes("my_dashboard") && form.channelStatuses.my_dashboard !== "active" && (
+          {hasPortalChannel && form.channelStatuses.my_dashboard !== "active" && (
             <button className="btn btn-primary" type="button" disabled={!canPublishToPortal} onClick={() => void runChannelAction("publish")}>
               Publish to Portal
             </button>
           )}
-          {(form.format === "email" || form.channels.includes("email")) && (
+          {hasEmailChannel && (
             <button className="btn btn-secondary" type="button" onClick={sendTestEmail}>
               Send test email to me
             </button>
@@ -3940,6 +3963,9 @@ function CommunicationsSection({
                   communication.audienceScope,
                   communication.channels.includes("email")
                     ? `Email: ${communication.channelStatuses.email === "sent" ? "Sent" : communication.channelStatuses.email === "failed" ? "Failed" : "Draft"}`
+                    : "",
+                  communication.channels.includes("email") && communication.sentAt
+                    ? `Sent ${formatDate(communication.sentAt)}`
                     : "",
                   communication.channels.includes("my_dashboard")
                     ? `Site Message: ${communication.channelStatuses.my_dashboard === "active" ? "Published" : "Draft"}`

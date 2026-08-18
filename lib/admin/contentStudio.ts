@@ -159,6 +159,7 @@ export type AdminCommunication = {
   publishedAt: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  sentAt: string | null;
 };
 
 export type CommunicationFormat =
@@ -418,6 +419,7 @@ type CommunicationRow = {
   published_at: string | null;
   created_at: string | null;
   updated_at: string | null;
+  sent_at?: string | null;
 };
 
 type CommunicationLinkRow = {
@@ -1468,7 +1470,7 @@ const resourceStorageBucket = "peaceworks-resources";
 const communicationStorageBucket = "peaceworks-communications";
 
 const communicationSelect =
-  "id,format,title,subject,preview_text,summary,body_content,communication_type,channel,dashboard_presentation,audience_scope,sender_id,reply_to_email,visible_author_name,author_profile_id,author_name,header_image_path,thumbnail_image_path,image_alt_text,category,tags,visible_from,visible_until,status,published_at,created_at,updated_at";
+  "id,format,title,subject,preview_text,summary,body_content,communication_type,channel,dashboard_presentation,audience_scope,sender_id,reply_to_email,visible_author_name,author_profile_id,author_name,header_image_path,thumbnail_image_path,image_alt_text,category,tags,visible_from,visible_until,status,published_at,sent_at,created_at,updated_at";
 
 async function fetchMonthlyQuestions() {
   const supabase = createAdminSupabaseClient();
@@ -1720,6 +1722,7 @@ async function mapCommunication(row: CommunicationRow): Promise<AdminCommunicati
     publishedAt: row.published_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    sentAt: row.sent_at || null,
   };
 }
 
