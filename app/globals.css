@@ -7631,8 +7631,40 @@ a {
 }
 
 .dashboard-post-body {
-  white-space: pre-wrap;
+  max-width: 68ch;
   line-height: 1.7;
+}
+
+.dashboard-post-body p,
+.admin-communication-preview-body p {
+  margin: 0 0 1.15em;
+}
+
+.dashboard-post-body h2,
+.dashboard-post-body h3,
+.dashboard-post-body h4 {
+  margin: 1.5em 0 0.55em;
+  line-height: 1.25;
+}
+
+.dashboard-post-body ul,
+.dashboard-post-body ol,
+.admin-communication-preview-body ul,
+.admin-communication-preview-body ol {
+  margin: 0 0 1.15em;
+  padding-left: 1.5em;
+}
+
+.dashboard-post-body li,
+.admin-communication-preview-body li {
+  margin-bottom: 0.4em;
+}
+
+.dashboard-post-body a,
+.admin-communication-preview-body a {
+  color: var(--sage-dark);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
 }
 
 @media (max-width: 680px) {

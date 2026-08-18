@@ -5,24 +5,34 @@ import { Resend } from "resend";
 import { createAdminSupabaseClient } from "../admin/authorization";
 import { resolveCommunicationAudienceProfileIds } from "../messaging/service";
 import {
+  buildPeaceWorksEmailHtml,
+  buildPeaceWorksEmailText,
+} from "./formatting";
+import {
   normalizeReplyToEmails,
   parseStoredReplyToEmails,
   resolveCommunicationSender,
 } from "./senders";
+import { mergeRecipientEmails, normalizeRecipientEmail } from "./recipients";
 
 const SITE_URL = "https://peaceworks.network";
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SEND_CONCURRENCY = 5;
 
 type CommunicationEmailRow = {
   id: string;
   title: string | null;
+  subject: string | null;
   summary: string | null;
   body_content: string | null;
+  preview_text: string | null;
+  author_name: string | null;
+  visible_author_name: string | null;
+  category: string | null;
   audience_scope: string | null;
   sender_id: string | null;
   reply_to_email: string | null;
   status: string | null;
+  links: Array<{ label: string | null; url: string | null; link_style: string | null }>;
 };
 
 export type CommunicationEmailDeliveryResult = {
@@ -35,40 +45,64 @@ export type CommunicationEmailDeliveryResult = {
 let resendClient: Resend | null = null;
 
 export async function deliverCommunicationEmail(
-  communicationId: string
+  communicationId: string,
+  options: { allowDraft?: boolean } = {}
 ): Promise<CommunicationEmailDeliveryResult | null> {
   const supabase = createAdminSupabaseClient();
-  const [{ data: communication, error }, { data: channels, error: channelError }] =
+  const [
+    { data: communication, error },
+    { data: channels, error: channelError },
+    { data: links, error: linkError },
+  ] =
     await Promise.all([
       supabase
         .from("communications")
-        .select("id,title,summary,body_content,audience_scope,sender_id,reply_to_email,status")
+        .select("id,title,subject,summary,body_content,preview_text,author_name,visible_author_name,category,audience_scope,sender_id,reply_to_email,status")
         .eq("id", communicationId)
         .single(),
       supabase
         .from("communication_channels")
         .select("channel")
         .eq("communication_id", communicationId),
+      supabase
+        .from("communication_links")
+        .select("label,url,link_style")
+        .eq("communication_id", communicationId)
+        .order("sort_order", { ascending: true }),
     ]);
 
-  if (error || channelError) {
+  if (error || channelError || linkError) {
     throw new Error(
-      error?.message || channelError?.message || "Email communication could not be loaded."
+      error?.message || channelError?.message || linkError?.message || "Email communication could not be loaded."
     );
   }
   if (!(channels || []).some((row) => row.channel === "email")) return null;
-  if (communication.status !== "published") return null;
+  if (!options.allowDraft && communication.status !== "published") return null;
 
   const profileIds = await resolveCommunicationAudienceProfileIds(
     communicationId,
     communication.audience_scope || "all_members"
   );
-  const emails = await resolveAuthEmails(profileIds);
-
-  return sendPeaceWorksEmails(
-    emails,
-    communication as CommunicationEmailRow
+  const [{ data: externalRows, error: externalError }, internalEmails] = await Promise.all([
+    supabase
+      .from("communication_external_recipients")
+      .select("email")
+      .eq("communication_id", communicationId),
+    resolveAuthEmails(profileIds),
+  ]);
+  if (externalError) throw new Error(`External recipients could not be loaded: ${externalError.message}`);
+  const { emails, skipped } = mergeRecipientEmails(
+    internalEmails,
+    (externalRows || []).map((row) => row.email)
   );
+
+  const result = await sendPeaceWorksEmails(
+    emails,
+    { ...communication, links: links || [] } as CommunicationEmailRow
+  );
+  result.requested += skipped;
+  result.skipped += skipped;
+  return result;
 }
 
 export async function sendCommunicationTestEmail(input: {
@@ -84,12 +118,18 @@ export async function sendCommunicationTestEmail(input: {
   return sendPeaceWorksEmails([recipient], {
     id: "test",
     title: input.title,
+    subject: input.title,
     summary: null,
     body_content: input.message,
+    preview_text: null,
+    author_name: null,
+    visible_author_name: null,
+    category: null,
     audience_scope: "admins",
     sender_id: input.senderId,
     reply_to_email: JSON.stringify(normalizeReplyToEmails(input.replyToEmails)),
     status: "published",
+    links: [],
   });
 }
 
@@ -121,11 +161,23 @@ async function sendPeaceWorksEmails(
   if (!selectedSender) throw new Error("The selected email sender is no longer eligible.");
   const sender = getSenderIdentity(selectedSender.displayName);
   const title = cleanText(communication.title) || "A message from PeaceWorks";
+  const subject = cleanText(communication.subject) || title;
   const message = cleanText(communication.body_content || communication.summary) || title;
-  const uniqueRecipients = Array.from(
-    new Set(recipientEmails.map(normalizeEmail).filter(Boolean))
-  ) as string[];
-  const skipped = recipientEmails.length - uniqueRecipients.length;
+  const ctaLink = communication.links.find(
+    (link) => link.url && (link.link_style === "button" || link.link_style === "featured")
+  );
+  const templateInput = {
+    title,
+    body: message,
+    previewText: cleanText(communication.preview_text),
+    authorName: cleanText(communication.author_name || communication.visible_author_name),
+    category: cleanText(communication.category),
+    cta: ctaLink?.url
+      ? { label: cleanText(ctaLink.label) || "Visit PeaceWorks", url: ctaLink.url }
+      : undefined,
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL || SITE_URL,
+  };
+  const { emails: uniqueRecipients, skipped } = mergeRecipientEmails(recipientEmails, []);
   let accepted = 0;
   let failed = 0;
 
@@ -136,9 +188,9 @@ async function sendPeaceWorksEmails(
         client.emails.send({
           from: sender,
           to: recipient,
-          subject: title,
-          text: buildPlainText(title, message),
-          html: buildHtml(title, message),
+          subject,
+          text: buildPeaceWorksEmailText(templateInput),
+          html: buildPeaceWorksEmailHtml(templateInput),
           replyTo: normalizeReplyToEmails(
             parseStoredReplyToEmails(communication.reply_to_email),
             selectedSender.email
@@ -147,10 +199,28 @@ async function sendPeaceWorksEmails(
       )
     );
 
-    results.forEach((result) => {
-      if (result.error) failed += 1;
+    const textSnapshot = buildPeaceWorksEmailText(templateInput);
+    const htmlSnapshot = buildPeaceWorksEmailHtml(templateInput);
+    const deliveryRows = results.map((result, resultIndex) => {
+      const error = result.error ? String(result.error.message || result.error) : null;
+      if (error) failed += 1;
       else accepted += 1;
+      return {
+        communication_id: communication.id,
+        recipient_email: batch[resultIndex],
+        provider_message_id: result.data?.id || null,
+        delivery_status: error ? "failed" : "accepted",
+        subject_snapshot: subject,
+        body_text_snapshot: textSnapshot,
+        body_html_snapshot: htmlSnapshot,
+        error_message: error,
+      };
     });
+    if (communication.id !== "test") {
+      const supabase = createAdminSupabaseClient();
+      const { error } = await supabase.from("communication_email_deliveries").insert(deliveryRows);
+      if (error) throw new Error(`Email delivery history could not be recorded: ${error.message}`);
+    }
   }
 
   return {
@@ -206,30 +276,8 @@ function cleanHeaderDisplayName(value: string | null | undefined) {
   return cleanText(value).replace(/[\r\n<>\"]/g, "").replace(/\s+/g, " ").slice(0, 140);
 }
 
-function buildPlainText(title: string, message: string) {
-  return `${title}\n\n${message}\n\nVisit PeaceWorks: ${SITE_URL}\n\nYou received this message because of your PeaceWorks account or Circle participation.`;
-}
-
-function buildHtml(title: string, message: string) {
-  const safeTitle = escapeHtml(title);
-  const safeMessage = escapeHtml(message).replace(/\n/g, "<br />");
-  return `<!doctype html><html><body style="margin:0;background:#f5f3ec;color:#191d1a;font-family:Arial,sans-serif"><div style="max-width:640px;margin:0 auto;padding:40px 24px"><p style="color:#3a5b40;font-size:14px;font-weight:700;letter-spacing:.12em;text-transform:uppercase">PeaceWorks</p><div style="background:#fff;border-radius:24px;padding:32px"><h1 style="margin:0 0 20px;font-size:32px;line-height:1.15">${safeTitle}</h1><p style="font-size:17px;line-height:1.65">${safeMessage}</p><p style="margin:28px 0 0"><a href="${SITE_URL}" style="display:inline-block;padding:13px 22px;border-radius:999px;background:#3a5b40;color:#fff;text-decoration:none;font-weight:700">Visit PeaceWorks</a></p></div><p style="margin:20px 0 0;color:#667068;font-size:13px;line-height:1.5">You received this message because of your PeaceWorks account or Circle participation.</p></div></body></html>`;
-}
-
-function normalizeEmail(value: string) {
-  const normalized = value.trim().toLowerCase();
-  return EMAIL_PATTERN.test(normalized) ? normalized : "";
-}
+const normalizeEmail = normalizeRecipientEmail;
 
 function cleanText(value: string | null | undefined) {
   return (value || "").replace(/\r\n/g, "\n").trim();
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
 }

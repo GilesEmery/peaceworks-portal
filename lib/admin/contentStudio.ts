@@ -21,6 +21,7 @@ import {
   resolveCommunicationSender,
   serializeReplyToEmails,
 } from "../communications/senders";
+import { cleanExternalRecipientEmails } from "../communications/recipients";
 
 export type AdminContentStatus = "draft" | "published" | "archived";
 export type AdminContentType = ContentItemKind;
@@ -146,6 +147,8 @@ export type AdminCommunication = {
   visibleUntil: string | null;
   links: CommunicationLink[];
   channels: CommunicationChannel[];
+  channelStatuses: Record<string, string>;
+  externalRecipientEmails: string[];
   audienceTargets: CommunicationAudienceTarget[];
   newsletterSections: CommunicationNewsletterSection[];
   resourceId: string;
@@ -311,6 +314,7 @@ export type CommunicationValues = {
   channels?: string[];
   circleIds?: string[];
   profileIds?: string[];
+  externalRecipientEmails?: string[];
   newsletterSections?: Array<{ heading?: string; bodyContent?: string; sortOrder?: number }>;
   addToResourceLibrary?: boolean;
   resourceTitle?: string;
@@ -420,10 +424,6 @@ type CommunicationLinkRow = {
   url: string | null;
   link_style: string | null;
   sort_order: number | null;
-};
-
-type CommunicationChannelRow = {
-  channel: string | null;
 };
 
 type CommunicationAudienceTargetRow = {
@@ -1210,19 +1210,69 @@ export async function setAdminCommunicationStatus(
 
   if (error) throw new Error(`Communication status could not be updated: ${error.message}`);
 
-  const [portalDelivery, emailDelivery] =
+  const portalDelivery =
     status === "published"
-      ? await Promise.all([
-          deliverCommunicationToPortal(communicationId, adminUserId),
-          deliverCommunicationEmail(communicationId),
-        ])
-      : [null, null];
+      ? await deliverCommunicationToPortal(communicationId, adminUserId)
+      : null;
 
   return {
     ...mapCommunication(data as CommunicationRow),
     portalDelivery,
-    emailDelivery,
+    emailDelivery: null,
   };
+}
+
+export async function sendAdminCommunicationEmail(
+  adminUserId: string,
+  communicationId: string | null,
+  values: CommunicationValues
+) {
+  const saved = communicationId
+    ? await updateAdminCommunication(adminUserId, communicationId, values)
+    : await createAdminCommunication(adminUserId, values);
+  if (!saved.channels.includes("email")) throw new Error("Select Email before sending.");
+
+  let emailDelivery;
+  try {
+    emailDelivery = await deliverCommunicationEmail(saved.id, { allowDraft: true });
+    if (!emailDelivery) throw new Error("Email delivery is not configured for this Communication.");
+  } catch (error) {
+    await setCommunicationChannelStatus(saved.id, "email", "failed");
+    throw error;
+  }
+
+  const channelStatus = emailDelivery.accepted > 0 ? "sent" : "failed";
+  const supabase = createAdminSupabaseClient();
+  const now = new Date().toISOString();
+  await Promise.all([
+    setCommunicationChannelStatus(saved.id, "email", channelStatus),
+    supabase
+      .from("communications")
+      .update({ sent_at: channelStatus === "sent" ? now : null, updated_by: adminUserId, updated_at: now })
+      .eq("id", saved.id),
+  ]);
+
+  const { data, error } = await supabase
+    .from("communications")
+    .select(communicationSelect)
+    .eq("id", saved.id)
+    .single();
+  if (error) throw new Error(`Communication could not be refreshed: ${error.message}`);
+  return { ...(await mapCommunication(data as CommunicationRow)), emailDelivery };
+}
+
+async function setCommunicationChannelStatus(
+  communicationId: string,
+  channel: CommunicationChannel,
+  status: string
+) {
+  const supabase = createAdminSupabaseClient();
+  const { error } = await supabase
+    .from("communication_channels")
+    .update({ channel_status: status, updated_at: new Date().toISOString() })
+    .eq("communication_id", communicationId)
+    .eq("channel", channel);
+  if (error) throw new Error(`Communication channel status could not be updated: ${error.message}`);
 }
 
 export async function deleteAdminCommunication(communicationId: string) {
@@ -1579,10 +1629,11 @@ function mapTraining(row: TrainingRow): AdminTraining {
 }
 
 async function mapCommunication(row: CommunicationRow): Promise<AdminCommunication> {
-  const [links, channels, audienceTargets, newsletterSections, sender, resourceId] =
+  const [links, channelRows, externalRecipientEmails, audienceTargets, newsletterSections, sender, resourceId] =
     await Promise.all([
       fetchCommunicationLinks(row.id),
       fetchCommunicationChannels(row.id),
+      fetchCommunicationExternalRecipients(row.id),
       fetchCommunicationAudienceTargets(row.id),
       fetchCommunicationNewsletterSections(row.id),
       row.sender_id ? resolveCommunicationSender(row.sender_id) : Promise.resolve(null),
@@ -1620,7 +1671,9 @@ async function mapCommunication(row: CommunicationRow): Promise<AdminCommunicati
     visibleFrom: row.visible_from || null,
     visibleUntil: row.visible_until || null,
     links,
-    channels,
+    channels: channelRows.map((item) => item.channel),
+    channelStatuses: Object.fromEntries(channelRows.map((item) => [item.channel, item.status])),
+    externalRecipientEmails,
     audienceTargets,
     newsletterSections,
     resourceId,
@@ -1802,6 +1855,7 @@ async function cleanCommunication(values: CommunicationValues) {
     channels,
     circleIds: Array.from(new Set((values.circleIds || []).filter(Boolean))),
     profileIds: Array.from(new Set((values.profileIds || []).filter(Boolean))),
+    externalRecipientEmails: cleanExternalRecipientEmails(values.externalRecipientEmails || []),
     newsletterSections: cleanNewsletterSections(values.newsletterSections || []),
     addToResourceLibrary: Boolean(values.addToResourceLibrary),
     resourceTitle: trimText(values.resourceTitle).slice(0, 180) || title,
@@ -2046,14 +2100,25 @@ async function fetchCommunicationChannels(communicationId: string) {
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("communication_channels")
-    .select("channel")
+    .select("channel,channel_status")
     .eq("communication_id", communicationId);
 
   if (error) throw new Error(`Communication channels could not be loaded: ${error.message}`);
 
-  return cleanCommunicationChannels(
-    ((data || []) as CommunicationChannelRow[]).map((row) => row.channel)
+  return ((data || []) as Array<{ channel: CommunicationChannel; channel_status: string }>).map(
+    (row) => ({ channel: row.channel, status: row.channel_status })
   );
+}
+
+async function fetchCommunicationExternalRecipients(communicationId: string) {
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("communication_external_recipients")
+    .select("email")
+    .eq("communication_id", communicationId)
+    .order("email");
+  if (error) throw new Error(`External recipients could not be loaded: ${error.message}`);
+  return (data || []).map((row) => row.email);
 }
 
 async function fetchCommunicationAudienceTargets(communicationId: string) {
@@ -2126,11 +2191,19 @@ async function syncCommunicationChildren(
       : Promise.resolve([]),
   ]);
 
+  const { data: currentChannels, error: currentChannelError } = await supabase
+    .from("communication_channels")
+    .select("channel,channel_status")
+    .eq("communication_id", communicationId);
+  if (currentChannelError) throw new Error(`Communication channels could not be loaded: ${currentChannelError.message}`);
+  const statusByChannel = new Map((currentChannels || []).map((row) => [row.channel, row.channel_status]));
+
   await Promise.all([
     supabase.from("communication_links").delete().eq("communication_id", communicationId),
     supabase.from("communication_channels").delete().eq("communication_id", communicationId),
     supabase.from("communication_audience_targets").delete().eq("communication_id", communicationId),
     supabase.from("communication_newsletter_sections").delete().eq("communication_id", communicationId),
+    supabase.from("communication_external_recipients").delete().eq("communication_id", communicationId),
   ]);
 
   if (input.links.length > 0) {
@@ -2152,11 +2225,18 @@ async function syncCommunicationChildren(
       input.channels.map((channel) => ({
         communication_id: communicationId,
         channel,
-        channel_status: "draft",
+        channel_status: statusByChannel.get(channel) || "draft",
       }))
     );
 
     if (error) throw new Error(`Communication channels could not be saved: ${error.message}`);
+  }
+
+  if (input.externalRecipientEmails.length > 0) {
+    const { error } = await supabase.from("communication_external_recipients").insert(
+      input.externalRecipientEmails.map((email) => ({ communication_id: communicationId, email }))
+    );
+    if (error) throw new Error(`External recipients could not be saved: ${error.message}`);
   }
 
   const audienceRows: Array<{

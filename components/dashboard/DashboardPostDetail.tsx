@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import type { DashboardPostDetail as DashboardPostDetailData } from "../../lib/member/dashboard";
 import { routes } from "../../lib/navigation";
 import { supabase } from "../../lib/supabase";
+import CommunicationBody from "../communications/CommunicationBody";
 import SiteFooter from "../layout/SiteFooter";
 import SiteHeader from "../layout/SiteHeader";
 
@@ -71,7 +72,9 @@ export default function DashboardPostDetail() {
                   <p className="content-byline">By {state.post.authorName}</p>
                 )}
                 <p className="eyebrow">{state.post.circle.name}</p>
-                <div className="dashboard-post-body">{state.post.body}</div>
+                <div className="dashboard-post-body">
+                  <CommunicationBody body={state.post.body} />
+                </div>
               </>
             )}
             <button className="btn btn-secondary" type="button" onClick={() => router.push(routes.myDashboard)}>

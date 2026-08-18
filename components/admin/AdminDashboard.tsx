@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 
 import ResultModal from "../assessment/ResultModal";
+import CommunicationBody from "../communications/CommunicationBody";
 import { requestConfirmation, showFeedback } from "../ui/FeedbackCenter";
 import AdminUsersManager from "./AdminUsersManager";
 import { supabase } from "../../lib/supabase";
@@ -199,6 +200,8 @@ type AdminCommunication = {
     sortOrder: number;
   }>;
   channels: string[];
+  channelStatuses: Record<string, string>;
+  externalRecipientEmails: string[];
   audienceTargets: Array<{
     id: string;
     audienceType: string;
@@ -2835,6 +2838,8 @@ function CommunicationsSection({
     visibleUntil: "",
     links: [] as Array<{ label: string; url: string; linkStyle: string; sortOrder: number }>,
     channels: ["my_dashboard"] as string[],
+    channelStatuses: {} as Record<string, string>,
+    externalRecipientEmails: [] as string[],
     circleIds: [] as string[],
     profileIds: [] as string[],
     newsletterSections: [] as Array<{ heading: string; bodyContent: string; sortOrder: number }>,
@@ -2853,6 +2858,7 @@ function CommunicationsSection({
   const [status, setStatus] = useState<CommunicationStatus | "all">("all");
   const [circleSearch, setCircleSearch] = useState("");
   const [recipientSearch, setRecipientSearch] = useState("");
+  const [externalRecipientInput, setExternalRecipientInput] = useState("");
   const [replyToInput, setReplyToInput] = useState("");
   const [replyToCustomized, setReplyToCustomized] = useState(false);
   const [message, setMessage] = useState<ContentMessage>(null);
@@ -2938,6 +2944,27 @@ function CommunicationsSection({
     setReplyToInput("");
     setReplyToCustomized(false);
     setMessage({ type: "success", text: "Communication was saved." });
+    await loadCommunications();
+  }
+
+  async function runChannelAction(action: "send-email" | "publish") {
+    const result = await adminContentRequest(
+      `/api/admin/content/communications/${action}`,
+      { method: "POST", body: form }
+    );
+    if (!result.ok) {
+      setMessage({ type: "error", text: result.message });
+      return;
+    }
+    const communication = result.communication as AdminCommunication | undefined;
+    if (communication) {
+      setForm((current) => ({
+        ...current,
+        id: communication.id,
+        channelStatuses: communication.channelStatuses || {},
+      }));
+    }
+    setMessage({ type: "success", text: result.message || "Communication channel updated." });
     await loadCommunications();
   }
 
@@ -3040,6 +3067,21 @@ function CommunicationsSection({
   function removeReplyTo(email: string) {
     setForm({ ...form, replyToEmails: form.replyToEmails.filter((item) => item !== email) });
     setReplyToCustomized(true);
+  }
+
+  function addExternalRecipient(value: string) {
+    const email = value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setMessage({ type: "error", text: "Enter a valid external email address." });
+      return;
+    }
+    const internalMatch = usersPayload.users.some((user) => user.email.toLowerCase() === email);
+    if (internalMatch || form.externalRecipientEmails.some((item) => item.toLowerCase() === email)) {
+      setMessage({ type: "error", text: "That email address is already included." });
+      return;
+    }
+    setForm({ ...form, externalRecipientEmails: [...form.externalRecipientEmails, email] });
+    setExternalRecipientInput("");
   }
 
   function updateFormat(format: CommunicationFormat) {
@@ -3283,6 +3325,7 @@ function CommunicationsSection({
               label={form.format === "email" ? "Email Body" : "Body Content"}
               value={form.bodyContent}
               onChange={(bodyContent) => setForm({ ...form, bodyContent })}
+              hint="Blank lines create paragraphs. Formatting: ## heading, **bold**, *italic*, - list, 1. numbered list, and [link text](https://example.com)."
             />
           </div>
         </CommunicationComposerBlock>
@@ -3679,6 +3722,38 @@ function CommunicationsSection({
               </p>
             </div>
           )}
+          {form.channels.includes("email") && (
+            <div className="admin-assignment-selector">
+              <label className="admin-recipient-search">
+                <span>Add external email</span>
+                <input
+                  type="email"
+                  value={externalRecipientInput}
+                  onChange={(event) => setExternalRecipientInput(event.target.value)}
+                  placeholder="outsideperson@example.com"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      addExternalRecipient(externalRecipientInput);
+                    }
+                  }}
+                />
+              </label>
+              <button className="admin-link-button" type="button" onClick={() => addExternalRecipient(externalRecipientInput)}>
+                Add external email
+              </button>
+              <div className="admin-checkbox-list">
+                {form.externalRecipientEmails.map((email) => (
+                  <div className="admin-repeatable-row" key={email}>
+                    <span><strong>{email}</strong><small>External Email · email only</small></span>
+                    <button className="admin-link-button" type="button" onClick={() => setForm({ ...form, externalRecipientEmails: form.externalRecipientEmails.filter((item) => item !== email) })}>
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CommunicationComposerBlock>
 
         <CommunicationComposerBlock title="Publish & Distribute">
@@ -3689,9 +3764,9 @@ function CommunicationsSection({
                 label={label}
                 description={
                   channel === "email"
-                    ? "Email will be submitted to eligible recipients when this Communication is published."
+                    ? "Email can be sent independently to internal and external recipients."
                     : channel === "my_dashboard"
-                      ? "Site message will appear in the PeaceWorks portal when this Communication is published."
+                      ? "Site message remains a draft until you publish it to the portal."
                       : "Create a reusable distribution placement for this Communication."
                 }
                 checked={form.channels.includes(channel)}
@@ -3760,9 +3835,22 @@ function CommunicationsSection({
         <CommunicationPreview communication={form} />
 
         <div className="admin-content-actions">
-          <button className="btn btn-primary" type="button" onClick={saveCommunication}>
+          <button className="btn btn-secondary" type="button" onClick={saveCommunication}>
             Save Draft
           </button>
+          {form.channels.includes("email") && form.channelStatuses.email !== "sent" && (
+            <button className="btn btn-primary" type="button" onClick={() => void runChannelAction("send-email")}>
+              Send Email
+            </button>
+          )}
+          {form.channels.includes("email") && form.channelStatuses.email === "sent" && (
+            <span className="admin-assignment-count">Email: Sent</span>
+          )}
+          {form.channels.includes("my_dashboard") && form.channelStatuses.my_dashboard !== "active" && (
+            <button className="btn btn-primary" type="button" onClick={() => void runChannelAction("publish")}>
+              Publish to Portal
+            </button>
+          )}
           {(form.format === "email" || form.channels.includes("email")) && (
             <button className="btn btn-secondary" type="button" onClick={sendTestEmail}>
               Send test email to me
@@ -3793,6 +3881,12 @@ function CommunicationsSection({
                   communication.communicationType,
                   communication.channel,
                   communication.audienceScope,
+                  communication.channels.includes("email")
+                    ? `Email: ${communication.channelStatuses.email === "sent" ? "Sent" : communication.channelStatuses.email === "failed" ? "Failed" : "Draft"}`
+                    : "",
+                  communication.channels.includes("my_dashboard")
+                    ? `Site Message: ${communication.channelStatuses.my_dashboard === "active" ? "Published" : "Draft"}`
+                    : "",
                   communication.visibleAuthorName
                     ? `By ${communication.visibleAuthorName}`
                     : "",
@@ -3836,6 +3930,8 @@ function CommunicationsSection({
                       sortOrder: link.sortOrder,
                     })),
                     channels: communication.channels,
+                    channelStatuses: communication.channelStatuses || {},
+                    externalRecipientEmails: communication.externalRecipientEmails || [],
                     circleIds: communication.audienceTargets
                       .map((target) => target.circleId)
                       .filter(Boolean),
@@ -3921,7 +4017,9 @@ function CommunicationPreview({
             <span>Email Preview</span>
             <h4>{communication.subject || communication.title || "Subject"}</h4>
             <p>{communication.previewText || "Preview text will appear here."}</p>
-            <div>{communication.bodyContent || communication.summary || "Email body preview"}</div>
+            <div className="admin-communication-preview-body">
+              <CommunicationBody body={communication.bodyContent || communication.summary || "Email body preview"} />
+            </div>
           </article>
         )}
         {communication.channels.some((channel) => channel.includes("dashboard")) && (
@@ -3936,7 +4034,9 @@ function CommunicationPreview({
             <span>Dashboard Article Preview</span>
             <h4>{communication.title || "Article title"}</h4>
             <p>{communication.visibleAuthorName || "Author"}</p>
-            <div>{communication.bodyContent || "Article body preview"}</div>
+            <div className="admin-communication-preview-body">
+              <CommunicationBody body={communication.bodyContent || "Article body preview"} />
+            </div>
           </article>
         )}
         {communication.addToResourceLibrary && (
@@ -4626,15 +4726,18 @@ function ContentTextarea({
   label,
   value,
   onChange,
+  hint,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  hint?: string;
 }) {
   return (
     <label>
       <span>{label}</span>
       <textarea value={value} onChange={(event) => onChange(event.target.value)} />
+      {hint && <small className="admin-muted-copy">{hint}</small>}
     </label>
   );
 }
@@ -4715,7 +4818,7 @@ async function adminContentRequest(
   url: string,
   options: { method: string; body?: unknown }
 ): Promise<
-  | { ok: true; url?: string; message?: string }
+  | { ok: true; url?: string; message?: string; communication?: unknown }
   | { ok: false; message: string }
 > {
   const token = await getAccessToken();
@@ -4731,7 +4834,7 @@ async function adminContentRequest(
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
   const result = (await response.json().catch(() => null)) as
-    | { ok?: boolean; message?: string; url?: string }
+    | { ok?: boolean; message?: string; url?: string; communication?: unknown }
     | null;
 
   if (!response.ok || !result?.ok) {
@@ -4745,6 +4848,7 @@ async function adminContentRequest(
     ok: true,
     url: typeof result.url === "string" ? result.url : undefined,
     message: typeof result.message === "string" ? result.message : undefined,
+    communication: result.communication,
   };
 }
 
