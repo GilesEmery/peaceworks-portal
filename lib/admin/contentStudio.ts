@@ -5,7 +5,7 @@ import {
   archiveCanonicalAssignment,
   canonicalAssignmentSelect,
   createCanonicalAssignments,
-  resolveCanonicalAssignmentRows,
+  resolveCanonicalAssignmentCollection,
   restoreCanonicalAssignment,
   upsertMonthlyQuestionAssignmentMetadata,
 } from "../content/assignments";
@@ -842,10 +842,6 @@ export async function deleteAdminResource(resourceId: string) {
     .select("content_item_id, storage_path, cover_image_path")
     .eq("id", resourceId)
     .maybeSingle();
-  const { error } = await supabase.from("resources").delete().eq("id", resourceId);
-
-  if (error) throw new Error(`Resource could not be deleted: ${error.message}`);
-
   if (existing?.content_item_id) {
     const { error: assignmentError } = await supabase
       .from("content_assignments")
@@ -862,6 +858,10 @@ export async function deleteAdminResource(resourceId: string) {
       );
     }
   }
+
+  const { error } = await supabase.from("resources").delete().eq("id", resourceId);
+
+  if (error) throw new Error(`Resource could not be deleted: ${error.message}`);
 
   await cleanupDeletedResourceFiles(
     resourceId,
@@ -1023,6 +1023,33 @@ export async function setAdminTrainingStatus(
 
 export async function deleteAdminTraining(trainingId: string) {
   const supabase = createAdminSupabaseClient();
+  const { data: existing, error: trainingError } = await supabase
+    .from("trainings")
+    .select("content_item_id")
+    .eq("id", trainingId)
+    .maybeSingle();
+
+  if (trainingError || !existing) {
+    throw new Error(trainingError?.message || "Training was not found.");
+  }
+
+  if (existing.content_item_id) {
+    const { error: assignmentError } = await supabase
+      .from("content_assignments")
+      .update({
+        assignment_status: "archived",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("content_item_id", existing.content_item_id)
+      .eq("assignment_status", "active");
+
+    if (assignmentError) {
+      throw new Error(
+        `Deleted Training assignments could not be archived: ${assignmentError.message}`
+      );
+    }
+  }
+
   const { error } = await supabase.from("trainings").delete().eq("id", trainingId);
 
   if (error) throw new Error(`Training could not be deleted: ${error.message}`);
@@ -1418,8 +1445,8 @@ async function fetchContentAssignments() {
 
   if (error) throw new Error(`Content assignments could not be loaded: ${error.message}`);
 
-  const rows = await resolveCanonicalAssignmentRows(
-    (data || []) as unknown as Parameters<typeof resolveCanonicalAssignmentRows>[0]
+  const rows = await resolveCanonicalAssignmentCollection(
+    (data || []) as unknown as Parameters<typeof resolveCanonicalAssignmentCollection>[0]
   );
   return rows.map(mapContentAssignment);
 }

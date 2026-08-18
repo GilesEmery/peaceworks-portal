@@ -3,6 +3,7 @@ import "server-only";
 import { createAdminSupabaseClient } from "../admin/authorization";
 import {
   canonicalAssignmentSelect,
+  resolveCanonicalAssignmentCollection,
   resolveCanonicalAssignmentRows,
   type ResolvedCanonicalAssignment,
 } from "../content/assignments";
@@ -163,9 +164,9 @@ export async function fetchCoachMonthlyQuestionReflections(input: {
     throw new Error(`Reflection assignments failed: ${assignmentError.message}`);
   }
 
-  const assignments = await resolveCanonicalAssignmentRows(
+  const assignments = await resolveCanonicalAssignmentCollection(
     (assignmentRows || []) as unknown as Parameters<
-      typeof resolveCanonicalAssignmentRows
+      typeof resolveCanonicalAssignmentCollection
     >[0]
   );
   const assignmentById = new Map(assignments.map((row) => [row.id, row]));

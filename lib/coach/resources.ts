@@ -10,7 +10,7 @@ import {
   archiveCanonicalAssignment,
   canonicalAssignmentSelect,
   createCanonicalAssignments,
-  resolveCanonicalAssignmentRows,
+  resolveCanonicalAssignmentCollection,
 } from "../content/assignments";
 import type { ResolvedCanonicalAssignment } from "../content/assignments";
 import type { CoachAuthResult, CoachPersonSummary } from "./dashboard";
@@ -301,9 +301,9 @@ async function fetchResourceRows() {
 
   return {
     resources: (resourcesResponse.data || []) as ResourceRow[],
-    assignments: await resolveCanonicalAssignmentRows(
+    assignments: await resolveCanonicalAssignmentCollection(
       (assignmentsResponse.data || []) as unknown as Parameters<
-        typeof resolveCanonicalAssignmentRows
+        typeof resolveCanonicalAssignmentCollection
       >[0]
     ),
   };

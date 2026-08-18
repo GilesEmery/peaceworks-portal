@@ -14,7 +14,7 @@ import {
 import {
   archiveCanonicalCircleMonthlyQuestion,
   canonicalAssignmentSelect,
-  resolveCanonicalAssignmentRows,
+  resolveCanonicalAssignmentCollection,
   upsertMonthlyQuestionAssignmentMetadata,
   upsertCanonicalCircleMonthlyQuestion,
 } from "../content/assignments";
@@ -718,9 +718,9 @@ async function fetchMonthlyQuestionRows() {
   }
 
   const assignmentRows = (assignmentData || []) as MonthlyQuestionAssignmentRow[];
-  const contentAssignmentRows = await resolveCanonicalAssignmentRows(
+  const contentAssignmentRows = await resolveCanonicalAssignmentCollection(
     (contentAssignmentsResponse.data || []) as unknown as Parameters<
-      typeof resolveCanonicalAssignmentRows
+      typeof resolveCanonicalAssignmentCollection
     >[0]
   );
 
@@ -823,8 +823,8 @@ async function fetchAssignmentMap(questionIds: string[]) {
     throw monthlyQuestionSchemaError("Content assignments are not configured.", error);
   }
 
-  const rows = await resolveCanonicalAssignmentRows(
-    (data || []) as unknown as Parameters<typeof resolveCanonicalAssignmentRows>[0]
+  const rows = await resolveCanonicalAssignmentCollection(
+    (data || []) as unknown as Parameters<typeof resolveCanonicalAssignmentCollection>[0]
   );
   const map = new Map<string, string[]>();
   rows.forEach((row) => {

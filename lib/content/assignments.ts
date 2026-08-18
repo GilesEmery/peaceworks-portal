@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createAdminSupabaseClient } from "../admin/authorization";
+import { resolveAssignmentRowsFromSources } from "./assignmentResolution";
 import type { ContentItemKind, ContentItemRow } from "./registry";
 
 export type CanonicalAudienceType =
@@ -331,6 +332,7 @@ export async function resolveCanonicalAssignmentRows(
   rows.forEach((row) => {
     const contentItem = normalizeContentItem(row.content_item);
     if (!contentItem) {
+      if (options.missingSource === "skip") return;
       throw new Error(`Canonical assignment ${row.id} has no registry record.`);
     }
 
@@ -361,40 +363,12 @@ export async function resolveCanonicalAssignmentRows(
     })
   );
 
-  return rows.flatMap((row) => {
-    const contentItem = normalizeContentItem(row.content_item);
-    const sourceId = sourceIds.get(row.content_item_id);
+  return resolveAssignmentRowsFromSources(rows, sourceIds, options);
+}
 
-    if (!contentItem || !sourceId) {
-      if (options.missingSource === "skip") {
-        console.warn("Ignoring canonical assignment without a source record", {
-          assignmentId: row.id,
-          contentItemId: row.content_item_id,
-        });
-        return [];
-      }
-      throw new Error(`Canonical assignment ${row.id} has no source record.`);
-    }
-
-    if (
-      row.content_type !== contentItem.content_kind ||
-      row.content_id !== sourceId
-    ) {
-      console.warn("Canonical assignment legacy parity mismatch", {
-        assignmentId: row.id,
-        contentItemId: row.content_item_id,
-      });
-    }
-
-    const { content_item: _contentItem, ...assignment } = row;
-    void _contentItem;
-
-    return [{
-      ...assignment,
-      content_kind: contentItem.content_kind,
-      source_id: sourceId,
-    }];
-  });
+/** Resolve an aggregate without allowing one stale assignment to abort the list. */
+export function resolveCanonicalAssignmentCollection(rows: CanonicalAssignmentRow[]) {
+  return resolveCanonicalAssignmentRows(rows, { missingSource: "skip" });
 }
 
 export async function resolveCanonicalContentSource(
