@@ -1,5 +1,6 @@
 import {
   createAdminCommunication,
+  assertCommunicationPortalAudience,
   setAdminCommunicationStatus,
   updateAdminCommunication,
 } from "../../../../../../lib/admin/contentStudio";
@@ -16,6 +17,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    assertCommunicationPortalAudience(body);
     const saved = typeof body.id === "string" && body.id
       ? await updateAdminCommunication(auth.user.id, body.id, body)
       : await createAdminCommunication(auth.user.id, body);

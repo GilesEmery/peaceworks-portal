@@ -1,4 +1,5 @@
 import {
+  CommunicationEmailSendError,
   sendAdminCommunicationEmail,
 } from "../../../../../../lib/admin/contentStudio";
 import {
@@ -28,7 +29,13 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Admin communication email send failed", error);
     return Response.json(
-      { ok: false, message: error instanceof Error ? error.message : "Email could not be sent." },
+      {
+        ok: false,
+        message: error instanceof Error ? error.message : "Email could not be sent.",
+        communicationId:
+          error instanceof CommunicationEmailSendError ? error.communicationId : undefined,
+        emailStatus: error instanceof CommunicationEmailSendError ? "failed" : undefined,
+      },
       { status: 400 }
     );
   }

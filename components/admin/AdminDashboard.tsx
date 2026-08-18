@@ -30,6 +30,11 @@ import { requestConfirmation, showFeedback } from "../ui/FeedbackCenter";
 import AdminUsersManager from "./AdminUsersManager";
 import { supabase } from "../../lib/supabase";
 import { routes } from "../../lib/navigation";
+import {
+  buildEmailSendConfirmation,
+  getEmailActionLabel,
+  summarizeRecipientEmails,
+} from "../../lib/communications/recipients";
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
 import type {
   AdminAnalyticsPayload,
@@ -2821,7 +2826,7 @@ function CommunicationsSection({
     communicationType: "announcement",
     channel: "dashboard",
     dashboardPresentation: "standard",
-    audienceScope: "all_members",
+    audienceScope: "none",
     senderId: "",
     replyToEmails: [] as string[],
     visibleAuthorName: "",
@@ -2859,6 +2864,7 @@ function CommunicationsSection({
   const [circleSearch, setCircleSearch] = useState("");
   const [recipientSearch, setRecipientSearch] = useState("");
   const [externalRecipientInput, setExternalRecipientInput] = useState("");
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [replyToInput, setReplyToInput] = useState("");
   const [replyToCustomized, setReplyToCustomized] = useState(false);
   const [message, setMessage] = useState<ContentMessage>(null);
@@ -2948,24 +2954,45 @@ function CommunicationsSection({
   }
 
   async function runChannelAction(action: "send-email" | "publish") {
-    const result = await adminContentRequest(
-      `/api/admin/content/communications/${action}`,
-      { method: "POST", body: form }
-    );
-    if (!result.ok) {
-      setMessage({ type: "error", text: result.message });
-      return;
+    if (action === "send-email" && isSendingEmail) return;
+    if (action === "send-email") {
+      const confirmation = buildEmailSendConfirmation(
+        form.audienceScope,
+        emailRecipientSummary.internalEmails.length,
+        emailRecipientSummary.externalEmails
+      );
+      if (!(await requestConfirmation(confirmation))) return;
+      setIsSendingEmail(true);
     }
-    const communication = result.communication as AdminCommunication | undefined;
-    if (communication) {
-      setForm((current) => ({
-        ...current,
-        id: communication.id,
-        channelStatuses: communication.channelStatuses || {},
-      }));
+    try {
+      const result = await adminContentRequest(
+        `/api/admin/content/communications/${action}`,
+        { method: "POST", body: form }
+      );
+      if (!result.ok) {
+        if (action === "send-email" && result.emailStatus === "failed") {
+          setForm((current) => ({
+            ...current,
+            id: result.communicationId || current.id,
+            channelStatuses: { ...current.channelStatuses, email: "failed" },
+          }));
+        }
+        setMessage({ type: "error", text: result.message });
+        return;
+      }
+      const communication = result.communication as AdminCommunication | undefined;
+      if (communication) {
+        setForm((current) => ({
+          ...current,
+          id: communication.id,
+          channelStatuses: communication.channelStatuses || {},
+        }));
+      }
+      setMessage({ type: "success", text: result.message || "Communication channel updated." });
+      await loadCommunications();
+    } finally {
+      if (action === "send-email") setIsSendingEmail(false);
     }
-    setMessage({ type: "success", text: result.message || "Communication channel updated." });
-    await loadCommunications();
   }
 
   async function sendTestEmail() {
@@ -3037,6 +3064,28 @@ function CommunicationsSection({
       .toLowerCase()
       .includes(recipientQuery)
   );
+  const internalRecipientProfiles = resolveCommunicationInternalProfiles(
+    form.audienceScope,
+    form.profileIds,
+    form.circleIds,
+    usersPayload
+  );
+  const emailRecipientSummary = summarizeRecipientEmails(
+    internalRecipientProfiles.map((profile) => profile.email),
+    form.externalRecipientEmails
+  );
+  const emailContentIsReady = Boolean(
+    form.subject.trim() && (form.bodyContent.trim() || form.summary.trim()) && form.senderId
+  );
+  const canSendEmail =
+    form.channels.includes("email") &&
+    form.channelStatuses.email !== "sent" &&
+    emailContentIsReady &&
+    emailRecipientSummary.total > 0;
+  const canPublishToPortal =
+    form.channels.includes("my_dashboard") &&
+    form.channelStatuses.my_dashboard !== "active" &&
+    internalRecipientProfiles.length > 0;
 
   function toggleRecipient(profileId: string) {
     setForm({
@@ -3098,8 +3147,11 @@ function CommunicationsSection({
         : "dashboard",
       dashboardPresentation:
         format === "blog_article" ? "article" : form.dashboardPresentation,
-      audienceScope:
-        format === "circle_update" ? "selected_circles" : form.audienceScope,
+      audienceScope: getCommunicationAudienceOptions(format).some(
+        ([value]) => value === form.audienceScope
+      )
+        ? form.audienceScope
+        : "none",
     });
   }
 
@@ -3618,7 +3670,7 @@ function CommunicationsSection({
         <CommunicationComposerBlock title="Audience">
           <div className="admin-content-form-grid">
             <ContentSelect
-              label="Audience"
+              label="Internal / Site Message Audience"
               value={form.audienceScope}
               options={getCommunicationAudienceOptions(form.format)}
               onChange={(audienceScope) => {
@@ -3724,6 +3776,9 @@ function CommunicationsSection({
           )}
           {form.channels.includes("email") && (
             <div className="admin-assignment-selector">
+              <p className="admin-assignment-count">
+                External email recipients are email-only and never receive Site Messages.
+              </p>
               <label className="admin-recipient-search">
                 <span>Add external email</span>
                 <input
@@ -3838,16 +3893,18 @@ function CommunicationsSection({
           <button className="btn btn-secondary" type="button" onClick={saveCommunication}>
             Save Draft
           </button>
-          {form.channels.includes("email") && form.channelStatuses.email !== "sent" && (
-            <button className="btn btn-primary" type="button" onClick={() => void runChannelAction("send-email")}>
-              Send Email
+          {form.channels.includes("email") && (
+            <button
+              className="btn btn-primary"
+              type="button"
+              disabled={!canSendEmail || isSendingEmail || form.channelStatuses.email === "sent"}
+              onClick={() => void runChannelAction("send-email")}
+            >
+              {getEmailActionLabel(form.channelStatuses.email, isSendingEmail)}
             </button>
           )}
-          {form.channels.includes("email") && form.channelStatuses.email === "sent" && (
-            <span className="admin-assignment-count">Email: Sent</span>
-          )}
           {form.channels.includes("my_dashboard") && form.channelStatuses.my_dashboard !== "active" && (
-            <button className="btn btn-primary" type="button" onClick={() => void runChannelAction("publish")}>
+            <button className="btn btn-primary" type="button" disabled={!canPublishToPortal} onClick={() => void runChannelAction("publish")}>
               Publish to Portal
             </button>
           )}
@@ -4819,7 +4876,12 @@ async function adminContentRequest(
   options: { method: string; body?: unknown }
 ): Promise<
   | { ok: true; url?: string; message?: string; communication?: unknown }
-  | { ok: false; message: string }
+  | {
+      ok: false;
+      message: string;
+      communicationId?: string;
+      emailStatus?: "failed";
+    }
 > {
   const token = await getAccessToken();
 
@@ -4834,13 +4896,22 @@ async function adminContentRequest(
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
   const result = (await response.json().catch(() => null)) as
-    | { ok?: boolean; message?: string; url?: string; communication?: unknown }
+    | {
+        ok?: boolean;
+        message?: string;
+        url?: string;
+        communication?: unknown;
+        communicationId?: string;
+        emailStatus?: "failed";
+      }
     | null;
 
   if (!response.ok || !result?.ok) {
     return {
       ok: false,
       message: result?.message || "The request could not be completed.",
+      communicationId: result?.communicationId,
+      emailStatus: result?.emailStatus,
     };
   }
 
@@ -5748,20 +5819,62 @@ function getCommunicationChannelOptions(format: CommunicationFormat): Array<[str
 
 function getCommunicationAudienceOptions(format: CommunicationFormat): Array<[string, string]> {
   const base: Array<[string, string]> = [
-    ["all_members", "All Members"],
+    ["none", "No internal audience selected"],
+    ["all_members", "Everyone"],
     ["all_circle_members", "All Circle Members"],
     ["all_coaches", "All Coaches"],
     ["selected_circles", "Selected Circles"],
-    ["selected_members", "Selected Members"],
+    ["selected_members", "Specific Internal People"],
     ["selected_coaches", "Selected Coaches"],
     ["admins", "Admins"],
   ];
 
   if (format === "circle_update") {
-    return [["selected_circles", "Selected Circles"]];
+    return [
+      ["none", "No internal audience selected"],
+      ["selected_circles", "Selected Circles"],
+    ];
   }
 
   return base;
+}
+
+function resolveCommunicationInternalProfiles(
+  audienceScope: string,
+  profileIds: string[],
+  circleIds: string[],
+  usersPayload: AdminUsersPayload
+) {
+  const activeUsers = usersPayload.users.filter((user) => user.accountStatus === "active");
+  const selectedProfileIds = new Set(profileIds);
+  const selectedCircleIds = new Set(circleIds);
+  const selectedCircleCoachIds = new Set(
+    usersPayload.circles
+      .filter((circle) => selectedCircleIds.has(circle.id) && circle.status === "active")
+      .flatMap((circle) => circle.coachIds)
+  );
+
+  if (audienceScope === "all_members") return activeUsers;
+  if (audienceScope === "all_circle_members") {
+    return activeUsers.filter((user) => user.circleIds.length > 0);
+  }
+  if (audienceScope === "all_coaches") {
+    return activeUsers.filter((user) => user.roles.includes("coach"));
+  }
+  if (audienceScope === "admins") {
+    return activeUsers.filter((user) => user.roles.includes("admin"));
+  }
+  if (audienceScope === "selected_circles") {
+    return activeUsers.filter(
+      (user) =>
+        user.circleIds.some((circleId) => selectedCircleIds.has(circleId)) ||
+        selectedCircleCoachIds.has(user.id)
+    );
+  }
+  if (audienceScope === "selected_members" || audienceScope === "selected_coaches") {
+    return activeUsers.filter((user) => selectedProfileIds.has(user.id));
+  }
+  return [];
 }
 
 function splitTags(value: string) {

@@ -21,7 +21,10 @@ import {
   resolveCommunicationSender,
   serializeReplyToEmails,
 } from "../communications/senders";
-import { cleanExternalRecipientEmails } from "../communications/recipients";
+import {
+  cleanExternalRecipientEmails,
+  hasExplicitInternalAudience,
+} from "../communications/recipients";
 
 export type AdminContentStatus = "draft" | "published" | "archived";
 export type AdminContentType = ContentItemKind;
@@ -1227,6 +1230,7 @@ export async function sendAdminCommunicationEmail(
   communicationId: string | null,
   values: CommunicationValues
 ) {
+  assertCommunicationEmailAudience(values);
   const saved = communicationId
     ? await updateAdminCommunication(adminUserId, communicationId, values)
     : await createAdminCommunication(adminUserId, values);
@@ -1238,7 +1242,10 @@ export async function sendAdminCommunicationEmail(
     if (!emailDelivery) throw new Error("Email delivery is not configured for this Communication.");
   } catch (error) {
     await setCommunicationChannelStatus(saved.id, "email", "failed");
-    throw error;
+    throw new CommunicationEmailSendError(
+      error instanceof Error ? error.message : "Email could not be sent.",
+      saved.id
+    );
   }
 
   const channelStatus = emailDelivery.accepted > 0 ? "sent" : "failed";
@@ -1259,6 +1266,38 @@ export async function sendAdminCommunicationEmail(
     .single();
   if (error) throw new Error(`Communication could not be refreshed: ${error.message}`);
   return { ...(await mapCommunication(data as CommunicationRow)), emailDelivery };
+}
+
+export class CommunicationEmailSendError extends Error {
+  readonly communicationId: string;
+
+  constructor(message: string, communicationId: string) {
+    super(message);
+    this.name = "CommunicationEmailSendError";
+    this.communicationId = communicationId;
+  }
+}
+
+export function assertCommunicationEmailAudience(values: CommunicationValues) {
+  if (!trimText(values.subject)) throw new Error("A subject is required before sending email.");
+  if (!trimText(values.bodyContent) && !trimText(values.summary)) {
+    throw new Error("Email body content is required before sending.");
+  }
+  const audienceScope = parseCommunicationAudience(values.audienceScope);
+  const externalEmails = cleanExternalRecipientEmails(values.externalRecipientEmails || []);
+  if (
+    externalEmails.length === 0 &&
+    !hasExplicitInternalAudience(audienceScope, values.profileIds, values.circleIds)
+  ) {
+    throw new Error("Choose at least one internal or external email recipient.");
+  }
+}
+
+export function assertCommunicationPortalAudience(values: CommunicationValues) {
+  const audienceScope = parseCommunicationAudience(values.audienceScope);
+  if (!hasExplicitInternalAudience(audienceScope, values.profileIds, values.circleIds)) {
+    throw new Error("Choose an internal audience before publishing a Site Message.");
+  }
 }
 
 async function setCommunicationChannelStatus(
@@ -1651,7 +1690,7 @@ async function mapCommunication(row: CommunicationRow): Promise<AdminCommunicati
     communicationType: row.communication_type || "announcement",
     channel: row.channel || "dashboard",
     dashboardPresentation: parseDashboardPresentation(row.dashboard_presentation),
-    audienceScope: row.audience_scope || "all_members",
+    audienceScope: row.audience_scope || "none",
     senderId: row.sender_id || "",
     senderName: sender?.displayName || "",
     replyToEmails: parseStoredReplyToEmails(row.reply_to_email || sender?.email || ""),
@@ -1977,6 +2016,7 @@ function parseDashboardPresentation(
 function parseCommunicationAudience(value: string | null | undefined) {
   const normalized = trimText(value).toLowerCase();
   const allowed = [
+    "none",
     "all_members",
     "all_circle_members",
     "all_coaches",
@@ -1986,7 +2026,7 @@ function parseCommunicationAudience(value: string | null | undefined) {
     "admins",
   ];
 
-  return allowed.includes(normalized) ? normalized : "all_members";
+  return allowed.includes(normalized) ? normalized : "none";
 }
 
 function cleanCommunicationChannels(values: Array<string | null | undefined>) {
@@ -2245,7 +2285,9 @@ async function syncCommunicationChildren(
     circle_id: string | null;
     profile_id: string | null;
   }> =
-    input.audienceScope === "selected_circles"
+    input.audienceScope === "none"
+      ? []
+      : input.audienceScope === "selected_circles"
       ? validCircleIds.map((circleId) => ({
           communication_id: communicationId,
           audience_type: "selected_circle",

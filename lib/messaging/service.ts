@@ -398,6 +398,9 @@ export async function deliverCommunicationToPortal(
   }
 
   const participantIds = await resolveCommunicationAudienceProfileIds(communicationId, communication.audience_scope);
+  if (participantIds.length === 0) {
+    throw new Error("Choose an internal audience before publishing a Site Message.");
+  }
   const activeIds = Array.from(new Set([adminProfileId, ...participantIds]));
   const contentBody = cleanMessageBody(
     communication.body_content || communication.summary || communication.subject || communication.title

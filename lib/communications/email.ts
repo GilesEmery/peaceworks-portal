@@ -95,6 +95,9 @@ export async function deliverCommunicationEmail(
     internalEmails,
     (externalRows || []).map((row) => row.email)
   );
+  if (emails.length === 0) {
+    throw new Error("Choose at least one valid internal or external email recipient.");
+  }
 
   const result = await sendPeaceWorksEmails(
     emails,

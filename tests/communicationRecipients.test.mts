@@ -2,14 +2,73 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   cleanExternalRecipientEmails,
+  buildEmailSendConfirmation,
+  hasExplicitInternalAudience,
+  getEmailActionLabel,
   mergeRecipientEmails,
   normalizeRecipientEmail,
+  summarizeRecipientEmails,
 } from "../lib/communications/recipients.ts";
 
 test("external recipient addresses are normalized and deduplicated", () => {
   assert.deepEqual(cleanExternalRecipientEmails([" Outside@Example.com ", "outside@example.com"]), [
     "outside@example.com",
   ]);
+});
+
+test("email action labels distinguish ready, sending, sent, and failed states", () => {
+  assert.equal(getEmailActionLabel("draft", false), "Send Email");
+  assert.equal(getEmailActionLabel("draft", true), "Sending...");
+  assert.equal(getEmailActionLabel("sent", false), "Sent");
+  assert.equal(getEmailActionLabel("failed", false), "Retry Email");
+});
+
+test("send confirmation identifies external-only, mixed, and Everyone audiences", () => {
+  assert.deepEqual(buildEmailSendConfirmation("none", 0, ["outside@example.com"]), {
+    title: "Send this email to 1 external recipient?",
+    description: "External email: outside@example.com",
+    confirmLabel: "Send Email",
+  });
+  assert.match(
+    buildEmailSendConfirmation("selected_members", 2, ["outside@example.com"]).title,
+    /2 PeaceWorks recipients and 1 external recipient/
+  );
+  assert.equal(
+    buildEmailSendConfirmation("all_members", 127, []).title,
+    "Send this email to Everyone — 127 recipients?"
+  );
+});
+
+test("new communications have no implicit internal audience", () => {
+  assert.equal(hasExplicitInternalAudience("none"), false);
+  assert.equal(hasExplicitInternalAudience(""), false);
+  assert.equal(hasExplicitInternalAudience("all_members"), true);
+});
+
+test("selected internal audiences require explicit targets", () => {
+  assert.equal(hasExplicitInternalAudience("selected_members", []), false);
+  assert.equal(hasExplicitInternalAudience("selected_members", ["profile-1"]), true);
+  assert.equal(hasExplicitInternalAudience("selected_circles", [], []), false);
+  assert.equal(hasExplicitInternalAudience("selected_circles", [], ["circle-1"]), true);
+});
+
+test("external-only and mixed summaries keep counts separate after deduplication", () => {
+  assert.deepEqual(summarizeRecipientEmails([], ["outside@example.com"]), {
+    internalEmails: [],
+    externalEmails: ["outside@example.com"],
+    total: 1,
+  });
+  assert.deepEqual(
+    summarizeRecipientEmails(
+      ["member@peaceworks.network"],
+      ["MEMBER@peaceworks.network", "outside@example.com"]
+    ),
+    {
+      internalEmails: ["member@peaceworks.network"],
+      externalEmails: ["outside@example.com"],
+      total: 2,
+    }
+  );
 });
 
 test("invalid external recipient addresses are rejected", () => {
