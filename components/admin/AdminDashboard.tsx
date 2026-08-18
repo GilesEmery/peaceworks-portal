@@ -33,9 +33,13 @@ import { routes } from "../../lib/navigation";
 import {
   buildEmailSendConfirmation,
   getEmailActionLabel,
-  shouldResetComposerAfterEmailSend,
   summarizeRecipientEmails,
 } from "../../lib/communications/recipients";
+import {
+  applyFailedEmailSend,
+  applySuccessfulEmailSend,
+  getCommunicationPresentationStatus,
+} from "../../lib/communications/composer";
 import type { PeaceAssessmentResult } from "../../lib/peaceAssessmentScoring";
 import type {
   AdminAnalyticsPayload,
@@ -2979,30 +2983,25 @@ function CommunicationsSection({
       );
       if (!result.ok) {
         if (action === "send-email" && result.emailStatus === "failed") {
-          setForm((current) => ({
-            ...current,
-            id: result.communicationId || current.id,
-            channelStatuses: { ...current.channelStatuses, email: "failed" },
-          }));
+          setForm((current) => applyFailedEmailSend(current, result.communicationId));
         }
         setMessage({ type: "error", text: result.message });
         return;
       }
       const communication = result.communication as AdminCommunication | undefined;
-      if (communication) {
-        const channelStatuses = communication.channelStatuses || {};
-        if (
-          action === "send-email" &&
-          shouldResetComposerAfterEmailSend(communication.channels, channelStatuses)
-        ) {
+      if (action === "send-email") {
+        const nextForm = applySuccessfulEmailSend(form, emptyForm, communication);
+        if (nextForm === emptyForm) {
           resetComposer({ preserveMessage: true });
         } else {
+          setForm(nextForm);
+        }
+      } else if (communication) {
           setForm((current) => ({
             ...current,
             id: communication.id,
-            channelStatuses,
+            channelStatuses: communication.channelStatuses || {},
           }));
-        }
       }
       setMessage({ type: "success", text: result.message || "Communication channel updated." });
       await loadCommunications();
@@ -3957,6 +3956,8 @@ function CommunicationsSection({
                 title={communication.title}
                 detail={communication.summary || communication.bodyContent}
                 status={communication.status}
+                statusLabel={getCommunicationPresentationStatus(communication)}
+                showPublishAction={communication.channels.includes("my_dashboard")}
                 meta={[
                   communication.communicationType,
                   communication.channel,
@@ -4569,6 +4570,8 @@ function ContentRecordCard({
   title,
   detail,
   status,
+  statusLabel,
+  showPublishAction = true,
   meta,
   externalUrl,
   fileOpenEndpoint,
@@ -4585,6 +4588,8 @@ function ContentRecordCard({
   title: string;
   detail: string;
   status: ContentStatus;
+  statusLabel?: string;
+  showPublishAction?: boolean;
   meta: string[];
   externalUrl?: string;
   fileOpenEndpoint?: string;
@@ -4620,7 +4625,7 @@ function ContentRecordCard({
         )}
       </div>
       <div>
-        <span>{formatContentStatus(status)}</span>
+        <span>{statusLabel || formatContentStatus(status)}</span>
         <h3>{title}</h3>
         <p>{detail || "No description yet."}</p>
         <small>{meta.filter(Boolean).join(" · ") || "No category"}</small>
@@ -4644,7 +4649,7 @@ function ContentRecordCard({
             <Copy size={15} /> Duplicate
           </button>
         )}
-        {status !== "published" && (
+        {showPublishAction && status !== "published" && (
           <button className="admin-link-button" type="button" onClick={() => onStatus("published")}>
             <CheckCircle size={15} /> Publish
           </button>

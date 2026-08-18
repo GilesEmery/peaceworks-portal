@@ -66,7 +66,7 @@ test("canonical sent state is loaded on edit and preserved by later saves", asyn
 
 test("successful email send resets only when no portal draft remains", async () => {
   const source = await readFile(adminDashboardUrl, "utf8");
-  assert.match(source, /action === "send-email"[\s\S]*shouldResetComposerAfterEmailSend/);
+  assert.match(source, /action === "send-email"[\s\S]*applySuccessfulEmailSend/);
   assert.match(source, /resetComposer\(\{ preserveMessage: true \}\)/);
   assert.match(source, /else \{[\s\S]*id: communication\.id,[\s\S]*channelStatuses/);
 });
@@ -101,4 +101,6 @@ test("history shows only statuses for channels actually selected", async () => {
   assert.match(source, /communication\.channels\.includes\("email"\)[\s\S]*`Email:/);
   assert.match(source, /communication\.channels\.includes\("my_dashboard"\)[\s\S]*`Site Message:/);
   assert.match(source, /communication\.channels\.includes\("email"\) && communication\.sentAt/);
+  assert.match(source, /statusLabel=\{getCommunicationPresentationStatus\(communication\)\}/);
+  assert.match(source, /showPublishAction=\{communication\.channels\.includes\("my_dashboard"\)\}/);
 });
