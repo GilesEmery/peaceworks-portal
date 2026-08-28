@@ -57,12 +57,12 @@ export default function HomePage() {
             <p className={styles.heroNote}>Because the way people carry pressure eventually becomes the way a culture feels.</p>
             <div className={styles.buttonRow}><Link className={`${styles.button} ${styles.buttonDark}`} href={routes.howItWorks}>See How PeaceWorks Works</Link><Link className={`${styles.button} ${styles.buttonLight}`} href={routes.peaceAssessment}>Take the Peace Assessment</Link></div>
           </div>
-          <div className={styles.heroVisual} aria-hidden="true"><div className={styles.heroGlow} /><div className={styles.orbits}><div className={`${styles.orbit} ${styles.orbitOuter}`}><span /></div><div className={`${styles.orbit} ${styles.orbitMiddle}`}><span /></div><div className={`${styles.orbit} ${styles.orbitInner}`}><span /></div><div className={styles.logoWrap}><Image src="/images/home/peaceworks-circle.svg" alt="" width={420} height={420} priority /></div></div></div>
+          <div className={styles.heroVisual} aria-hidden="true"><div className={styles.heroGlow} /><div className={styles.orbits}><div className={`${styles.orbit} ${styles.orbitOuter}`} /><div className={`${styles.orbit} ${styles.orbitMiddle}`} /><div className={`${styles.orbit} ${styles.orbitInner}`} /><div className={styles.logoWrap}><Image src="/images/home/peaceworks-circle.svg" alt="" width={420} height={420} priority /></div></div></div>
         </div>
       </section>
 
       <section className={styles.entrySection} aria-label="Ways to begin">
-        <div className={`${styles.container} ${styles.entryGrid}`}>{entryPaths.map(([label, title, copy, linkText, href], index) => <Link className={styles.entryCard} href={href} key={title}><span className={styles.entryNumber}>{String(index + 1).padStart(2, "0")}</span><small>{label}</small><h2>{title}</h2><p>{copy}</p><strong>{linkText} <span aria-hidden="true">→</span></strong></Link>)}</div>
+        <div className={`${styles.container} ${styles.entryGrid}`}>{entryPaths.map(([label, title, copy, linkText, href], index) => <Link className={styles.entryCard} href={href} key={title}><span className={styles.entryNumber}>{String(index + 1).padStart(2, "0")}</span><small>{label}</small><h2>{title}</h2><p>{copy}</p><strong>{linkText}</strong></Link>)}</div>
       </section>
 
       <section className={styles.section}>
@@ -77,7 +77,7 @@ export default function HomePage() {
         <div className={`${styles.container} ${styles.ideaPanel}`}>
           <Eyebrow>The PeaceWorks Idea</Eyebrow><h2>Build a Relational Operating System.</h2><p className={styles.ideaCopy}>Organizations already have systems for strategy, finance, operations, and execution. PeaceWorks helps build the relational practices that shape how people listen, respond, repair, and restore trust when pressure rises.</p>
           <ol className={styles.practiceList}>{practices.map((practice, index) => <li key={practice}><span>{String(index + 1).padStart(2, "0")}</span>{practice}</li>)}</ol>
-          <div className={styles.ideaClose}><strong>Healthy cultures are not built by accident. They are practiced.</strong><Link href={routes.howItWorks}>See How PeaceWorks Works <span aria-hidden="true">→</span></Link></div>
+          <div className={styles.ideaClose}><strong>Healthy cultures are not built by accident. They are practiced.</strong><Link className={`${styles.button} ${styles.buttonLight}`} href={routes.howItWorks}>See How PeaceWorks Works</Link></div>
         </div>
       </section>
 
@@ -108,7 +108,7 @@ export default function HomePage() {
           <div className={styles.cultureIntro}><Eyebrow light>Culture</Eyebrow><h2>Culture is relational before it is operational.</h2><p>Strategies, systems, and values matter. But people experience culture in the moments between them: how leaders carry pressure, how teams listen, how disagreement is handled, how truth is spoken, and how trust is repaired.</p></div>
           <blockquote>Healthy culture is not simply what an organization says it values. It is what people experience in relationship with one another.</blockquote>
           <div className={styles.capabilityGrid}>{cultureCapabilities.map(([title, copy], index) => <article key={title}><span>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{copy}</p></article>)}</div>
-          <Link className={styles.lightLink} href={routes.organizations}>Explore PeaceWorks for Organizations <span aria-hidden="true">→</span></Link>
+          <Link className={`${styles.button} ${styles.buttonLight} ${styles.cultureButton}`} href={routes.organizations}>Explore PeaceWorks for Organizations</Link>
         </div>
       </section>
 
