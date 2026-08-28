@@ -100,8 +100,17 @@ export default function PeaceAssessmentLanding(props: PeaceAssessmentLandingProp
 
       <section className={styles.section}>
         <div className={`${styles.container} ${styles.profilePanel}`}>
-          <div className={styles.profileCopy}><div className={styles.eyebrow}>Your Results</div><h2>A profile built around how you experience and respond to peace.</h2><p>Your answers combine into a personalized Peace Profile that brings together your core peace strategy, pressure response, and processing style.</p><p>PeaceWorks includes 48 Peace Profiles, each offering more specific language for strengths, pressure patterns, relational impact, and growth.</p></div>
-          <div className={styles.profileVisual} aria-hidden="true"><div className={styles.profileRing}><span>Peace strategy</span><div><span>Pressure response</span><strong>Peace<br />Profile</strong><span>Processing style</span></div><span>Relational impact</span></div></div>
+          <div className={styles.profileCopy}><div className={styles.eyebrow}>Your Results</div><h2>A profile built around how you experience and respond to peace.</h2><p>Your answers combine into a personalized Peace Profile that brings together your peace strategy, pressure response, processing style, and relational impact.</p><p>PeaceWorks includes 12 Peace Profiles, each offering more specific language for strengths, pressure patterns, relational impact, and growth.</p></div>
+          <div className={styles.profileVisual} aria-hidden="true">
+            <div className={styles.profileDiagram}>
+              <div className={styles.profileOrbit} />
+              <div className={`${styles.profileDimension} ${styles.strategy}`}>Peace<span>Strategy</span></div>
+              <div className={`${styles.profileDimension} ${styles.response}`}>Pressure<span>Response</span></div>
+              <div className={`${styles.profileDimension} ${styles.processing}`}>Processing<span>Style</span></div>
+              <div className={`${styles.profileDimension} ${styles.impact}`}>Relational<span>Impact</span></div>
+              <strong className={styles.profileCore}><small>Your</small>Peace<br />Profile</strong>
+            </div>
+          </div>
         </div>
       </section>
 
