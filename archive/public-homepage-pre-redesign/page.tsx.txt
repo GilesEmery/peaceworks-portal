@@ -5,13 +5,13 @@ import SiteHeader from "../components/layout/SiteHeader";
 import HomePage from "../components/public/home/HomePage";
 
 export const metadata: Metadata = {
-  title: "PeaceWorks | Make Peace Practical",
+  title: "PeaceWorks | Peace Made Practical",
   description:
-    "PeaceWorks helps people strengthen peace, relationships, and organizational culture through practical tools, guided practice, Circles, and organizational work.",
+    "PeaceWorks equips business leaders to build cultures where trust holds under pressure.",
   openGraph: {
-    title: "PeaceWorks | Make Peace Practical",
+    title: "PeaceWorks | Peace Made Practical",
     description:
-      "Practical tools and guided experiences for people, relationships, and organizational cultures that can hold under pressure.",
+      "A relational operating system for calm leadership, conflict repair, and cultures where trust holds under pressure.",
     type: "website",
   },
 };
@@ -25,3 +25,5 @@ export default function Home() {
     </main>
   );
 }
+
+
