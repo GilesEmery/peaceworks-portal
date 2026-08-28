@@ -32,31 +32,16 @@ export const routes = {
 } as const;
 
 export const publicPrimaryNavigation: NavigationItem[] = [
-  { label: "About", href: routes.about },
-  { label: "ROI Calculator", href: routes.roiCalculator },
+  { label: "How It Works", href: routes.howItWorks },
+  { label: "For Organizations", href: routes.organizations },
   { label: "Join a Circle", href: routes.join },
   { label: "Assessments", href: routes.assessments },
-  { label: "My Dashboard", href: routes.myDashboard },
+  { label: "About", href: routes.about },
 ];
 
 export const assessmentNavigation: NavigationItem[] = [
   { label: "Peace Assessment", href: routes.peaceAssessment },
 ];
-
-export function getMobilePrimaryNavigation(isAuthenticated: boolean) {
-  const navigation = publicPrimaryNavigation.filter(
-    (item) => item.href !== routes.assessments
-  );
-
-  if (!isAuthenticated) {
-    return navigation.filter((item) => item.href !== routes.myDashboard);
-  }
-
-  return [
-    ...navigation.filter((item) => item.href === routes.myDashboard),
-    ...navigation.filter((item) => item.href !== routes.myDashboard),
-  ];
-}
 
 export const roleAccountNavigation: RoleNavigationItem[] = [
   { label: "Coach Dashboard", href: routes.coach, role: "coach" },

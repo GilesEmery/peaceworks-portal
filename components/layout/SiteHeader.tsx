@@ -9,8 +9,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { usePwaInstall } from "../../hooks/usePwaInstall";
 import {
   assessmentNavigation,
-  dashboardLoginHref,
-  getMobilePrimaryNavigation,
   isActivePath,
   isAssessmentPath,
   publicPrimaryNavigation,
@@ -122,14 +120,6 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
     router.push(path);
   }
 
-  function getPrimaryHref(href: string) {
-    if (href === routes.myDashboard && !isAuthenticated) {
-      return dashboardLoginHref(routes.myDashboard);
-    }
-
-    return href;
-  }
-
   function canShowRoleLink(role: string) {
     if (role === "coach") return canViewCoachDashboard;
     if (role === "project_manager") return canViewProjectDashboard;
@@ -203,37 +193,33 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
         </button>
 
         <nav className="site-nav desktop-site-nav" aria-label="Primary navigation">
-          {publicPrimaryNavigation
-            .filter((item) => item.href !== routes.assessments)
-            .slice(0, 3)
-            .map((item) => (
+          <div className="public-nav-links">
+            {publicPrimaryNavigation.map((item) =>
+              item.href === routes.assessments ? (
+                <AssessmentsDropdown key={item.href} pathname={pathname} />
+              ) : (
+                <Link
+                  key={item.href}
+                  className={isActivePath(pathname, item.href) ? "active" : ""}
+                  href={item.href}
+                >
+                  {item.label}
+                </Link>
+              )
+            )}
+          </div>
+
+          <div className="header-utility-nav">
+            {isAuthenticated && (
               <Link
-                key={item.href}
-                className={isActivePath(pathname, item.href) ? "active" : ""}
-                href={getPrimaryHref(item.href)}
+                className={isActivePath(pathname, routes.myDashboard) ? "active" : ""}
+                href={routes.myDashboard}
               >
-                {item.label}
+                My Dashboard
               </Link>
-            ))}
+            )}
 
-          <AssessmentsDropdown pathname={pathname} />
-
-          {publicPrimaryNavigation
-            .filter(
-              (item) =>
-                item.href === routes.myDashboard && isAuthenticated
-            )
-            .map((item) => (
-              <Link
-                key={item.href}
-                className={isActivePath(pathname, item.href) ? "active" : ""}
-                href={getPrimaryHref(item.href)}
-              >
-                {item.label}
-              </Link>
-            ))}
-
-          {showSignOut && isAuthenticated ? (
+            {showSignOut && isAuthenticated ? (
             <>
               <MessagesNavigationLink />
               <div className="profile-menu" ref={menuRef}>
@@ -297,7 +283,7 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
               )}
               </div>
             </>
-          ) : (
+            ) : (
             <Link
               className={`profile-menu-button profile-login-link${
                 isActivePath(pathname, routes.login) ? " active" : ""
@@ -309,7 +295,8 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
               </span>
               <span className="profile-name">Login</span>
             </Link>
-          )}
+            )}
+          </div>
         </nav>
 
         {mobileMenuOpen && (
@@ -366,61 +353,60 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
               <nav className="mobile-drawer-nav" aria-label="Mobile navigation">
                 <div className="mobile-nav-group">
                   <span className="mobile-nav-label">Primary</span>
-                  {getMobilePrimaryNavigation(isAuthenticated).map((item) => (
-                    <Link
-                      key={item.href}
-                      className={
-                        isActivePath(pathname, item.href) ? "active" : ""
-                      }
-                      href={getPrimaryHref(item.href)}
-                      onClick={handleMobileLinkClick}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
+                  {publicPrimaryNavigation.map((item) =>
+                    item.href === routes.assessments ? (
+                      <div
+                        key={item.href}
+                        className={`mobile-assessment-group ${
+                          isAssessmentPath(pathname) ? "active" : ""
+                        }`}
+                      >
+                        <button
+                          className={isAssessmentPath(pathname) ? "active" : ""}
+                          type="button"
+                          aria-controls={`${mobileDrawerId}-assessments`}
+                          aria-expanded={mobileAssessmentsOpen}
+                          onClick={() =>
+                            setMobileAssessmentsOpen((current) => !current)
+                          }
+                        >
+                          <span>Assessments</span>
+                          <span aria-hidden="true">▾</span>
+                        </button>
 
-                  <div
-                    className={`mobile-assessment-group ${
-                      isAssessmentPath(pathname) ? "active" : ""
-                    }`}
-                  >
-                    <div className="mobile-assessment-row">
+                        {mobileAssessmentsOpen && (
+                          <div
+                            className="mobile-assessment-links"
+                            id={`${mobileDrawerId}-assessments`}
+                          >
+                            {assessmentNavigation.map((assessment) => (
+                              <Link
+                                key={assessment.href}
+                                className={
+                                  isActivePath(pathname, assessment.href) ? "active" : ""
+                                }
+                                href={assessment.href}
+                                onClick={handleMobileLinkClick}
+                              >
+                                {assessment.label}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
                       <Link
-                        className={isActivePath(pathname, routes.assessments) ? "active" : ""}
-                        href={routes.assessments}
+                        key={item.href}
+                        className={
+                          isActivePath(pathname, item.href) ? "active" : ""
+                        }
+                        href={item.href}
                         onClick={handleMobileLinkClick}
                       >
-                        Assessments
+                        {item.label}
                       </Link>
-                      <button
-                        type="button"
-                        aria-label="Toggle assessments menu"
-                        aria-expanded={mobileAssessmentsOpen}
-                        onClick={() =>
-                          setMobileAssessmentsOpen((current) => !current)
-                        }
-                      >
-                        ▾
-                      </button>
-                    </div>
-
-                    {mobileAssessmentsOpen && (
-                      <div className="mobile-assessment-links">
-                        {assessmentNavigation.map((item) => (
-                          <Link
-                            key={item.href}
-                            className={
-                              isActivePath(pathname, item.href) ? "active" : ""
-                            }
-                            href={item.href}
-                            onClick={handleMobileLinkClick}
-                          >
-                            {item.label}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                    )
+                  )}
                 </div>
 
                 <div className="mobile-nav-divider" />
@@ -430,6 +416,13 @@ export default function SiteHeader({ showSignOut = true }: SiteHeaderProps) {
 
                   {showSignOut && isAuthenticated ? (
                     <>
+                      <Link
+                        className={isActivePath(pathname, routes.myDashboard) ? "active" : ""}
+                        href={routes.myDashboard}
+                        onClick={handleMobileLinkClick}
+                      >
+                        My Dashboard
+                      </Link>
                       <MessagesNavigationLink mobile onClick={handleMobileLinkClick} />
                       <Link
                         className={isActivePath(pathname, routes.account) ? "active" : ""}

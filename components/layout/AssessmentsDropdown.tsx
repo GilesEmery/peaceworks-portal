@@ -1,13 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 
-import {
-  assessmentNavigation,
-  isAssessmentPath,
-  routes,
-} from "../../lib/navigation";
+import { assessmentNavigation, isAssessmentPath } from "../../lib/navigation";
 
 type AssessmentsDropdownProps = {
   pathname: string;
@@ -19,6 +15,8 @@ export default function AssessmentsDropdown({
   onNavigate,
 }: AssessmentsDropdownProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
+  const dropdownId = useId();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -28,7 +26,10 @@ export default function AssessmentsDropdown({
     }
 
     function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape" && open) {
+        setOpen(false);
+        toggleRef.current?.focus();
+      }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -38,7 +39,7 @@ export default function AssessmentsDropdown({
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
     };
-  }, []);
+  }, [open]);
 
   function handleNavigate() {
     setOpen(false);
@@ -53,33 +54,29 @@ export default function AssessmentsDropdown({
       ref={menuRef}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+      }}
     >
-      <Link
-        className="assessment-nav-link"
-        href={routes.assessments}
-        onClick={handleNavigate}
-        onFocus={() => setOpen(true)}
-      >
-        Assessments
-      </Link>
       <button
+        ref={toggleRef}
         className="assessment-nav-toggle"
         type="button"
-        aria-label="Open assessments menu"
-        aria-haspopup="menu"
+        aria-controls={dropdownId}
         aria-expanded={open}
+        onFocus={() => setOpen(true)}
         onClick={() => setOpen((current) => !current)}
       >
-        ▾
+        <span>Assessments</span>
+        <span aria-hidden="true">▾</span>
       </button>
 
       {open && (
-        <div className="assessment-nav-dropdown" role="menu">
+        <div className="assessment-nav-dropdown" id={dropdownId}>
           {assessmentNavigation.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              role="menuitem"
               onClick={handleNavigate}
             >
               {item.label}
