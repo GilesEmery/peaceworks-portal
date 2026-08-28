@@ -8,7 +8,7 @@ const paymentDetails = {
   "credit-card": {
     eyebrow: "Join by Credit Card",
     intro:
-      "You are completing the PeaceWorks cohort signup using a credit card. Fill out the form below to submit your information and begin your membership.",
+      "You are completing the PeaceWorks Circle signup using a credit card. Fill out the form below to submit your information and begin your membership.",
     alternative:
       "If you meant to register by ACH or bank account instead, return to the Join page and choose that option there.",
     heading: "Credit card signup",
@@ -18,7 +18,7 @@ const paymentDetails = {
   ach: {
     eyebrow: "Join by ACH / Bank Account",
     intro:
-      "You are completing the PeaceWorks cohort signup using ACH or bank account payment. Fill out the form below to submit your information and begin your membership.",
+      "You are completing the PeaceWorks Circle signup using ACH or bank account payment. Fill out the form below to submit your information and begin your membership.",
     alternative:
       "If you meant to register by credit card instead, return to the Join page and choose that option there.",
     heading: "ACH / bank account signup",
@@ -40,12 +40,12 @@ export default function JoinPaymentPage({ method }: JoinPaymentPageProps) {
         <div className={`${styles.container} ${styles.heroGrid}`}>
           <div className={styles.heroCopy}>
             <div className={styles.eyebrow}>{details.eyebrow}</div>
-            <h1 className={`${styles.display} ${styles.paymentHeroTitle}`}>
-              Complete your PeaceWorks cohort registration.
+            <h1 className={styles.paymentHeroTitle}>
+              Complete your PeaceWorks Circle registration.
             </h1>
             <p>{details.intro}</p>
-            <div className={styles.btnRow}>
-              <Link className={`${styles.btn} ${styles.btnSecondary}`} href={routes.join}>
+            <div className={styles.buttonRow}>
+              <Link className={`${styles.button} ${styles.buttonLight}`} href={routes.join}>
                 Back to Join Page
               </Link>
             </div>
@@ -85,7 +85,7 @@ export default function JoinPaymentPage({ method }: JoinPaymentPageProps) {
               </div>
               <p>
                 Complete the secure form below to register for the PeaceWorks
-                cohort. Your spot will be tied to the information you submit
+                Circle. Your spot will be tied to the information you submit
                 here.
               </p>
             </div>

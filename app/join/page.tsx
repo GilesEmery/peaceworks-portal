@@ -5,13 +5,13 @@ import SiteHeader from "../../components/layout/SiteHeader";
 import JoinPage from "../../components/public/join/JoinPage";
 
 export const metadata: Metadata = {
-  title: "Join PeaceWorks | PeaceWorks",
+  title: "Join a PeaceWorks Circle | PeaceWorks",
   description:
-    "Join the PeaceWorks cohort for monthly roundtables, practical tools, and guided one-on-one learning.",
+    "Join a PeaceWorks Circle—a trusted monthly space to understand yourself, practice peace, strengthen relationships, and grow alongside others.",
   openGraph: {
-    title: "Join PeaceWorks",
+    title: "Join a PeaceWorks Circle",
     description:
-      "A cohort for leaders who want healthier, more resilient cultures.",
+      "Join a trusted monthly Circle where reflection, honest conversation, and practical tools help you build peace and strengthen relationships.",
     type: "website",
   },
 };

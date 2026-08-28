@@ -7,11 +7,11 @@ import JoinPaymentPage from "../../../components/public/join/JoinPaymentPage";
 export const metadata: Metadata = {
   title: "Join by ACH | PeaceWorks",
   description:
-    "Complete your PeaceWorks cohort registration securely by ACH or bank account.",
+    "Complete your PeaceWorks Circle registration securely by ACH or bank account.",
   openGraph: {
     title: "Join PeaceWorks by ACH",
     description:
-      "Complete your PeaceWorks cohort registration securely by ACH or bank account.",
+      "Complete your PeaceWorks Circle registration securely by ACH or bank account.",
     type: "website",
   },
 };
