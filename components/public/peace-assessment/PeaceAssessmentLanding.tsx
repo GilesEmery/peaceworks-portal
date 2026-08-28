@@ -76,9 +76,6 @@ export default function PeaceAssessmentLanding(props: PeaceAssessmentLandingProp
               <div className={`${styles.orbit} ${styles.orbitMiddle}`} />
               <div className={`${styles.orbit} ${styles.orbitInner}`} />
               <div className={styles.logoWrap}><Image src="/images/home/peaceworks-circle.svg" alt="" width={420} height={420} priority /></div>
-              <span className={`${styles.dimensionDot} ${styles.dotOne}`} />
-              <span className={`${styles.dimensionDot} ${styles.dotTwo}`} />
-              <span className={`${styles.dimensionDot} ${styles.dotThree}`} />
             </div>
           </div>
         </div>
