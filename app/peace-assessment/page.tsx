@@ -21,6 +21,7 @@ import SiteFooter from "../../components/layout/SiteFooter";
 import QuestionCard from "../../components/assessment/QuestionCard";
 import ProgressBar from "../../components/assessment/ProgressBar";
 import ResultModal from "../../components/assessment/ResultModal";
+import PeaceAssessmentLanding from "../../components/public/peace-assessment/PeaceAssessmentLanding";
 import { requestConfirmation } from "../../components/ui/FeedbackCenter";
 import { peaceAssessmentProfiles } from "../../data/peaceAssessmentProfiles";
 import { buildPeaceReportProfile } from "../../data/peaceReport";
@@ -293,90 +294,14 @@ export default function PeaceAssessmentPage() {
           <SiteHeader />
         </div>
 
-        <section className="peace-assessment-landing">
-          <div className="container">
-            <div className="peace-assessment-landing-card">
-              <div>
-                <div className="eyebrow">PeaceWorks Assessments</div>
-                <h1>Peace Assessment</h1>
-                <p>
-                  Discover how you seek, lose, protect, and restore peace when
-                  pressure rises. Your results give you a personalized profile,
-                  reflection language, and practices for growth.
-                </p>
-              </div>
-
-              <div className="peace-assessment-benefits">
-                <div>
-                  <strong>Your peace anchors</strong>
-                  <span>
-                    See the needs and strategies that help you feel grounded.
-                  </span>
-                </div>
-                <div>
-                  <strong>Your pressure response</strong>
-                  <span>
-                    Recognize whether you tend to please, prove, push, or pull
-                    away.
-                  </span>
-                </div>
-                <div>
-                  <strong>Your relational impact</strong>
-                  <span>
-                    Explore strengths, growth edges, and practices for your
-                    relationships.
-                  </span>
-                </div>
-              </div>
-
-              <div className="peace-assessment-actions">
-                {!userId ? (
-                  <>
-                    <button
-                      className="btn btn-primary"
-                      type="button"
-                      onClick={() => router.push(routes.login)}
-                    >
-                      Sign In to Begin
-                    </button>
-                    <button
-                      className="btn btn-secondary"
-                      type="button"
-                      onClick={() => router.push(routes.login)}
-                    >
-                      Create an Account to Begin
-                    </button>
-                  </>
-                ) : latestResult ? (
-                  <>
-                    <button
-                      className="btn btn-primary"
-                      type="button"
-                      onClick={openLatestResult}
-                    >
-                      View Results
-                    </button>
-                    <button
-                      className="btn btn-secondary"
-                      type="button"
-                      onClick={startAssessment}
-                    >
-                      Retake Assessment
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    className="btn btn-primary"
-                    type="button"
-                    onClick={startAssessment}
-                  >
-                    Start Assessment
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
+        <PeaceAssessmentLanding
+          isAuthenticated={Boolean(userId)}
+          hasResult={Boolean(latestResult)}
+          onSignIn={() => router.push(routes.login)}
+          onCreateAccount={() => router.push(routes.login)}
+          onStart={startAssessment}
+          onViewResult={openLatestResult}
+        />
 
         <SiteFooter />
 
