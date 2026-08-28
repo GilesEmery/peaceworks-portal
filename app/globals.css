@@ -167,6 +167,15 @@ a {
   backdrop-filter: blur(14px);
 }
 
+.assessment-nav-dropdown::before {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 9px;
+  content: "";
+}
+
 .assessment-nav-dropdown a,
 .assessment-nav-dropdown button {
   width: 100%;
