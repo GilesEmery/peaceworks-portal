@@ -127,7 +127,7 @@ export default function OrganizationsPage() {
       <section className={styles.section}>
         <div className={styles.container}>
           <SectionIntro eyebrow="How the Work Develops" title="From insight to sustainable practice." copy="The starting point may differ, but the work follows the same shared movement across people, teams, and organizations." />
-          <ol className={styles.journeyGrid}>{journey.map(([title, copy], index) => <li key={title}><span className={styles.journeyNumber}>{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{copy}</p></li>)}</ol>
+          <ol className={styles.journeyGrid}>{journey.map(([title, copy]) => <li key={title}><h3>{title}</h3><p>{copy}</p></li>)}</ol>
           <p className={styles.closingStatement}>The aim is not dependence on PeaceWorks. It is growing internal capacity for truth, responsibility, repair, and return.</p>
         </div>
       </section>

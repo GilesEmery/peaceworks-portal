@@ -45,3 +45,15 @@
 @media (max-width: 760px) { .container { width: min(var(--max), calc(100% - 24px)); }.hero { min-height: auto; padding: 58px 0 34px; }.hero h1 { font-size: clamp(3.5rem, 15vw, 5rem); }.section { padding: 42px 0; }.circleIntro, .darkPanel, .experiencePanel, .investmentPanel, .closingPanel, .shell { padding: 28px 22px; border-radius: 28px; }.sectionIntro { margin-bottom: 32px; }.sectionIntro h2, .sectionIntroLight h2, .closingPanel h2 { font-size: clamp(2.5rem, 11vw, 3.8rem); }.experienceGrid, .paymentGrid { grid-template-columns: 1fr; }.experienceGrid > div, .experienceGrid > div + div { padding: 26px 0 0; border-left: 0; }.experienceGrid > div + div { margin-top: 28px; border-top: 1px solid rgba(17, 20, 17, 0.14); }.systemNote { display: grid; }.investmentHead { display: grid; align-items: start; }.price { white-space: normal; }.embedWrap iframe { min-height: 1600px; } }
 @media (max-width: 560px) { .joinPage p, .joinPage li { font-size: 1.06rem; line-height: 1.48; }.buttonRow { align-items: stretch; flex-direction: column; }.button { width: 100%; }.circleIntro h2 { font-size: clamp(2.35rem, 11vw, 3.35rem); }.journeyList, .rhythmList, .nextSteps, .movementList { grid-template-columns: 1fr; }.journeyList li, .rhythmList li, .nextSteps li { display: grid; grid-template-columns: 50px 1fr; gap: 18px; padding: 20px 0; border-bottom: 1px solid rgba(17, 20, 17, 0.13); border-left: 0; text-align: left; }.darkPanel .rhythmList li { border-bottom-color: rgba(184, 204, 183, 0.24); }.journeyList .stepNumber, .rhythmList .stepNumber, .nextSteps .stepNumber { grid-row: 1 / 3; margin: 0; }.movementList .threshold { grid-column: auto; }.movementList li + li { border-left: 0; }.price { display: block; }.price span { display: block; margin-top: 8px; }.paymentGrid .button { width: 100%; }.embedWrap iframe { min-height: 1720px; } }
 @media (prefers-reduced-motion: reduce) { .orbit1, .orbit2, .orbit3 { animation: none; }.button { transition: none; } }
+
+/* Sequence is communicated through order and layout without numbered badges. */
+.journeyList::before { display: none; }
+.journeyList li { padding: 24px 22px; border-top: 1px solid rgba(17, 20, 17, 0.13); text-align: left; }
+.rhythmList li,
+.nextSteps li { padding-top: 24px; }
+
+@media (max-width: 560px) {
+  .journeyList li,
+  .rhythmList li,
+  .nextSteps li { display: block; }
+}

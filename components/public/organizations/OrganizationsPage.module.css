@@ -362,22 +362,6 @@
 .businessGrid article:hover,
 .journeyGrid li:hover { transform: translateY(-3px); }
 
-.cardNumber,
-.journeyNumber {
-  display: grid;
-  width: 48px;
-  height: 48px;
-  place-items: center;
-  margin-bottom: 34px;
-  border: 1px solid rgba(120, 144, 120, 0.44);
-  border-radius: 50%;
-  color: #fff;
-  background: linear-gradient(145deg, #8ca18c, #657d67);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-}
-
 .startCard strong {
   display: block;
   margin-bottom: 15px;
@@ -466,7 +450,7 @@
 }
 
 .journeyGrid li {
-  min-height: 290px;
+  min-height: 250px;
   padding: 28px;
   border: 1px solid rgba(184, 204, 183, 0.19);
   border-radius: 27px;

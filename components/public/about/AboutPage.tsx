@@ -4,6 +4,7 @@ import Link from "next/link";
 import { routes } from "../../../lib/navigation";
 import PublicPageIntro from "../shared/PublicPageIntro";
 import styles from "./AboutPage.module.css";
+import ContactForm from "./ContactForm";
 
 const commonQuestions = [
   {
@@ -23,15 +24,6 @@ const commonQuestions = [
   },
 ];
 
-const subject = "I have a question about PeaceWorks";
-const mailtoSubject = encodeURIComponent(subject);
-
-const contactLinks = {
-  peaceworks: `mailto:peaceworks@peaceworks.network?subject=${mailtoSubject}`,
-  matt: `mailto:matt.curts@peaceworks.network?subject=${mailtoSubject}`,
-  giles: `mailto:giles.emery@peaceworks.network?subject=${mailtoSubject}`,
-};
-
 export default function AboutPage() {
   return (
     <div className={styles.aboutPage}>
@@ -42,15 +34,15 @@ export default function AboutPage() {
               eyebrow="Contact PeaceWorks"
               title="Questions are welcome."
               actions={
-                <a className={`${styles.btn} ${styles.btnPrimary}`} href={contactLinks.peaceworks}>
-                  Email PeaceWorks
+                <a className={`${styles.btn} ${styles.btnPrimary}`} href="#contact-form">
+                  Contact PeaceWorks
                 </a>
               }
             >
               <p>
                 If you have questions about PeaceWorks, the Circle experience,
                 the Relational ROI work, or whether PeaceWorks may be a fit for your organization, the
-                simplest next step is to email us directly.
+                simplest next step is to send the team a message.
               </p>
             </PublicPageIntro>
 
@@ -106,45 +98,11 @@ export default function AboutPage() {
               <div className={styles.splitHead}>
                 <div>
                   <div className={styles.eyebrow}>Get In Touch</div>
-                  <h2>Reach out directly.</h2>
+                  <h2>Send the team a message.</h2>
                 </div>
-                <p>Questions are welcome. You can contact PeaceWorks as a team or reach Matt Curts or Giles Emery directly.</p>
+                <p>Your message will go directly to the PeaceWorks team. We will read it together and the right person will respond.</p>
               </div>
-
-              <div className={styles.contactGrid}>
-                <article className={styles.contactCard}>
-                  <h3 className={styles.panelTitle}>Contact the team</h3>
-                  <div className={styles.btnRow}>
-                    <a className={`${styles.btn} ${styles.btnPrimary}`} href={contactLinks.peaceworks}>
-                      Contact Us
-                    </a>
-                  </div>
-                </article>
-
-                <aside className={styles.infoPanel} aria-labelledby="direct-contact-title">
-                  <h3 className={styles.panelTitle} id="direct-contact-title">
-                    Contact Matt Curts or Giles Emery directly
-                  </h3>
-                  <div className={styles.infoStack}>
-                    <article className={styles.infoCard}>
-                      <strong>Email Matt Curts</strong>
-                      <div className={styles.btnRow}>
-                        <a className={`${styles.btn} ${styles.btnSecondary}`} href={contactLinks.matt}>
-                          Email Matt Curts
-                        </a>
-                      </div>
-                    </article>
-                    <article className={styles.infoCard}>
-                      <strong>Email Giles Emery</strong>
-                      <div className={styles.btnRow}>
-                        <a className={`${styles.btn} ${styles.btnSecondary}`} href={contactLinks.giles}>
-                          Email Giles Emery
-                        </a>
-                      </div>
-                    </article>
-                  </div>
-                </aside>
-              </div>
+              <ContactForm />
             </div>
           </div>
         </section>

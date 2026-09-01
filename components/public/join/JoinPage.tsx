@@ -89,7 +89,7 @@ export default function JoinPage() {
       <section className={styles.section}>
         <div className={styles.container}>
           <SectionIntro eyebrow="The PeaceWorks Journey" title="A practical path for peace and growth." />
-          <ol className={styles.journeyList}>{journey.map(([title, copy], index) => <li key={title}><span className={styles.stepNumber}>{String(index + 1).padStart(2, "0")}</span><div><h3>{title}</h3><p>{copy}</p></div></li>)}</ol>
+          <ol className={styles.journeyList}>{journey.map(([title, copy]) => <li key={title}><div><h3>{title}</h3><p>{copy}</p></div></li>)}</ol>
           <div className={styles.systemNote}><p>PeaceWorks helps move peace from something formed within us to something we practice with others.</p><Link href={routes.howItWorks}>See how PeaceWorks works <span aria-hidden="true">→</span></Link></div>
         </div>
       </section>
@@ -97,7 +97,7 @@ export default function JoinPage() {
       <section className={styles.section}>
         <div className={`${styles.container} ${styles.darkPanel}`}>
           <header className={styles.sectionIntroLight}><div className={styles.eyebrow}>The Monthly Rhythm</div><h2>A question becomes a practice.</h2></header>
-          <ol className={styles.rhythmList}>{monthlyRhythm.map(([title, copy], index) => <li key={title}><span className={styles.stepNumber}>{String(index + 1).padStart(2, "0")}</span><div><h3>{title}</h3><p>{copy}</p></div></li>)}</ol>
+          <ol className={styles.rhythmList}>{monthlyRhythm.map(([title, copy]) => <li key={title}><div><h3>{title}</h3><p>{copy}</p></div></li>)}</ol>
         </div>
       </section>
 
@@ -125,7 +125,7 @@ export default function JoinPage() {
       <section className={styles.finalMovement}>
         <div className={styles.container}>
           <SectionIntro eyebrow="What Happens Next" title="A clear beginning." />
-          <ol className={styles.nextSteps}>{nextSteps.map(([title, copy], index) => <li key={title}><span className={styles.stepNumber}>{String(index + 1).padStart(2, "0")}</span><div><h3>{title}</h3><p>{copy}</p></div></li>)}</ol>
+          <ol className={styles.nextSteps}>{nextSteps.map(([title, copy]) => <li key={title}><div><h3>{title}</h3><p>{copy}</p></div></li>)}</ol>
           <div className={styles.closingPanel}><div className={styles.eyebrow}>Practice Together</div><h2>Peace becomes practical when we practice it together.</h2><p>A Circle gives you a place to notice, reflect, practice, and carry peace into everyday relationships and pressures.</p><div className={styles.buttonRow}><a className={`${styles.button} ${styles.buttonCream}`} href="#investment">Join a Circle</a><Link className={`${styles.button} ${styles.buttonOutline}`} href={routes.howItWorks}>See How PeaceWorks Works</Link></div></div>
         </div>
       </section>

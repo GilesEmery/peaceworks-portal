@@ -1,6 +1,5 @@
 import {
   ArrowDown,
-  ArrowRight,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,22 +9,18 @@ import styles from "./HowItWorksPage.module.css";
 
 const pressureStages = [
   {
-    number: "01",
     title: "Seek",
     copy: "What a person or group is pursuing or trying to preserve, such as safety, worth, belonging, control, approval, stability, or meaning.",
   },
   {
-    number: "02",
     title: "Disrupt",
     copy: "What unsettles or threatens that sense of peace, such as uncertainty, disappointment, exclusion, change, unmet expectations, or loss of control.",
   },
   {
-    number: "03",
     title: "Respond",
     copy: "How a person or group reacts when peace feels threatened, such as controlling, withdrawing, pleasing, defending, blaming, over functioning, or avoiding.",
   },
   {
-    number: "04",
     title: "Restore",
     copy: "The practiced movement toward awareness, honest engagement, responsibility, repair, and a return toward wholeness.",
   },
@@ -48,13 +43,6 @@ const systemParts = [
     title: "Relational Rhythms",
     copy: "Build reflection, accountability, and repair into meetings, coaching, and everyday organizational routines.",
   },
-];
-
-const journeyStages = [
-  ["Seek", "Clarify what the organization values, what healthy relationships look like, and what kind of culture people are trying to build together."],
-  ["Disrupt", "See where pressure, patterns, systems, or unresolved tension are weakening trust, clarity, and connection."],
-  ["Respond", "Develop shared language, practical tools, and everyday practices that help people respond differently when pressure rises."],
-  ["Restore", "Name what needs attention, take responsibility, repair what is possible, and build the practices into organizational life so people can return again."],
 ];
 
 const isItems = [
@@ -134,12 +122,12 @@ export default function HowItWorksPage() {
           />
           <div className={styles.contrastGrid}>
             <article className={styles.technicalPanel}>
-              <span className={styles.panelLabel}>01 / Technical</span>
+              <span className={styles.panelLabel}>Technical</span>
               <h3>The technical operating system</h3>
               <p>How the organization sets direction, assigns roles, makes decisions, executes work, measures progress, and holds performance accountable.</p>
             </article>
             <article className={styles.relationalPanel}>
-              <span className={styles.panelLabel}>02 / Relational</span>
+              <span className={styles.panelLabel}>Relational</span>
               <h3>The relational operating system</h3>
               <p>How people listen, speak honestly, respond under pressure, take responsibility, work through disruption, and rebuild trust.</p>
             </article>
@@ -153,14 +141,13 @@ export default function HowItWorksPage() {
       <section className={styles.section}>
         <div className={styles.container}>
           <SectionIntro
-            eyebrow="Under Pressure"
-            title="Pressure reveals the pattern."
-            copy="PeaceWorks helps people recognize what they are seeking, what disrupts their peace, how they respond under pressure, and what a more responsible return can look like."
+            eyebrow="The Relational Operating System in Practice"
+            title="Pressure reveals the relational pattern."
+            copy="At the heart of the Relational Operating System is a shared movement that helps people recognize what they are seeking, what disrupts their peace, how they respond under pressure, and what a more responsible return can look like."
           />
           <div className={styles.pressureFlow} aria-label="Seek, Disrupt, Respond, Restore">
             {pressureStages.map((stage) => (
               <article className={styles.pressureCard} key={stage.title}>
-                <span className={styles.stageNumber}>{stage.number}</span>
                 <h3>{stage.title}</h3>
                 <p>{stage.copy}</p>
               </article>
@@ -178,40 +165,15 @@ export default function HowItWorksPage() {
             copy="The system becomes valuable when it can guide real conversations, decisions, tensions, and leadership moments."
           />
           <div className={styles.systemGrid}>
-            {systemParts.map(({ title, copy }, index) => (
+            {systemParts.map(({ title, copy }) => (
               <article className={styles.systemCard} key={title}>
                 <div className={styles.systemCardHeading}>
-                  <span aria-label={`Item ${index + 1}`}>{String(index + 1).padStart(2, "0")}</span>
                   <h3>{title}</h3>
                 </div>
                 <p>{copy}</p>
               </article>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className={`${styles.section} ${styles.anchorTarget}`} id="installation-journey">
-        <div className={styles.container}>
-          <SectionIntro
-            eyebrow="From Practice to Ownership"
-            title="From practice to ownership"
-            copy="The same movement works across an organization."
-          />
-          <Link className={styles.organizationsLink} href={routes.organizations}>Explore PeaceWorks for Organizations <ArrowRight aria-hidden="true" size={17} /></Link>
-          <p>PeaceWorks may begin in different places, but the work follows a shared way of noticing what matters, understanding what disrupts it, responding differently, and restoring what pressure has strained.</p>
-          <ol className={styles.journey}>
-            {journeyStages.map(([title, copy], index) => (
-              <li key={title}>
-                <span className={styles.journeyNumber}>{String(index + 1).padStart(2, "0")}</span>
-                <h3>{title}</h3>
-                <p>{copy}</p>
-              </li>
-            ))}
-          </ol>
-          <p className={styles.closingStatement}>
-            The aim is not dependence on PeaceWorks. It is growing internal capacity for truth, responsibility, repair, and return.
-          </p>
         </div>
       </section>
 
@@ -222,12 +184,12 @@ export default function HowItWorksPage() {
           </header>
           <div className={styles.isGrid}>
             <article>
-              <span className={styles.panelLabel}>01 / What it is</span>
+              <span className={styles.panelLabel}>What it is</span>
               <h3>PeaceWorks is</h3>
               <ul>{isItems.map((item) => <li key={item}>{item}</li>)}</ul>
             </article>
             <article>
-              <span className={styles.panelLabel}>02 / What it is not</span>
+              <span className={styles.panelLabel}>What it is not</span>
               <h3>PeaceWorks is not</h3>
               <ul>{isNotItems.map((item) => <li key={item}>{item}</li>)}</ul>
             </article>

@@ -366,7 +366,7 @@
 .pressureCard {
   position: relative;
   z-index: 1;
-  min-height: 320px;
+  min-height: 280px;
   padding: 28px 24px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.82);
@@ -385,21 +385,6 @@
     0 26px 54px rgba(17, 20, 17, 0.13),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
   transform: translateY(-3px);
-}
-
-.stageNumber {
-  display: grid;
-  width: 48px;
-  height: 48px;
-  place-items: center;
-  margin-bottom: 35px;
-  border: 1px solid rgba(120, 144, 120, 0.48);
-  border-radius: 50%;
-  color: #fff;
-  background: linear-gradient(145deg, #8ca18c, #657d67);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
 }
 
 .pressureCard h3,
@@ -435,10 +420,9 @@
 
 .systemCard:nth-child(odd) { padding-right: 28px; }
 .systemCard:nth-child(even) { padding-left: 28px; }
-.systemCardHeading { display: grid; grid-template-columns: 52px 1fr; gap: 16px; align-items: start; }
-.systemCardHeading > span { padding-top: 6px; color: var(--ros-sage-light); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.12em; }
+.systemCardHeading { display: block; }
 .systemCard h3 { color: #f8f4eb; }
-.systemCard p { max-width: 590px; margin: 22px 0 0 68px; color: rgba(248, 244, 235, 0.66); font-size: 1rem; }
+.systemCard p { max-width: 590px; margin: 22px 0 0; color: rgba(248, 244, 235, 0.66); font-size: 1rem; }
 
 .journey {
   display: grid;

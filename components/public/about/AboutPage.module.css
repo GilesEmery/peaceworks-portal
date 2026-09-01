@@ -355,6 +355,87 @@
   gap: 14px;
 }
 
+.contactForm {
+  position: relative;
+  padding: clamp(24px, 4vw, 42px);
+  border: 1px solid rgba(120, 144, 120, 0.2);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: var(--shadow);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.field {
+  display: grid;
+  gap: 9px;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.field small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  border: 1px solid rgba(17, 20, 17, 0.14);
+  border-radius: 15px;
+  color: var(--text);
+  background: rgba(250, 249, 245, 0.92);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.field input,
+.field select { min-height: 54px; padding: 0 16px; }
+.field textarea { min-height: 170px; padding: 15px 16px; line-height: 1.5; resize: vertical; }
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: rgba(83, 109, 85, 0.7);
+  outline: 0;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(184, 204, 183, 0.3);
+}
+
+.messageField { grid-column: 1 / -1; }
+.honeypot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+.formFooter {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  margin-top: 26px;
+}
+
+.contactForm .btn {
+  flex: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.contactForm .btn:disabled { cursor: wait; opacity: 0.68; transform: none; }
+.formStatus { color: var(--sage-dark) !important; font-size: 1rem !important; font-weight: 600; }
+.formStatusError { color: #8a3434 !important; }
+
 .afterword {
   padding: 0 0 64px;
 }
@@ -453,6 +534,10 @@
   .btn {
     width: 100%;
   }
+
+  .formGrid { grid-template-columns: 1fr; }
+  .messageField { grid-column: auto; }
+  .formFooter { align-items: stretch; flex-direction: column; }
 
   .aboutPage p {
     font-size: 1.08rem;
