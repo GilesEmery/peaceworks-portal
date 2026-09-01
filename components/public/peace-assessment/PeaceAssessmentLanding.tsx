@@ -63,7 +63,7 @@ export default function PeaceAssessmentLanding(props: PeaceAssessmentLandingProp
           <div className={styles.heroCopy}>
             <div className={styles.eyebrow}>The Peace Assessment</div>
             <h1>Understand what happens to your peace under pressure.</h1>
-            <p>The Peace Assessment helps you recognize the patterns that shape how you seek, lose, protect, and restore peace. Your results give you language for understanding yourself and practical insight for how you relate to others.</p>
+            <p>The Peace Assessment helps you recognize what you seek, what disrupts your peace, how you respond under pressure, and how you restore. Your results give you language for understanding yourself and practical insight for how you relate to others.</p>
             <div className={styles.buttonRow}>
               <button className={`${styles.button} ${styles.buttonDark}`} type="button" onClick={heroAction[1]}>{heroAction[0]}</button>
               {props.isAuthenticated && props.hasResult && <button className={`${styles.button} ${styles.buttonLight}`} type="button" onClick={props.onStart}>Retake Assessment</button>}
@@ -91,7 +91,7 @@ export default function PeaceAssessmentLanding(props: PeaceAssessmentLandingProp
       <section className={styles.section}>
         <div className={`${styles.container} ${styles.darkPanel}`}>
           <div><div className={styles.eyebrow}>More Than a Personality Type</div><h2>Not a label. A language for growth.</h2></div>
-          <div className={styles.darkCopy}><p>The Peace Assessment is not designed to put you in a box. It helps you notice patterns—what you seek, how pressure changes you, and where a more peaceful response can begin.</p><strong>Awareness is useful when it leads to practice.</strong><Link href={routes.howItWorks}>See How PeaceWorks Works <span aria-hidden="true">→</span></Link></div>
+          <div className={styles.darkCopy}><p>The Peace Assessment is not designed to put you in a box. It helps you notice patterns: what you seek, what disrupts your peace, how you respond, and where restoration can begin.</p><strong>Awareness is useful when it leads to practice.</strong><Link href={routes.howItWorks}>See How PeaceWorks Works <span aria-hidden="true">→</span></Link></div>
         </div>
       </section>
 

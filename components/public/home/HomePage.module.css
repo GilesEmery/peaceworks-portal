@@ -20,3 +20,19 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes spinReverse { from { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .orbitOuter, .orbitMiddle, .orbitInner { animation: none; }.button, .entryCard { transition: none; } }
+
+/* Parallel lists retain their editorial structure without sequence markers. */
+.signalGrid blockquote { display: block; }
+.practiceList li { display: block; }
+.scaleList li { gap: 0; }
+.detailList > div { grid-template-columns: 0.75fr 1.25fr; }
+.capabilityGrid article { grid-template-columns: 1fr; }
+.capabilityGrid h3,
+.capabilityGrid p { grid-column: 1; }
+.finalLinks a { grid-template-columns: 1fr; }
+
+@media (max-width: 560px) {
+  .signalGrid blockquote { display: block; }
+  .detailList > div { grid-template-columns: 1fr; }
+  .detailList dd { grid-column: 1; }
+}

@@ -7,7 +7,7 @@ import HowItWorksPage from "../../components/public/how-it-works/HowItWorksPage"
 export const metadata: Metadata = {
   title: "How It Works | The PeaceWorks Relational Operating System",
   description:
-    "Explore the PeaceWorks Relational Operating System—a practical framework of shared language, tools, rhythms, organizational listening, repair, and sustained relational practice.",
+    "Explore the PeaceWorks Relational Operating System, a practical framework of shared language, tools, relational rhythms, organizational listening, repair, and sustained relational practice.",
   openGraph: {
     title: "The PeaceWorks Relational Operating System",
     description:

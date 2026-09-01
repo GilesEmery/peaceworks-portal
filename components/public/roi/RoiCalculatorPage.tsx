@@ -230,7 +230,7 @@ export default function RoiCalculatorPage() {
         <section className={styles.hero}>
           <div className={`${styles.container} ${styles.heroGrid}`}>
             <PublicPageIntro
-              eyebrow="PeaceWorks ROI Calculator"
+              eyebrow="Relational ROI Calculator"
               title="Make relational drag visible."
               actions={
                 <>
@@ -257,7 +257,7 @@ export default function RoiCalculatorPage() {
                 Most leaders can feel the cost of tension, disengagement, and
                 low trust. Very few can see it clearly. This calculator helps
                 you estimate the hidden business cost of relational drag inside
-                your organization — and what could change if healthier
+                your organization and what could change if healthier
                 leadership and culture recovered even part of that lost
                 capacity.
               </p>
@@ -331,7 +331,7 @@ export default function RoiCalculatorPage() {
                   <h2 className={styles.panelTitle} id="roi-results-title">Live results</h2>
                   <p className={styles.panelCopy}>
                     A clearer view of what relational drag may already be
-                    costing — and what could be recovered.
+                    costing and what could be recovered.
                   </p>
 
                   <RoiResultsPanel results={results} hasErrors={hasErrors} />
@@ -570,9 +570,9 @@ function RoiContentSections() {
                 <h2>Peace is not passive. It is practiced.</h2>
               </div>
               <p>
-                PeaceWorks helps leaders move from awareness to implementation —
+                PeaceWorks helps leaders move from awareness to implementation,
                 not only seeing the hidden cost of relational drag, but building
-                the practices that actually change how a culture responds under
+                the practices that help change how a culture responds under
                 pressure.
               </p>
             </div>
@@ -593,7 +593,7 @@ function RoiContentSections() {
                 <div className={styles.eyebrowLight}>What Comes Next</div>
                 <h2 className={styles.display}>If the numbers get your attention, the culture already should.</h2>
                 <p>
-                  PeaceWorks helps leaders move from awareness to practice —
+                  PeaceWorks helps leaders move from awareness to practice,
                   building the relational operating system that allows trust to
                   hold under pressure.
                 </p>
@@ -609,8 +609,8 @@ function RoiContentSections() {
                 <strong>From ROI to real change.</strong>
                 <span>
                   The calculator helps leaders quantify the problem. PeaceWorks
-                  helps them practice a different way of leading — through
-                  cohorts, practical tools, and relational rhythms that
+                  helps them practice a different way of leading through
+                  Circles, practical tools, and relational rhythms that may
                   strengthen the culture over time.
                 </span>
               </div>
@@ -653,12 +653,12 @@ function PdfReport({
         <div className={styles.pdfTitleBrand}>
           <div className={styles.pdfTitleMain}>PeaceWorks</div>
         </div>
-        <div className={styles.pdfEyebrow}>PeaceWorks ROI Calculator</div>
+        <div className={styles.pdfEyebrow}>Relational ROI Calculator</div>
         <h1 className={styles.pdfTitle}>Relational drag, made visible.</h1>
         <p className={styles.pdfCopy}>
           This report estimates the hidden business cost of disengagement,
           absenteeism, leadership strain, productivity loss, and turnover
-          exposure — and models what healthier leadership and stronger
+          exposure and models what healthier leadership and stronger
           relational culture could recover.
         </p>
         <div className={styles.pdfBigGrid}>
@@ -706,7 +706,7 @@ function PdfReport({
         <div className={styles.pdfCta}>
           <h2>Peace is not passive. It is practiced.</h2>
           <p>
-            PeaceWorks helps leaders move from awareness to implementation —
+            PeaceWorks helps leaders move from awareness to implementation,
             building the relational operating system that allows trust to hold
             under pressure.
           </p>
@@ -714,7 +714,7 @@ function PdfReport({
         <div className={styles.pdfFooterNote}>
           This report is an estimate for strategic conversation, not a financial
           audit. The numbers are based on the assumptions entered into the
-          PeaceWorks ROI Calculator.
+          Relational ROI Calculator.
           <br />
           <br />
           Questions or ready to schedule a meeting? Contact contact@peaceworks.network.

@@ -7,7 +7,7 @@ import JoinPage from "../../components/public/join/JoinPage";
 export const metadata: Metadata = {
   title: "Join a PeaceWorks Circle | PeaceWorks",
   description:
-    "Join a PeaceWorks Circle—a trusted monthly space to understand yourself, practice peace, strengthen relationships, and grow alongside others.",
+    "Join a PeaceWorks Circle, a trusted monthly space to understand yourself, practice peace, strengthen relationships, and grow alongside others.",
   openGraph: {
     title: "Join a PeaceWorks Circle",
     description:

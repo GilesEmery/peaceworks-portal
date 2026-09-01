@@ -9,17 +9,17 @@ const commonQuestions = [
   {
     question: "Could this help our leadership team?",
     answer:
-      "Especially if tension, trust, or communication are affecting how the organization functions.",
+      "Especially if tension, trust, communication, or recurring relational strain are affecting how the organization works together.",
   },
   {
-    question: "Is the cohort the right fit?",
+    question: "Is a Circle the right fit?",
     answer:
-      "If you are unsure where to start, this is a very good question to ask directly.",
+      "If you are looking for a place to reflect, practice peace with others, and carry that work into your leadership and relationships, a Circle may be a good place to begin.",
   },
   {
     question: "How does this connect to our business reality?",
     answer:
-      "We understand the practical pressures leaders are under and welcome that kind of conversation.",
+      "PeaceWorks takes seriously the practical pressures leaders carry and the ways relational strain can affect communication, decision making, trust, and the work itself.",
   },
 ];
 
@@ -48,8 +48,8 @@ export default function AboutPage() {
               }
             >
               <p>
-                If you have questions about PeaceWorks, the cohort experience,
-                the ROI work, or whether this may fit your organization, the
+                If you have questions about PeaceWorks, the Circle experience,
+                the Relational ROI work, or whether PeaceWorks may be a fit for your organization, the
                 simplest next step is to email us directly.
               </p>
             </PublicPageIntro>
@@ -108,7 +108,7 @@ export default function AboutPage() {
                   <div className={styles.eyebrow}>Get In Touch</div>
                   <h2>Reach out directly.</h2>
                 </div>
-                <p>Contact PeaceWorks directly by email.</p>
+                <p>Questions are welcome. You can contact PeaceWorks as a team or reach Matt Curts or Giles Emery directly.</p>
               </div>
 
               <div className={styles.contactGrid}>
@@ -152,12 +152,12 @@ export default function AboutPage() {
         <section className={styles.afterword}>
           <div className={`${styles.container} ${styles.afterwordInner}`}>
             <p>
-              Ready to explore the rhythm first?{" "}
+              Ready to practice peace with others?{" "}
               <Link href={routes.join}>Join a Circle</Link>
             </p>
             <p>
               Want to understand the business case?{" "}
-              <Link href={routes.roiCalculator}>Open the ROI Calculator</Link>
+              <Link href={routes.roiCalculator}>Explore the Relational ROI Calculator</Link>
             </p>
           </div>
         </section>

@@ -604,3 +604,12 @@
   .businessGrid article,
   .journeyGrid li { transition: none; }
 }
+
+/* Parallel lists retain their editorial structure without sequence markers. */
+.editorialRow { grid-template-columns: 1fr; }
+.startCard h3,
+.businessGrid article h3 { margin-top: 0; }
+
+@media (max-width: 600px) {
+  .editorialRow { grid-template-columns: 1fr; }
+}

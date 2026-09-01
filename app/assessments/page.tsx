@@ -44,7 +44,7 @@ const availableAssessments: AssessmentDefinition[] = [
     key: "peace-assessment",
     title: "Peace Assessment",
     description:
-      "Understand the patterns that shape how you seek, lose, protect, and restore peace under pressure.",
+      "Understand what you seek, what disrupts your peace, how you respond under pressure, and how you restore.",
     context: "Available to every PeaceWorks member",
     route: "/peace-assessment",
   },

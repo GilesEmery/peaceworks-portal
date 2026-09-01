@@ -12,22 +12,22 @@ const pressureStages = [
   {
     number: "01",
     title: "Seek",
-    copy: "What a person or group is trying to secure—such as safety, worth, belonging, control, approval, stability, or meaning.",
+    copy: "What a person or group is pursuing or trying to preserve, such as safety, worth, belonging, control, approval, stability, or meaning.",
   },
   {
     number: "02",
-    title: "Lose",
-    copy: "The moment that sense of peace is disrupted by threat, uncertainty, disappointment, exclusion, or loss of control.",
+    title: "Disrupt",
+    copy: "What unsettles or threatens that sense of peace, such as uncertainty, disappointment, exclusion, change, unmet expectations, or loss of control.",
   },
   {
     number: "03",
-    title: "Protect",
-    copy: "The response used to regain stability—such as controlling, withdrawing, pleasing, defending, blaming, over-functioning, or avoiding.",
+    title: "Respond",
+    copy: "How a person or group reacts when peace feels threatened, such as controlling, withdrawing, pleasing, defending, blaming, over functioning, or avoiding.",
   },
   {
     number: "04",
     title: "Restore",
-    copy: "The practiced movement toward awareness, honest engagement, responsibility, repair, and renewed relationship.",
+    copy: "The practiced movement toward awareness, honest engagement, responsibility, repair, and a return toward wholeness.",
   },
 ];
 
@@ -38,31 +38,29 @@ const systemParts = [
   },
   {
     title: "Practical Tools",
-    copy: "Use simple practices for listening, honest conversation, conflict engagement, and decision-making.",
+    copy: "Use simple practices for listening, honest conversation, navigating tension, and repair.",
   },
   {
     title: "Relational Practice",
-    copy: "Apply the framework in the situations where trust, clarity, and cooperation are actually tested.",
+    copy: "Apply the framework in the situations where trust, clarity, responsibility, and cooperation are actually tested.",
   },
   {
-    title: "Rhythms of Reflection, Accountability, and Repair",
-    copy: "Build the practices into coaching, meetings, reflection, accountability, and organizational routines.",
+    title: "Relational Rhythms",
+    copy: "Build reflection, accountability, and repair into meetings, coaching, and everyday organizational routines.",
   },
 ];
 
 const journeyStages = [
-  ["See", "Understand the current environment, including strengths, strain, patterns, and readiness."],
-  ["Name", "Create shared language for what happens when the work between people becomes difficult."],
-  ["Practice", "Use practical tools in real conversations, decisions, tensions, and leadership moments."],
-  ["Rhythm", "Build the practices into meetings, coaching, reflection, and accountability."],
-  ["Restore", "Address disruption, take responsibility, repair what is possible, and return to shared work."],
-  ["Sustain", "Develop internal ownership so the organization can carry the work forward."],
+  ["Seek", "Clarify what the organization values, what healthy relationships look like, and what kind of culture people are trying to build together."],
+  ["Disrupt", "See where pressure, patterns, systems, or unresolved tension are weakening trust, clarity, and connection."],
+  ["Respond", "Develop shared language, practical tools, and everyday practices that help people respond differently when pressure rises."],
+  ["Restore", "Name what needs attention, take responsibility, repair what is possible, and build the practices into organizational life so people can return again."],
 ];
 
 const isItems = [
   "A practical relational operating system",
-  "A shared language for difficult moments",
-  "A set of learnable practices",
+  "Shared language for navigating tension",
+  "Learnable tools and practices",
   "A path toward internal ownership",
 ];
 
@@ -70,7 +68,7 @@ const isNotItems = [
   "Therapy",
   "A promise of permanent harmony",
   "A substitute for legal, HR, clinical, or operational responsibility",
-  "A one-time motivational workshop",
+  "A one time culture or leadership workshop",
 ];
 
 function SectionIntro({
@@ -102,7 +100,7 @@ export default function HowItWorksPage() {
             <div className={styles.eyebrow}>How PeaceWorks Works</div>
             <h1>The PeaceWorks Relational Operating System</h1>
             <p>
-              Every organization has systems for strategy, roles, execution, and accountability. PeaceWorks strengthens the system between people—how they respond under pressure, speak honestly, take responsibility, repair disruption, and return to shared work.
+              Every organization has systems for strategy, roles, execution, and accountability. PeaceWorks strengthens the system between people: how they respond under pressure, speak honestly, take responsibility, repair what has been disrupted, and return to shared work.
             </p>
             <p className={styles.heroSecondary}>
               It is a practical framework leaders and teams can learn, practice, and build into everyday organizational life.
@@ -136,14 +134,14 @@ export default function HowItWorksPage() {
           />
           <div className={styles.contrastGrid}>
             <article className={styles.technicalPanel}>
-              <span className={styles.panelLabel}>01 — Technical</span>
+              <span className={styles.panelLabel}>01 / Technical</span>
               <h3>The technical operating system</h3>
               <p>How the organization sets direction, assigns roles, makes decisions, executes work, measures progress, and holds performance accountable.</p>
             </article>
             <article className={styles.relationalPanel}>
-              <span className={styles.panelLabel}>02 — Relational</span>
+              <span className={styles.panelLabel}>02 / Relational</span>
               <h3>The relational operating system</h3>
-              <p>How people listen, speak honestly, respond to strain, exercise responsibility, work through disruption, and rebuild trust.</p>
+              <p>How people listen, speak honestly, respond under pressure, take responsibility, work through disruption, and rebuild trust.</p>
             </article>
           </div>
           <p className={styles.closingStatement}>
@@ -157,9 +155,9 @@ export default function HowItWorksPage() {
           <SectionIntro
             eyebrow="Under Pressure"
             title="Pressure reveals the pattern."
-            copy="PeaceWorks helps people recognize what they are trying to protect, how disruption changes their behavior, and what a more responsible return can look like."
+            copy="PeaceWorks helps people recognize what they are seeking, what disrupts their peace, how they respond under pressure, and what a more responsible return can look like."
           />
-          <div className={styles.pressureFlow} aria-label="Seek, Lose, Protect, Restore">
+          <div className={styles.pressureFlow} aria-label="Seek, Disrupt, Respond, Restore">
             {pressureStages.map((stage) => (
               <article className={styles.pressureCard} key={stage.title}>
                 <span className={styles.stageNumber}>{stage.number}</span>
@@ -197,10 +195,11 @@ export default function HowItWorksPage() {
         <div className={styles.container}>
           <SectionIntro
             eyebrow="From Practice to Ownership"
-            title="The system becomes sustainable through use."
-            copy="PeaceWorks may begin in different places, but the developmental movement remains consistent."
+            title="From practice to ownership"
+            copy="The same movement works across an organization."
           />
           <Link className={styles.organizationsLink} href={routes.organizations}>Explore PeaceWorks for Organizations <ArrowRight aria-hidden="true" size={17} /></Link>
+          <p>PeaceWorks may begin in different places, but the work follows a shared way of noticing what matters, understanding what disrupts it, responding differently, and restoring what pressure has strained.</p>
           <ol className={styles.journey}>
             {journeyStages.map(([title, copy], index) => (
               <li key={title}>
@@ -223,12 +222,12 @@ export default function HowItWorksPage() {
           </header>
           <div className={styles.isGrid}>
             <article>
-              <span className={styles.panelLabel}>01 — What it is</span>
+              <span className={styles.panelLabel}>01 / What it is</span>
               <h3>PeaceWorks is</h3>
               <ul>{isItems.map((item) => <li key={item}>{item}</li>)}</ul>
             </article>
             <article>
-              <span className={styles.panelLabel}>02 — What it is not</span>
+              <span className={styles.panelLabel}>02 / What it is not</span>
               <h3>PeaceWorks is not</h3>
               <ul>{isNotItems.map((item) => <li key={item}>{item}</li>)}</ul>
             </article>
@@ -240,7 +239,7 @@ export default function HowItWorksPage() {
         <div className={`${styles.container} ${styles.nextPanel}`}>
           <div className={styles.eyebrow}>Practice Peace</div>
           <h2>Peace becomes practical when it becomes practiced.</h2>
-          <p>PeaceWorks helps leaders and organizations build the shared language, practices, and rhythms needed to work through pressure with greater honesty, responsibility, and care.</p>
+          <p>PeaceWorks helps leaders and organizations build the shared language, tools, and practices needed to respond to pressure with greater honesty, responsibility, and care and return to peace when relationships are strained.</p>
           <div className={styles.buttonRow}>
             <Link className={`${styles.button} ${styles.buttonLight}`} href={routes.organizations}>Explore PeaceWorks for Organizations</Link>
             <Link className={`${styles.button} ${styles.buttonOutline}`} href={routes.about}>About PeaceWorks</Link>
