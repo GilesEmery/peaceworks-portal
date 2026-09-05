@@ -63,7 +63,12 @@ test("email shell includes branding, absolute logo, metadata, configured CTA, an
   assert.match(html, /https:\/\/peaceworks\.network\/brand\/peaceworks-email-logo\.png/);
   assert.match(html, /href="https:\/\/peaceworks\.network\/my-dashboard\?from=email"/);
   assert.match(html, />Read more<\/a>/);
-  assert.match(html, /Make Peace Practical/);
+  assert.match(html, /align="left" style="padding:4px 0 24px"/);
+  assert.match(html, /Peace Made Practical/);
+  assert.match(
+    html,
+    /You received this message because of your PeaceWorks account, Circle participation, or are a friend of PeaceWorks\./
+  );
 });
 
 test("email shell renders an escaped HTTPS header image before body content", () => {
