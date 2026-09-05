@@ -60,7 +60,7 @@ test("email shell includes branding, absolute logo, metadata, configured CTA, an
   });
   assert.match(html, /The Problems I Invent/);
   assert.match(html, /By PeaceWorks Team · Founder Circle/);
-  assert.match(html, /https:\/\/peaceworks\.network\/icons\/peaceworks-192\.png/);
+  assert.match(html, /https:\/\/peaceworks\.network\/brand\/peaceworks-email-logo\.png/);
   assert.match(html, /href="https:\/\/peaceworks\.network\/my-dashboard\?from=email"/);
   assert.match(html, />Read more<\/a>/);
   assert.match(html, /Make Peace Practical/);

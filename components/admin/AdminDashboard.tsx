@@ -34,6 +34,7 @@ import { routes } from "../../lib/navigation";
 import {
   buildEmailSendConfirmation,
   getEmailActionLabel,
+  hasExplicitInternalAudience,
   summarizeRecipientEmails,
 } from "../../lib/communications/recipients";
 import {
@@ -3117,11 +3118,14 @@ function CommunicationsSection({
   const emailContentIsReady = Boolean(
     form.subject.trim() && (form.bodyContent.trim() || form.summary.trim()) && form.senderId
   );
+  const emailAudienceIsReady =
+    form.externalRecipientEmails.length > 0 ||
+    hasExplicitInternalAudience(form.audienceScope, form.profileIds, form.circleIds);
   const canSendEmail =
     hasEmailChannel &&
     form.channelStatuses.email !== "sent" &&
     emailContentIsReady &&
-    emailRecipientSummary.total > 0;
+    emailAudienceIsReady;
   const canSendTestEmail = hasEmailChannel && emailContentIsReady;
   const canPublishToPortal =
     hasPortalChannel &&
