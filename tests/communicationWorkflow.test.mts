@@ -56,7 +56,7 @@ test("email send is confirmed and channel actions have independent audience gate
   assert.match(source, /isSendingEmail/);
   assert.match(source, /form\.channelStatuses\.email === "sent"/);
   assert.match(source, /getEmailActionLabel\(form\.channelStatuses\.email, isSendingEmail\)/);
-  assert.match(source, /hasExplicitInternalAudience\(form\.audienceScope, form\.profileIds, form\.circleIds\)/);
+  assert.doesNotMatch(source, /const emailAudienceIsReady/);
   assert.doesNotMatch(source, /emailContentIsReady &&\s*emailRecipientSummary\.total > 0/);
 });
 
