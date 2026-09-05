@@ -1257,8 +1257,7 @@ export async function sendAdminCommunicationEmail(
     );
   }
 
-  const channelStatus =
-    emailDelivery.accepted > 0 && emailDelivery.failed === 0 ? "sent" : "failed";
+  const channelStatus = emailDelivery.accepted > 0 ? "sent" : "failed";
   const emailOnly = saved.channels.length === 1 && saved.channels[0] === "email";
   const supabase = createAdminSupabaseClient();
   const now = new Date().toISOString();
@@ -1276,7 +1275,7 @@ export async function sendAdminCommunicationEmail(
       .eq("id", saved.id),
   ]);
 
-  if (channelStatus === "failed") {
+  if (emailDelivery.accepted === 0) {
     throw new CommunicationEmailSendError(
       formatEmailDeliverySummary(emailDelivery),
       saved.id

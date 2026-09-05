@@ -205,17 +205,19 @@ async function sendPeaceWorksEmails(
   const { emails: uniqueRecipients, skipped } = mergeRecipientEmails(recipientEmails, []);
   let accepted = 0;
   let failed = 0;
+  const textSnapshot = buildPeaceWorksEmailText(templateInput);
+  const htmlSnapshot = buildPeaceWorksEmailHtml(templateInput);
 
   for (let index = 0; index < uniqueRecipients.length; index += SEND_CONCURRENCY) {
     const batch = uniqueRecipients.slice(index, index + SEND_CONCURRENCY);
-    const results = await Promise.all(
+    const results = await Promise.allSettled(
       batch.map((recipient) =>
         client.emails.send({
           from: sender,
           to: recipient,
           subject,
-          text: buildPeaceWorksEmailText(templateInput),
-          html: buildPeaceWorksEmailHtml(templateInput),
+          text: textSnapshot,
+          html: htmlSnapshot,
           replyTo: normalizeReplyToEmails(
             parseStoredReplyToEmails(communication.reply_to_email),
             selectedSender.email
@@ -224,16 +226,19 @@ async function sendPeaceWorksEmails(
       )
     );
 
-    const textSnapshot = buildPeaceWorksEmailText(templateInput);
-    const htmlSnapshot = buildPeaceWorksEmailHtml(templateInput);
     const deliveryRows = results.map((result, resultIndex) => {
-      const error = result.error ? String(result.error.message || result.error) : null;
+      const providerResult = result.status === "fulfilled" ? result.value : null;
+      const error = result.status === "rejected"
+        ? formatEmailSendError(result.reason)
+        : providerResult?.error
+          ? String(providerResult.error.message || providerResult.error)
+          : null;
       if (error) failed += 1;
       else accepted += 1;
       return {
         communication_id: communication.id,
         recipient_email: batch[resultIndex],
-        provider_message_id: result.data?.id || null,
+        provider_message_id: providerResult?.data?.id || null,
         delivery_status: error ? "failed" : "accepted",
         subject_snapshot: subject,
         body_text_snapshot: textSnapshot,
@@ -254,6 +259,10 @@ async function sendPeaceWorksEmails(
     skipped,
     failed,
   };
+}
+
+function formatEmailSendError(error: unknown) {
+  return error instanceof Error ? error.message : String(error || "Email provider request failed.");
 }
 
 async function resolveAuthEmails(profileIds: string[]) {

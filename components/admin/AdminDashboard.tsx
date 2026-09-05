@@ -2973,15 +2973,24 @@ function CommunicationsSection({
     await loadCommunications();
   }
 
-  async function runChannelAction(action: "send-email" | "publish") {
-    if (action === "send-email" && isSendingEmail) return;
-    if (action === "send-email") {
+  async function runChannelAction(action: "send-email" | "publish" | "send-and-publish") {
+    const includesEmail = action === "send-email" || action === "send-and-publish";
+    if (includesEmail && isSendingEmail) return;
+    if (includesEmail) {
       const confirmation = buildEmailSendConfirmation(
         form.audienceScope,
         emailRecipientSummary.internalEmails.length,
         emailRecipientSummary.externalEmails
       );
-      if (!(await requestConfirmation(confirmation))) return;
+      if (!(await requestConfirmation(
+        action === "send-and-publish"
+          ? {
+              ...confirmation,
+              title: `Send this email and publish it to the portal for ${emailRecipientSummary.total} recipient${emailRecipientSummary.total === 1 ? "" : "s"}?`,
+              confirmLabel: "Send Email and Publish",
+            }
+          : confirmation
+      ))) return;
       setIsSendingEmail(true);
     }
     try {
@@ -2990,14 +2999,21 @@ function CommunicationsSection({
         { method: "POST", body: form }
       );
       if (!result.ok) {
-        if (action === "send-email" && result.emailStatus === "failed") {
-          setForm((current) => applyFailedEmailSend(current, result.communicationId));
+        if (includesEmail && result.emailStatus === "failed") {
+          setForm((current) => ({
+            ...applyFailedEmailSend(current, result.communicationId),
+            channelStatuses: {
+              ...current.channelStatuses,
+              ...(result.portalPublished ? { my_dashboard: "active" } : {}),
+              email: "failed",
+            },
+          }));
         }
         setMessage({ type: "error", text: result.message });
         return;
       }
       const communication = result.communication as AdminCommunication | undefined;
-      if (action === "send-email") {
+      if (includesEmail) {
         const nextForm = applySuccessfulEmailSend(form, emptyForm, communication);
         if (nextForm === emptyForm) {
           resetComposer({ preserveMessage: true });
@@ -3014,7 +3030,7 @@ function CommunicationsSection({
       setMessage({ type: "success", text: result.message || "Communication channel updated." });
       await loadCommunications();
     } finally {
-      if (action === "send-email") setIsSendingEmail(false);
+      if (includesEmail) setIsSendingEmail(false);
     }
   }
 
@@ -3126,6 +3142,7 @@ function CommunicationsSection({
     hasPortalChannel &&
     form.channelStatuses.my_dashboard !== "active" &&
     internalRecipientProfiles.length > 0;
+  const canSendAndPublish = canSendEmail && canPublishToPortal;
 
   function toggleRecipient(profileId: string) {
     setForm({
@@ -3939,6 +3956,18 @@ function CommunicationsSection({
                 ))}
               </div>
             </div>
+          )}
+          {hasEmailChannel && hasPortalChannel &&
+            form.channelStatuses.email !== "sent" &&
+            form.channelStatuses.my_dashboard !== "active" && (
+            <button
+              className="btn btn-primary"
+              type="button"
+              disabled={!canSendAndPublish || isSendingEmail || isSendingTestEmail}
+              onClick={() => void runChannelAction("send-and-publish")}
+            >
+              {isSendingEmail ? "Sending and Publishing..." : "Send Email and Publish to Portal"}
+            </button>
           )}
         </CommunicationComposerBlock>
 
@@ -5039,6 +5068,7 @@ async function adminContentRequest(
       message: string;
       communicationId?: string;
       emailStatus?: "failed";
+      portalPublished?: boolean;
     }
 > {
   const token = await getAccessToken();

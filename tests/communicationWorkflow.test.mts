@@ -47,7 +47,7 @@ test("new composer state has no audience while edit restores the saved audience"
 
 test("email send is confirmed and channel actions have independent audience gates", async () => {
   const source = await readFile(adminDashboardUrl, "utf8");
-  assert.match(source, /requestConfirmation\(confirmation\)/);
+  assert.match(source, /requestConfirmation\(/);
   assert.match(
     source,
     /disabled=\{!canSendEmail \|\| isSendingEmail \|\| isSendingTestEmail \|\| form\.channelStatuses\.email === "sent"\}/
@@ -163,12 +163,17 @@ test("draft test email carries current email presentation fields", async () => {
   }
 });
 
-test("successful email-only sends move to the existing archive status", async () => {
-  const source = await readFile(contentStudioUrl, "utf8");
+test("successful and partially successful email sends move to the sent state", async () => {
+  const [source, emailSource] = await Promise.all([
+    readFile(contentStudioUrl, "utf8"),
+    readFile(emailUrl, "utf8"),
+  ]);
   assert.match(source, /saved\.channels\.length === 1 && saved\.channels\[0\] === "email"/);
   assert.match(source, /emailOnly && channelStatus === "sent" \? \{ status: "archived" \} : \{\}/);
-  assert.match(source, /emailDelivery\.accepted > 0 && emailDelivery\.failed === 0 \? "sent" : "failed"/);
-  assert.match(source, /if \(channelStatus === "failed"\)[\s\S]*formatEmailDeliverySummary\(emailDelivery\)/);
+  assert.match(source, /emailDelivery\.accepted > 0 \? "sent" : "failed"/);
+  assert.match(source, /if \(emailDelivery\.accepted === 0\)[\s\S]*formatEmailDeliverySummary\(emailDelivery\)/);
+  assert.match(emailSource, /Promise\.allSettled\(/);
+  assert.match(emailSource, /result\.status === "rejected"[\s\S]*formatEmailSendError\(result\.reason\)/);
 });
 
 test("the Admin current view excludes archived records while Archive remains selectable", async () => {
@@ -189,4 +194,21 @@ test("portal delivery and member aggregation require the My Dashboard channel", 
   assert.match(dashboardSource, /\.eq\("channel", "my_dashboard"\)/);
   assert.match(contentStudioSource, /!input\.channels\.includes\("my_dashboard"\)[\s\S]*status: "archived"[\s\S]*source_communication_id/);
   assert.match(portalSource, /status: "active"[\s\S]*existing\.id/);
+});
+
+test("combined email and portal delivery persists one communication and exposes one action", async () => {
+  const [dashboardSource, routeSource] = await Promise.all([
+    readFile(adminDashboardUrl, "utf8"),
+    readFile(
+      new URL("../app/api/admin/content/communications/send-and-publish/route.ts", import.meta.url),
+      "utf8"
+    ),
+  ]);
+  assert.match(dashboardSource, /Send Email and Publish to Portal/);
+  assert.match(dashboardSource, /runChannelAction\("send-and-publish"\)/);
+  assert.match(routeSource, /createAdminCommunication/);
+  assert.match(routeSource, /assertCommunicationEmailAudience\(body\)/);
+  assert.match(routeSource, /setAdminCommunicationStatus\(auth\.user\.id, saved\.id, "published"\)/);
+  assert.match(routeSource, /sendAdminCommunicationEmail\(auth\.user\.id, saved\.id, body\)/);
+  assert.match(routeSource, /portalPublished/);
 });
