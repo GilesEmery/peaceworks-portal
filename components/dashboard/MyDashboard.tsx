@@ -393,12 +393,20 @@ export default function MyDashboard() {
               items={circlePosts}
               renderItem={(post) => (
                 <article className="portal-card dashboard-journey-card" key={post.id}>
+                  {post.thumbnailUrl && (
+                    <div
+                      className="dashboard-tile-media"
+                      style={{ backgroundImage: `url("${post.thumbnailUrl}")` }}
+                      role="img"
+                      aria-label={`${post.title} thumbnail`}
+                    />
+                  )}
                   <div>
                     <span className="card-label">{formatLabel(post.format)}</span>
                     <h3>{post.title}</h3>
                     {post.authorName && <p className="content-byline">By {post.authorName}</p>}
                     {post.excerpt && <p>{post.excerpt}</p>}
-                    <small>{post.circle.name}</small>
+                    {post.circle && <small>{post.circle.name}</small>}
                   </div>
                   <button
                     className="btn btn-primary"

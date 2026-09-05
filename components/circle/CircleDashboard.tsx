@@ -136,7 +136,7 @@ export default function CircleDashboard() {
     (note) => note.circle && circleIds.has(note.circle.id)
   );
   const posts = (dashboard.sections.posts || []).filter((post) =>
-    circleIds.has(post.circle.id)
+    Boolean(post.circle && circleIds.has(post.circle.id))
   );
 
   return (

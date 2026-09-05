@@ -12,6 +12,7 @@ import {
 } from "../resources/media";
 import type { MemberAuthResult } from "./authorization";
 import { resolveSecondaryIdentityType } from "../peaceAssessmentScoring";
+import { createCommunicationImagePreviewUrl } from "../communications/images";
 
 export type DashboardCoach = {
   id: string;
@@ -89,8 +90,9 @@ export type DashboardPost = {
   excerpt: string;
   format: string;
   authorName: string;
+  thumbnailUrl: string;
   publishedAt: string | null;
-  circle: { id: string; name: string };
+  circle: { id: string; name: string } | null;
   detailHref: string;
 };
 
@@ -98,6 +100,8 @@ export type DashboardPostDetail = DashboardPost & {
   body: string;
   category: string;
   tags: string[];
+  headerImageUrl: string;
+  imageAltText: string;
 };
 
 export type DashboardNoteSource = "circle" | "member";
@@ -380,13 +384,13 @@ export async function fetchMemberDashboard(
     )
   );
   const circleNames = new Map(circles.map((circle) => [circle.id, circle.name]));
+  const roles = (rolesResponse.data || []).map((role) => role.name);
   const [contentSections, notes, posts] = await Promise.all([
     resolveDashboardContent(matchingAssignments, circleNames, memberId),
     fetchMemberVisibleNotes(memberId, activeCircleIds, circleNames),
-    fetchMemberVisiblePostsSafely(activeCircleIds, circleNames, now),
+    fetchMemberVisiblePostsSafely(memberId, roles, activeCircleIds, circleNames, now),
   ]);
   const sections = { ...contentSections, notes, posts };
-  const roles = (rolesResponse.data || []).map((role) => role.name);
   const assessment = assessmentResponse.data;
 
   return {
@@ -445,7 +449,7 @@ export async function fetchMemberDashboardPostDetail(
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("communications")
-    .select("body_content,summary,category,tags")
+    .select("body_content,summary,category,tags,header_image_path,image_alt_text")
     .eq("id", communicationId)
     .eq("status", "published")
     .maybeSingle();
@@ -457,63 +461,74 @@ export async function fetchMemberDashboardPostDetail(
     body: data.body_content || data.summary || "",
     category: data.category || "",
     tags: normalizeStrings(data.tags),
+    headerImageUrl: data.header_image_path
+      ? await createCommunicationImagePreviewUrl(data.header_image_path)
+      : "",
+    imageAltText: data.image_alt_text || "",
   };
 }
 
 async function fetchMemberVisiblePosts(
+  memberId: string,
+  roles: string[],
   activeCircleIds: Set<string>,
   circleNames: Map<string, string>,
   now: string
 ): Promise<DashboardPost[]> {
-  const circleIds = Array.from(activeCircleIds);
-  if (circleIds.length === 0) return [];
-
   const supabase = createAdminSupabaseClient();
-  const { data: targets, error: targetError } = await supabase
-    .from("communication_audience_targets")
-    .select("communication_id,circle_id")
-    .eq("audience_type", "selected_circle")
-    .in("circle_id", circleIds);
-  if (targetError) throw new Error(`Circle post targets failed: ${targetError.message}`);
-
-  const communicationIds = Array.from(
-    new Set((targets || []).map((target) => target.communication_id))
-  );
+  const { data: channels, error: channelError } = await supabase
+    .from("communication_channels")
+    .select("communication_id")
+    .eq("channel", "my_dashboard");
+  if (channelError) throw new Error(`Dashboard post channels failed: ${channelError.message}`);
+  const communicationIds = Array.from(new Set((channels || []).map((row) => row.communication_id)));
   if (communicationIds.length === 0) return [];
 
-  const [{ data: channels, error: channelError }, { data: communications, error: postError }] =
+  const [{ data: targets, error: targetError }, { data: communications, error: postError }] =
     await Promise.all([
       supabase
-        .from("communication_channels")
-        .select("communication_id,channel")
-        .in("communication_id", communicationIds)
-        .in("channel", ["circle_dashboards", "my_dashboard"]),
+        .from("communication_audience_targets")
+        .select("communication_id,audience_type,circle_id,profile_id")
+        .in("communication_id", communicationIds),
       supabase
         .from("communications")
         .select(
-          "id,title,summary,body_content,format,author_name,visible_author_name,status,published_at,visible_from,visible_until"
+          "id,title,summary,body_content,format,author_name,visible_author_name,thumbnail_image_path,status,published_at,visible_from,visible_until"
         )
         .in("id", communicationIds)
-        .in("format", ["blog_article", "circle_update", "announcement", "dashboard_message"])
+        .in("format", [
+          "email",
+          "blog_article",
+          "announcement",
+          "newsletter",
+          "circle_update",
+          "dashboard_message",
+        ])
         .eq("status", "published"),
     ]);
-  if (channelError || postError) {
-    throw new Error(`Circle posts could not be loaded: ${channelError?.message || postError?.message}`);
+  if (targetError || postError) {
+    throw new Error(`Dashboard posts could not be loaded: ${targetError?.message || postError?.message}`);
   }
 
-  const enabledIds = new Set((channels || []).map((channel) => channel.communication_id));
+  const visibleIds = new Set(
+    (targets || [])
+      .filter((target) => communicationTargetMatchesMember(target, memberId, roles, activeCircleIds))
+      .map((target) => target.communication_id)
+  );
   const circleIdByCommunication = new Map(
-    (targets || []).map((target) => [target.communication_id, target.circle_id])
+    (targets || [])
+      .filter((target) => target.audience_type === "selected_circle" && target.circle_id)
+      .map((target) => [target.communication_id, target.circle_id])
   );
 
-  return (communications || [])
+  const visiblePosts = (communications || [])
     .filter(
       (post) =>
-        enabledIds.has(post.id) &&
+        visibleIds.has(post.id) &&
         (!post.visible_from || post.visible_from <= now) &&
         (!post.visible_until || post.visible_until >= now)
     )
-    .map((post) => {
+  const posts = await Promise.all(visiblePosts.map(async (post) => {
       const circleId = circleIdByCommunication.get(post.id) || "";
       return {
         id: post.id,
@@ -521,25 +536,52 @@ async function fetchMemberVisiblePosts(
         excerpt: excerpt(post.summary || post.body_content || ""),
         format: post.format || "announcement",
         authorName: post.author_name || post.visible_author_name || "",
+        thumbnailUrl: post.thumbnail_image_path
+          ? await createCommunicationImagePreviewUrl(post.thumbnail_image_path)
+          : "",
         publishedAt: post.published_at,
-        circle: { id: circleId, name: circleNames.get(circleId) || "Your Circle" },
+        circle: circleId
+          ? { id: circleId, name: circleNames.get(circleId) || "Your Circle" }
+          : null,
         detailHref: `/my-dashboard/posts/${post.id}`,
       };
-    })
-    .sort((a, b) => String(b.publishedAt || "").localeCompare(String(a.publishedAt || "")));
+    }));
+
+  return posts.sort((a, b) => String(b.publishedAt || "").localeCompare(String(a.publishedAt || "")));
 }
 
 async function fetchMemberVisiblePostsSafely(
+  memberId: string,
+  roles: string[],
   activeCircleIds: Set<string>,
   circleNames: Map<string, string>,
   now: string
 ) {
   try {
-    return await fetchMemberVisiblePosts(activeCircleIds, circleNames, now);
+    return await fetchMemberVisiblePosts(memberId, roles, activeCircleIds, circleNames, now);
   } catch (error) {
     console.error("Optional Circle post aggregation failed", error);
     return [];
   }
+}
+
+function communicationTargetMatchesMember(
+  target: { audience_type: string; circle_id: string | null; profile_id: string | null },
+  memberId: string,
+  roles: string[],
+  activeCircleIds: Set<string>
+) {
+  if (target.audience_type === "all_members") return true;
+  if (target.audience_type === "all_circle_members") return activeCircleIds.size > 0;
+  if (target.audience_type === "all_coaches") return roles.includes("coach");
+  if (target.audience_type === "admins") return roles.includes("admin");
+  if (target.audience_type === "selected_circle") {
+    return Boolean(target.circle_id && activeCircleIds.has(target.circle_id));
+  }
+  if (target.audience_type === "selected_member" || target.audience_type === "selected_coach") {
+    return target.profile_id === memberId;
+  }
+  return false;
 }
 
 function matchesMemberAudience(

@@ -5,6 +5,7 @@ import test from "node:test";
 const contentStudioUrl = new URL("../lib/admin/contentStudio.ts", import.meta.url);
 const emailUrl = new URL("../lib/communications/email.ts", import.meta.url);
 const portalUrl = new URL("../lib/messaging/service.ts", import.meta.url);
+const memberDashboardUrl = new URL("../lib/member/dashboard.ts", import.meta.url);
 const adminDashboardUrl = new URL("../components/admin/AdminDashboard.tsx", import.meta.url);
 
 test("email send persists first and does not require global publication", async () => {
@@ -103,4 +104,31 @@ test("history shows only statuses for channels actually selected", async () => {
   assert.match(source, /communication\.channels\.includes\("email"\) && communication\.sentAt/);
   assert.match(source, /statusLabel=\{getCommunicationPresentationStatus\(communication\)\}/);
   assert.match(source, /showPublishAction=\{communication\.channels\.includes\("my_dashboard"\)\}/);
+});
+
+test("every communication format offers both email and My Dashboard delivery", async () => {
+  const source = await readFile(adminDashboardUrl, "utf8");
+  const options = source.slice(
+    source.indexOf("function getCommunicationChannelOptions"),
+    source.indexOf("function getCommunicationAudienceOptions")
+  );
+  assert.match(options, /\["email", "Email"\]/);
+  assert.match(options, /\["my_dashboard", "My Dashboard"\]/);
+  assert.match(options, /return \[\.\.\.dashboard, \.\.\.circle, \.\.\.coach, \.\.\.email\]/);
+});
+
+test("communication persistence requires at least one valid delivery channel", async () => {
+  const source = await readFile(contentStudioUrl, "utf8");
+  assert.match(source, /if \(channels\.length === 0\)[\s\S]*Choose at least one delivery channel/);
+  assert.doesNotMatch(source, /normalized\.length > 0 \? normalized : \["my_dashboard"\]/);
+});
+
+test("member dashboard aggregation accepts every communication format and its thumbnail", async () => {
+  const source = await readFile(memberDashboardUrl, "utf8");
+  assert.match(
+    source,
+    /\.in\("format", \[[\s\S]*"email"[\s\S]*"blog_article"[\s\S]*"announcement"[\s\S]*"newsletter"[\s\S]*"circle_update"[\s\S]*"dashboard_message"[\s\S]*\]\)/
+  );
+  assert.match(source, /thumbnail_image_path/);
+  assert.match(source, /createCommunicationImagePreviewUrl\(post\.thumbnail_image_path\)/);
 });

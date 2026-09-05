@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 
 import type { DashboardPostDetail as DashboardPostDetailData } from "../../lib/member/dashboard";
@@ -71,7 +72,19 @@ export default function DashboardPostDetail() {
                 {state.post.authorName && (
                   <p className="content-byline">By {state.post.authorName}</p>
                 )}
-                <p className="eyebrow">{state.post.circle.name}</p>
+                {state.post.circle && <p className="eyebrow">{state.post.circle.name}</p>}
+                {state.post.headerImageUrl && (
+                  <div className="dashboard-post-header-image">
+                    <Image
+                      src={state.post.headerImageUrl}
+                      alt={state.post.imageAltText}
+                      width={960}
+                      height={540}
+                      sizes="(max-width: 760px) 100vw, 760px"
+                      unoptimized
+                    />
+                  </div>
+                )}
                 <div className="dashboard-post-body">
                   <CommunicationBody body={state.post.body} />
                 </div>
@@ -89,7 +102,9 @@ export default function DashboardPostDetail() {
 }
 
 function formatPostLabel(format: string) {
+  if (format === "email") return "Email";
   if (format === "blog_article") return "Blog Post";
+  if (format === "newsletter") return "Newsletter";
   if (format === "circle_update") return "Circle Update";
   if (format === "dashboard_message") return "Dashboard Message";
   return "Announcement";

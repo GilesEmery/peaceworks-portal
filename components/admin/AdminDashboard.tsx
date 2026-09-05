@@ -3921,7 +3921,7 @@ function CommunicationsSection({
           )}
         </CommunicationComposerBlock>
 
-        <CommunicationComposerBlock title="Publish & Distribute">
+        <CommunicationComposerBlock title="Delivery">
           <div className="admin-checkbox-list">
             {compatibleChannels.map(([channel, label]) => (
               <CircleCheckboxRow
@@ -3931,7 +3931,7 @@ function CommunicationsSection({
                   channel === "email"
                     ? "Email can be sent independently to internal and external recipients."
                     : channel === "my_dashboard"
-                      ? "Site message remains a draft until you publish it to the portal."
+                      ? "Dashboard content remains a draft until you publish it to the portal."
                       : "Create a reusable distribution placement for this Communication."
                 }
                 checked={form.channels.includes(channel)}
@@ -5915,7 +5915,6 @@ function getCommunicationFormatDescription(format: CommunicationFormat) {
 
 function getDefaultCommunicationChannels(format: CommunicationFormat) {
   if (format === "email" || format === "newsletter") return ["email"];
-  if (format === "circle_update") return ["circle_dashboards"];
 
   return ["my_dashboard"];
 }
@@ -5923,7 +5922,7 @@ function getDefaultCommunicationChannels(format: CommunicationFormat) {
 function getCommunicationChannelOptions(format: CommunicationFormat): Array<[string, string]> {
   const email: Array<[string, string]> = [["email", "Email"]];
   const dashboard: Array<[string, string]> = [
-    ["my_dashboard", "PeaceWorks Site Message"],
+    ["my_dashboard", "My Dashboard"],
   ];
   const circle: Array<[string, string]> = [["circle_dashboards", "Selected Circle Dashboards"]];
   const coach: Array<[string, string]> = [["coach_dashboards", "Coach Dashboards"]];
@@ -5934,7 +5933,7 @@ function getCommunicationChannelOptions(format: CommunicationFormat): Array<[str
   if (format === "announcement") return [...dashboard, ...circle, ...coach, ...email];
   if (format === "circle_update") return [...circle, ...dashboard, ...email];
 
-  return [...dashboard, ...circle, ...coach];
+  return [...dashboard, ...circle, ...coach, ...email];
 }
 
 function getCommunicationAudienceOptions(format: CommunicationFormat): Array<[string, string]> {

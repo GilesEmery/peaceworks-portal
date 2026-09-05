@@ -7729,6 +7729,18 @@ a {
   line-height: 1.7;
 }
 
+.dashboard-post-header-image {
+  margin: 1.25rem 0;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.dashboard-post-header-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .dashboard-post-body p,
 .admin-communication-preview-body p {
   margin: 0 0 1.15em;

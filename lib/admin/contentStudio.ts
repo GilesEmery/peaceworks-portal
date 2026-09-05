@@ -1837,6 +1837,9 @@ async function cleanCommunication(values: CommunicationValues) {
   const summary = trimText(values.summary).slice(0, 900);
   const bodyContent = trimText(values.bodyContent).slice(0, 18000);
   const channels = cleanCommunicationChannels(values.channels || [values.channel]);
+  if (channels.length === 0) {
+    throw new Error("Choose at least one delivery channel.");
+  }
   const channel = channels.includes("email")
     ? channels.some((item) => item !== "email")
       ? "both"
@@ -2053,11 +2056,7 @@ function cleanCommunicationChannels(values: Array<string | null | undefined>) {
       allowed.includes(value as CommunicationChannel)
     );
 
-  return Array.from(
-    new Set<CommunicationChannel>(
-      normalized.length > 0 ? normalized : ["my_dashboard"]
-    )
-  );
+  return Array.from(new Set<CommunicationChannel>(normalized));
 }
 
 function cleanCommunicationLinks(
