@@ -114,11 +114,16 @@ export async function deliverCommunicationEmail(
 export async function sendCommunicationTestEmail(input: {
   recipientEmail: string;
   title: string;
+  subject?: string;
+  previewText?: string;
   message: string;
   senderId: string;
   replyToEmails: string[];
   headerImagePath?: string;
   imageAltText?: string;
+  authorName?: string;
+  category?: string;
+  links?: Array<{ label?: string; url?: string; linkStyle?: string }>;
 }) {
   const recipient = normalizeEmail(input.recipientEmail);
   if (!recipient) throw new Error("Your Admin account does not have a valid email address.");
@@ -126,20 +131,25 @@ export async function sendCommunicationTestEmail(input: {
   return sendPeaceWorksEmails([recipient], {
     id: "test",
     title: input.title,
-    subject: input.title,
+    subject: input.subject || input.title,
     summary: null,
     body_content: input.message,
-    preview_text: null,
-    author_name: null,
+    preview_text: input.previewText || null,
+    author_name: input.authorName || null,
     visible_author_name: null,
-    category: null,
+    category: input.category || null,
     audience_scope: "admins",
     sender_id: input.senderId,
     reply_to_email: JSON.stringify(normalizeReplyToEmails(input.replyToEmails)),
     header_image_path: input.headerImagePath || null,
     image_alt_text: input.imageAltText || null,
     status: "published",
-    links: [],
+    links: (input.links || []).map((link) => ({
+      label: cleanText(link.label),
+      url: cleanText(link.url),
+      link_style:
+        link.linkStyle === "button" || link.linkStyle === "featured" ? link.linkStyle : "text",
+    })),
   });
 }
 

@@ -2872,6 +2872,7 @@ function CommunicationsSection({
   const [recipientSearch, setRecipientSearch] = useState("");
   const [externalRecipientInput, setExternalRecipientInput] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
   const [replyToInput, setReplyToInput] = useState("");
   const [replyToCustomized, setReplyToCustomized] = useState(false);
   const [message, setMessage] = useState<ContentMessage>(null);
@@ -3012,26 +3013,38 @@ function CommunicationsSection({
   }
 
   async function sendTestEmail() {
-    const result = await adminContentRequest(
-      "/api/admin/content/communications/test-email",
-      {
-        method: "POST",
-        body: {
-          title: form.title,
-          message: form.bodyContent || form.summary,
-          senderId: form.senderId,
-          replyToEmails: form.replyToEmails,
-          headerImagePath: form.headerImagePath,
-          imageAltText: form.imageAltText,
+    if (isSendingTestEmail) return;
+    setIsSendingTestEmail(true);
+    try {
+      const result = await adminContentRequest(
+        "/api/admin/content/communications/test-email",
+        {
+          method: "POST",
+          body: {
+            format: form.format,
+            title: form.title,
+            subject: form.subject,
+            previewText: form.previewText,
+            message: form.bodyContent || form.summary,
+            senderId: form.senderId,
+            replyToEmails: form.replyToEmails,
+            headerImagePath: form.headerImagePath,
+            imageAltText: form.imageAltText,
+            authorName: form.visibleAuthorName,
+            category: form.category,
+            links: form.links,
+          },
         },
-      }
-    );
+      );
 
-    setMessage(
-      result.ok
-        ? { type: "success", text: result.message || "Test email accepted for sending." }
-        : { type: "error", text: result.message }
-    );
+      setMessage(
+        result.ok
+          ? { type: "success", text: result.message || "Test email accepted for sending." }
+          : { type: "error", text: result.message }
+      );
+    } finally {
+      setIsSendingTestEmail(false);
+    }
   }
 
   const formatOptions: Array<[CommunicationFormat, string]> = [
@@ -3051,6 +3064,7 @@ function CommunicationsSection({
   const showAuthorField = form.format !== "email" && form.format !== "newsletter";
   const showNewsletterSections = form.format === "newsletter";
   const hasEmailChannel = form.channels.includes("email");
+  const isEmailOnly = hasEmailChannel && form.channels.length === 1;
   const hasPortalChannel = form.channels.includes("my_dashboard");
   const showDashboardPresentation =
     hasPortalChannel &&
@@ -3102,6 +3116,7 @@ function CommunicationsSection({
     form.channelStatuses.email !== "sent" &&
     emailContentIsReady &&
     emailRecipientSummary.total > 0;
+  const canSendTestEmail = hasEmailChannel && emailContentIsReady;
   const canPublishToPortal =
     hasPortalChannel &&
     form.channelStatuses.my_dashboard !== "active" &&
@@ -4003,11 +4018,21 @@ function CommunicationsSection({
           <button className="btn btn-secondary" type="button" onClick={saveCommunication}>
             Save Draft
           </button>
+          {isEmailOnly && (
+            <button
+              className="btn btn-secondary"
+              type="button"
+              disabled={!canSendTestEmail || isSendingEmail || isSendingTestEmail}
+              onClick={sendTestEmail}
+            >
+              {isSendingTestEmail ? "Sending Test..." : "Send Test Email"}
+            </button>
+          )}
           {hasEmailChannel && (
             <button
               className="btn btn-primary"
               type="button"
-              disabled={!canSendEmail || isSendingEmail || form.channelStatuses.email === "sent"}
+              disabled={!canSendEmail || isSendingEmail || isSendingTestEmail || form.channelStatuses.email === "sent"}
               onClick={() => void runChannelAction("send-email")}
             >
               {getEmailActionLabel(form.channelStatuses.email, isSendingEmail)}
@@ -4018,9 +4043,14 @@ function CommunicationsSection({
               Publish to Portal
             </button>
           )}
-          {hasEmailChannel && (
-            <button className="btn btn-secondary" type="button" onClick={sendTestEmail}>
-              Send test email to me
+          {hasEmailChannel && !isEmailOnly && (
+            <button
+              className="btn btn-secondary"
+              type="button"
+              disabled={!canSendTestEmail || isSendingEmail || isSendingTestEmail}
+              onClick={sendTestEmail}
+            >
+              {isSendingTestEmail ? "Sending Test..." : "Send test email to me"}
             </button>
           )}
         </div>

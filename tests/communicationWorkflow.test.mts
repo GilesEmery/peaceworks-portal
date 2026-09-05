@@ -50,7 +50,7 @@ test("email send is confirmed and channel actions have independent audience gate
   assert.match(source, /requestConfirmation\(confirmation\)/);
   assert.match(
     source,
-    /disabled=\{!canSendEmail \|\| isSendingEmail \|\| form\.channelStatuses\.email === "sent"\}/
+    /disabled=\{!canSendEmail \|\| isSendingEmail \|\| isSendingTestEmail \|\| form\.channelStatuses\.email === "sent"\}/
   );
   assert.match(source, /disabled=\{!canPublishToPortal\}/);
   assert.match(source, /isSendingEmail/);
@@ -131,4 +131,25 @@ test("member dashboard aggregation accepts every communication format and its th
   );
   assert.match(source, /thumbnail_image_path/);
   assert.match(source, /createCommunicationImagePreviewUrl\(post\.thumbnail_image_path\)/);
+});
+
+test("email-only composer exposes save, test, and send without requiring an id", async () => {
+  const source = await readFile(adminDashboardUrl, "utf8");
+  const previewIndex = source.indexOf("<CommunicationPreview communication={form} />");
+  const actionArea = source.slice(
+    source.indexOf('<div className="admin-content-actions">', previewIndex),
+    source.indexOf("</section>", previewIndex)
+  );
+  assert.ok(actionArea.indexOf("Save Draft") < actionArea.indexOf("Send Test Email"));
+  assert.ok(actionArea.indexOf("Send Test Email") < actionArea.indexOf("getEmailActionLabel"));
+  assert.match(source, /runChannelAction\("send-email"\)/);
+  assert.match(source, /communications\/\$\{action\}[\s\S]*body: form/);
+});
+
+test("draft test email carries current email presentation fields", async () => {
+  const source = await readFile(adminDashboardUrl, "utf8");
+  const testEmail = source.slice(source.indexOf("async function sendTestEmail"), source.indexOf("const formatOptions"));
+  for (const field of ["subject", "previewText", "headerImagePath", "imageAltText", "authorName", "category", "links"]) {
+    assert.match(testEmail, new RegExp(`${field}:`));
+  }
 });
