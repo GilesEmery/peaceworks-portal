@@ -65,3 +65,32 @@ test("email shell includes branding, absolute logo, metadata, configured CTA, an
   assert.match(html, />Read more<\/a>/);
   assert.match(html, /Make Peace Practical/);
 });
+
+test("email shell renders an escaped HTTPS header image before body content", () => {
+  const html = buildPeaceWorksEmailHtml({
+    title: "Image example",
+    body: "Body copy",
+    headerImageUrl: "https://example.com/header.png?token=signed",
+    headerImageAlt: 'A gathering of people <listening> & learning "together"',
+  });
+
+  assert.match(html, /<img src="https:\/\/example\.com\/header\.png\?token=signed"/);
+  assert.match(html, /alt="A gathering of people &lt;listening&gt; &amp; learning &quot;together&quot;"/);
+  assert.ok(html.indexOf("header.png") < html.indexOf("Body copy"));
+});
+
+test("email shell omits unsafe image URLs and uses blank alt text when requested", () => {
+  const unsafeHtml = buildPeaceWorksEmailHtml({
+    title: "Unsafe image",
+    body: "Body copy",
+    headerImageUrl: "javascript:alert(1)",
+  });
+  const decorativeHtml = buildPeaceWorksEmailHtml({
+    title: "Decorative image",
+    body: "Body copy",
+    headerImageUrl: "https://example.com/decorative.png",
+  });
+
+  assert.doesNotMatch(unsafeHtml, /javascript:alert/);
+  assert.match(decorativeHtml, /src="https:\/\/example\.com\/decorative\.png" alt=""/);
+});

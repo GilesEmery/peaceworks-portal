@@ -14,6 +14,7 @@ import {
   resolveCommunicationSender,
 } from "./senders";
 import { mergeRecipientEmails, normalizeRecipientEmail } from "./recipients";
+import { createCommunicationEmailImageUrl } from "./images";
 
 const SITE_URL = "https://peaceworks.network";
 const SEND_CONCURRENCY = 5;
@@ -31,6 +32,8 @@ type CommunicationEmailRow = {
   audience_scope: string | null;
   sender_id: string | null;
   reply_to_email: string | null;
+  header_image_path: string | null;
+  image_alt_text: string | null;
   status: string | null;
   links: Array<{ label: string | null; url: string | null; link_style: string | null }>;
 };
@@ -57,7 +60,7 @@ export async function deliverCommunicationEmail(
     await Promise.all([
       supabase
         .from("communications")
-        .select("id,title,subject,summary,body_content,preview_text,author_name,visible_author_name,category,audience_scope,sender_id,reply_to_email,status")
+        .select("id,title,subject,summary,body_content,preview_text,author_name,visible_author_name,category,audience_scope,sender_id,reply_to_email,header_image_path,image_alt_text,status")
         .eq("id", communicationId)
         .single(),
       supabase
@@ -114,6 +117,8 @@ export async function sendCommunicationTestEmail(input: {
   message: string;
   senderId: string;
   replyToEmails: string[];
+  headerImagePath?: string;
+  imageAltText?: string;
 }) {
   const recipient = normalizeEmail(input.recipientEmail);
   if (!recipient) throw new Error("Your Admin account does not have a valid email address.");
@@ -131,6 +136,8 @@ export async function sendCommunicationTestEmail(input: {
     audience_scope: "admins",
     sender_id: input.senderId,
     reply_to_email: JSON.stringify(normalizeReplyToEmails(input.replyToEmails)),
+    header_image_path: input.headerImagePath || null,
+    image_alt_text: input.imageAltText || null,
     status: "published",
     links: [],
   });
@@ -166,6 +173,9 @@ async function sendPeaceWorksEmails(
   const title = cleanText(communication.title) || "A message from PeaceWorks";
   const subject = cleanText(communication.subject) || title;
   const message = cleanText(communication.body_content || communication.summary) || title;
+  const headerImageUrl = communication.header_image_path
+    ? await createCommunicationEmailImageUrl(communication.header_image_path)
+    : "";
   const ctaLink = communication.links.find(
     (link) => link.url && (link.link_style === "button" || link.link_style === "featured")
   );
@@ -179,6 +189,8 @@ async function sendPeaceWorksEmails(
       ? { label: cleanText(ctaLink.label) || "Visit PeaceWorks", url: ctaLink.url }
       : undefined,
     siteUrl: process.env.NEXT_PUBLIC_SITE_URL || SITE_URL,
+    headerImageUrl,
+    headerImageAlt: cleanText(communication.image_alt_text),
   };
   const { emails: uniqueRecipients, skipped } = mergeRecipientEmails(recipientEmails, []);
   let accepted = 0;

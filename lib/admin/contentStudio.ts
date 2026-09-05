@@ -13,6 +13,10 @@ import type { ResolvedCanonicalAssignment } from "../content/assignments";
 import type { ContentItemKind } from "../content/registry";
 import { deliverCommunicationToPortal } from "../messaging/service";
 import { deliverCommunicationEmail } from "../communications/email";
+import {
+  communicationStorageBucket,
+  createCommunicationImagePreviewUrl,
+} from "../communications/images";
 import { resolveContentAuthor } from "../content/authors";
 import {
   fetchEligibleCommunicationSenders,
@@ -1367,8 +1371,11 @@ export async function uploadAdminCommunicationImage(
 
   if (error) throw new Error(`Communication image could not be uploaded: ${error.message}`);
 
+  const previewUrl = await createCommunicationImagePreviewUrl(storagePath);
+
   return {
     storagePath,
+    previewUrl,
     fileName: file.name,
     fileSize: file.size,
     mimeType: file.type || "image/png",
@@ -1467,8 +1474,6 @@ const trainingSelect =
   "id,content_item_id,title,description,cover_image_url,category,estimated_duration,author_profile_id,author_name,status,published_at,created_at,updated_at";
 
 const resourceStorageBucket = "peaceworks-resources";
-const communicationStorageBucket = "peaceworks-communications";
-
 const communicationSelect =
   "id,format,title,subject,preview_text,summary,body_content,communication_type,channel,dashboard_presentation,audience_scope,sender_id,reply_to_email,visible_author_name,author_profile_id,author_name,header_image_path,thumbnail_image_path,image_alt_text,category,tags,visible_from,visible_until,status,published_at,sent_at,created_at,updated_at";
 
@@ -2390,17 +2395,7 @@ async function upsertCommunicationResource(
 }
 
 async function createSignedCommunicationImageUrl(storagePath: string) {
-  const supabase = createAdminSupabaseClient();
-  const { data, error } = await supabase.storage
-    .from(communicationStorageBucket)
-    .createSignedUrl(storagePath, 60 * 60);
-
-  if (error) {
-    console.warn("Communication image signed URL could not be created", error);
-    return "";
-  }
-
-  return data?.signedUrl || "";
+  return createCommunicationImagePreviewUrl(storagePath);
 }
 
 function parseContentType(value: string | null | undefined): AdminContentType {

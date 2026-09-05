@@ -13,6 +13,8 @@ export async function POST(request: Request) {
       message?: string;
       senderId?: string;
       replyToEmails?: string[];
+      headerImagePath?: string;
+      imageAltText?: string;
     };
     const title = body.title?.trim() || "PeaceWorks test email";
     const message = body.message?.trim();
@@ -28,6 +30,8 @@ export async function POST(request: Request) {
       message,
       senderId: body.senderId,
       replyToEmails: body.replyToEmails || [],
+      headerImagePath: body.headerImagePath?.trim() || "",
+      imageAltText: body.imageAltText?.trim() || "",
     });
     if (delivery.failed > 0 || delivery.accepted !== 1) {
       return Response.json({ ok: false, message: formatEmailDeliverySummary(delivery) }, { status: 502 });

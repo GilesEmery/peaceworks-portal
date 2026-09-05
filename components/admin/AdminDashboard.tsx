@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode, RefObject } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Activity,
   Archive,
@@ -3020,6 +3021,8 @@ function CommunicationsSection({
           message: form.bodyContent || form.summary,
           senderId: form.senderId,
           replyToEmails: form.replyToEmails,
+          headerImagePath: form.headerImagePath,
+          imageAltText: form.imageAltText,
         },
       }
     );
@@ -3052,10 +3055,9 @@ function CommunicationsSection({
   const showDashboardPresentation =
     hasPortalChannel &&
     (form.format === "announcement" || form.format === "dashboard_message");
-  const showMedia =
-    form.format !== "email" ||
-    form.channels.includes("my_dashboard") ||
-    form.channels.includes("resource_library");
+  const hasResourceChannel = form.channels.includes("resource_library");
+  const showMedia = hasEmailChannel || hasPortalChannel || hasResourceChannel;
+  const showThumbnail = hasPortalChannel || hasResourceChannel;
   const compatibleChannels = getCommunicationChannelOptions(form.format);
   const requiresCircleTargets = form.audienceScope === "selected_circles";
   const requiresProfileTargets =
@@ -3234,7 +3236,11 @@ function CommunicationsSection({
       body: formData,
     });
     const result = (await response.json().catch(() => null)) as
-      | { ok?: boolean; message?: string; upload?: { storagePath?: string } }
+      | {
+          ok?: boolean;
+          message?: string;
+          upload?: { storagePath?: string; previewUrl?: string };
+        }
       | null;
 
     if (!response.ok || !result?.ok || !result.upload?.storagePath) {
@@ -3244,23 +3250,28 @@ function CommunicationsSection({
       });
       return;
     }
+    const storagePath = result.upload.storagePath;
+    const previewUrl = result.upload.previewUrl || "";
 
     if (uploadKind === "header") {
-      setForm({
-        ...form,
-        headerImagePath: result.upload.storagePath,
-        headerImageUrl: "",
-        thumbnailImagePath: form.useHeaderAsThumbnail
-          ? result.upload.storagePath
-          : form.thumbnailImagePath,
-      });
+      setForm((current) => ({
+        ...current,
+        headerImagePath: storagePath,
+        headerImageUrl: previewUrl,
+        thumbnailImagePath: current.useHeaderAsThumbnail
+          ? storagePath
+          : current.thumbnailImagePath,
+        thumbnailImageUrl: current.useHeaderAsThumbnail
+          ? previewUrl
+          : current.thumbnailImageUrl,
+      }));
     } else {
-      setForm({
-        ...form,
-        thumbnailImagePath: result.upload.storagePath,
-        thumbnailImageUrl: "",
+      setForm((current) => ({
+        ...current,
+        thumbnailImagePath: storagePath,
+        thumbnailImageUrl: previewUrl,
         useHeaderAsThumbnail: false,
-      });
+      }));
     }
 
     setMessage({ type: "success", text: "Image uploaded." });
@@ -3553,67 +3564,144 @@ function CommunicationsSection({
 
         {showMedia && (
           <CommunicationComposerBlock title="Media">
-            <div className="admin-content-form-grid">
-              <label>
-                <span>Header Image</span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(event) =>
-                    void uploadCommunicationImage(event.target.files?.[0], "header")
-                  }
-                />
-              </label>
-              <label>
-                <span>Thumbnail</span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(event) =>
-                    void uploadCommunicationImage(event.target.files?.[0], "thumbnail")
-                  }
-                />
-              </label>
+            <div className={`admin-communication-media-grid ${showThumbnail ? "" : "email-only"}`}>
+              <div className="admin-communication-image-field">
+                <div>
+                  <strong>Header Image</strong>
+                  <p>Used as the main image for this communication.</p>
+                </div>
+                {form.headerImageUrl && (
+                  <div className="admin-communication-image-preview header">
+                    <Image
+                      src={form.headerImageUrl}
+                      alt="Header image preview"
+                      width={720}
+                      height={405}
+                      unoptimized
+                    />
+                  </div>
+                )}
+                {form.headerImagePath && (
+                  <span className="admin-communication-upload-status">Header image uploaded</span>
+                )}
+                <label className="admin-communication-file-label">
+                  <span>{form.headerImagePath ? "Replace Header Image" : "Choose Header Image"}</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) => {
+                      const file = event.currentTarget.files?.[0];
+                      event.currentTarget.value = "";
+                      void uploadCommunicationImage(file, "header");
+                    }}
+                  />
+                </label>
+                {form.headerImagePath && (
+                  <button
+                    className="admin-link-button danger"
+                    type="button"
+                    onClick={() =>
+                      setForm((current) => ({
+                        ...current,
+                        headerImagePath: "",
+                        headerImageUrl: "",
+                        thumbnailImagePath: current.useHeaderAsThumbnail
+                          ? ""
+                          : current.thumbnailImagePath,
+                        thumbnailImageUrl: current.useHeaderAsThumbnail
+                          ? ""
+                          : current.thumbnailImageUrl,
+                        useHeaderAsThumbnail: false,
+                      }))
+                    }
+                  >
+                    Remove Header Image
+                  </button>
+                )}
+              </div>
+
+              {showThumbnail && (
+                <div className="admin-communication-image-field">
+                  <div>
+                    <strong>Thumbnail</strong>
+                    <p>Used for dashboard and portal previews.</p>
+                  </div>
+                  {form.useHeaderAsThumbnail ? (
+                    <div className="admin-communication-derived-state">
+                      <strong>Using Header Image</strong>
+                      <span>The header image will also be used as the thumbnail.</span>
+                    </div>
+                  ) : (
+                    form.thumbnailImageUrl && (
+                      <div className="admin-communication-image-preview thumbnail">
+                        <Image
+                          src={form.thumbnailImageUrl}
+                          alt="Thumbnail preview"
+                          width={480}
+                          height={320}
+                          unoptimized
+                        />
+                      </div>
+                    )
+                  )}
+                  {form.thumbnailImagePath && !form.useHeaderAsThumbnail && (
+                    <span className="admin-communication-upload-status">Thumbnail uploaded</span>
+                  )}
+                  <label className="admin-communication-file-label">
+                    <span>{form.thumbnailImagePath && !form.useHeaderAsThumbnail ? "Replace Thumbnail" : "Choose Thumbnail"}</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(event) => {
+                        const file = event.currentTarget.files?.[0];
+                        event.currentTarget.value = "";
+                        void uploadCommunicationImage(file, "thumbnail");
+                      }}
+                    />
+                  </label>
+                  {form.headerImagePath && !form.useHeaderAsThumbnail && (
+                    <button
+                      className="admin-link-button"
+                      type="button"
+                      onClick={() =>
+                        setForm((current) => ({
+                          ...current,
+                          thumbnailImagePath: current.headerImagePath,
+                          thumbnailImageUrl: current.headerImageUrl,
+                          useHeaderAsThumbnail: true,
+                        }))
+                      }
+                    >
+                      Use Header Image as Thumbnail
+                    </button>
+                  )}
+                  {form.thumbnailImagePath && (
+                    <button
+                      className="admin-link-button danger"
+                      type="button"
+                      onClick={() =>
+                        setForm((current) => ({
+                          ...current,
+                          thumbnailImagePath: "",
+                          thumbnailImageUrl: "",
+                          useHeaderAsThumbnail: false,
+                        }))
+                      }
+                    >
+                      Remove Thumbnail
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <div className="admin-communication-alt-field">
               <ContentInput
                 label="Image Alt Text"
                 value={form.imageAltText}
                 onChange={(imageAltText) => setForm({ ...form, imageAltText })}
               />
-            </div>
-            <div className="admin-content-actions">
-              {form.headerImagePath && (
-                <button
-                  className="admin-link-button"
-                  type="button"
-                  onClick={() =>
-                    setForm({
-                      ...form,
-                      thumbnailImagePath: form.headerImagePath,
-                      useHeaderAsThumbnail: true,
-                    })
-                  }
-                >
-                  Use Header Image as Thumbnail
-                </button>
-              )}
-              {(form.headerImagePath || form.thumbnailImagePath) && (
-                <button
-                  className="admin-link-button"
-                  type="button"
-                  onClick={() =>
-                    setForm({
-                      ...form,
-                      headerImagePath: "",
-                      headerImageUrl: "",
-                      thumbnailImagePath: "",
-                      thumbnailImageUrl: "",
-                      useHeaderAsThumbnail: false,
-                    })
-                  }
-                >
-                  Remove Images
-                </button>
-              )}
+                <p className="admin-muted-copy">Accessible description of the Header Image. Leave blank when the image is decorative.</p>
+              </div>
             </div>
           </CommunicationComposerBlock>
         )}
@@ -4001,6 +4089,7 @@ function CommunicationsSection({
                     thumbnailImagePath: communication.thumbnailImagePath,
                     thumbnailImageUrl: communication.thumbnailImageUrl,
                     useHeaderAsThumbnail:
+                      Boolean(communication.headerImagePath) &&
                       communication.thumbnailImagePath === communication.headerImagePath,
                     imageAltText: communication.imageAltText,
                     category: communication.category,
