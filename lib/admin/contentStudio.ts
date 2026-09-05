@@ -12,7 +12,10 @@ import {
 import type { ResolvedCanonicalAssignment } from "../content/assignments";
 import type { ContentItemKind } from "../content/registry";
 import { deliverCommunicationToPortal } from "../messaging/service";
-import { deliverCommunicationEmail } from "../communications/email";
+import {
+  deliverCommunicationEmail,
+  formatEmailDeliverySummary,
+} from "../communications/email";
 import {
   communicationStorageBucket,
   createCommunicationImagePreviewUrl,
@@ -1254,16 +1257,31 @@ export async function sendAdminCommunicationEmail(
     );
   }
 
-  const channelStatus = emailDelivery.accepted > 0 ? "sent" : "failed";
+  const channelStatus =
+    emailDelivery.accepted > 0 && emailDelivery.failed === 0 ? "sent" : "failed";
+  const emailOnly = saved.channels.length === 1 && saved.channels[0] === "email";
   const supabase = createAdminSupabaseClient();
   const now = new Date().toISOString();
+  const communicationUpdate = {
+    sent_at: channelStatus === "sent" ? now : null,
+    updated_by: adminUserId,
+    updated_at: now,
+    ...(emailOnly && channelStatus === "sent" ? { status: "archived" } : {}),
+  };
   await Promise.all([
     setCommunicationChannelStatus(saved.id, "email", channelStatus),
     supabase
       .from("communications")
-      .update({ sent_at: channelStatus === "sent" ? now : null, updated_by: adminUserId, updated_at: now })
+      .update(communicationUpdate)
       .eq("id", saved.id),
   ]);
+
+  if (channelStatus === "failed") {
+    throw new CommunicationEmailSendError(
+      formatEmailDeliverySummary(emailDelivery),
+      saved.id
+    );
+  }
 
   const { data, error } = await supabase
     .from("communications")
@@ -2252,6 +2270,14 @@ async function syncCommunicationChildren(
     supabase.from("communication_newsletter_sections").delete().eq("communication_id", communicationId),
     supabase.from("communication_external_recipients").delete().eq("communication_id", communicationId),
   ]);
+
+  if (!input.channels.includes("my_dashboard")) {
+    const { error } = await supabase
+      .from("conversations")
+      .update({ status: "archived", updated_at: new Date().toISOString() })
+      .eq("source_communication_id", communicationId);
+    if (error) throw new Error(`Portal communication could not be archived: ${error.message}`);
+  }
 
   if (input.links.length > 0) {
     const { error } = await supabase.from("communication_links").insert(

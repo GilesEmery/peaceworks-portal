@@ -2929,22 +2929,28 @@ function CommunicationsSection({
     if (!options.preserveMessage) setMessage(null);
   }
 
-  const filtered = communications.filter((communication) =>
-    (status === "all" || communication.status === status) &&
-    [
-      communication.title,
-      communication.subject,
-      communication.summary,
-      communication.visibleAuthorName,
-      communication.communicationType,
-      communication.channel,
-      communication.audienceScope,
-      communication.channels.join(" "),
-    ]
-      .join(" ")
-      .toLowerCase()
-      .includes(query.trim().toLowerCase())
-  );
+  const filtered = communications.filter((communication) => {
+    const listStatus = getCommunicationListStatus(communication);
+    const matchesStatus =
+      status === "all"
+        ? listStatus !== "archived"
+        : listStatus === status;
+
+    return matchesStatus &&
+      [
+        communication.title,
+        communication.subject,
+        communication.summary,
+        communication.visibleAuthorName,
+        communication.communicationType,
+        communication.channel,
+        communication.audienceScope,
+        communication.channels.join(" "),
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(query.trim().toLowerCase());
+  });
 
   async function saveCommunication() {
     const result = await adminContentRequest(
@@ -3313,6 +3319,7 @@ function CommunicationsSection({
         searchLabel="Search communications"
         onSearch={setQuery}
         onStatusChange={(value) => setStatus(value as CommunicationStatus | "all")}
+        allLabel="Active / Current"
       />
 
       <section className="admin-content-editor">
@@ -4073,7 +4080,7 @@ function CommunicationsSection({
                 key={communication.id}
                 title={communication.title}
                 detail={communication.summary || communication.bodyContent}
-                status={communication.status}
+                status={getCommunicationListStatus(communication)}
                 statusLabel={getCommunicationPresentationStatus(communication)}
                 showPublishAction={communication.channels.includes("my_dashboard")}
                 meta={[
@@ -4798,12 +4805,14 @@ function ContentLibraryTools({
   searchLabel,
   onSearch,
   onStatusChange,
+  allLabel = "All statuses",
 }: {
   search: string;
   status: ContentStatus | "all";
   searchLabel: string;
   onSearch: (value: string) => void;
   onStatusChange: (value: ContentStatus | "all") => void;
+  allLabel?: string;
 }) {
   return (
     <div className="admin-table-tools">
@@ -4822,7 +4831,7 @@ function ContentLibraryTools({
           value={status}
           onChange={(event) => onStatusChange(event.target.value as ContentStatus | "all")}
         >
-          <option value="all">All statuses</option>
+          <option value="all">{allLabel}</option>
           <option value="draft">Draft</option>
           <option value="published">Published</option>
           <option value="archived">Archived</option>
@@ -5941,6 +5950,13 @@ function getCommunicationFormatDescription(format: CommunicationFormat) {
   };
 
   return descriptions[format];
+}
+
+function getCommunicationListStatus(communication: AdminCommunication): CommunicationStatus {
+  const isEmailOnly =
+    communication.channels.length === 1 && communication.channels[0] === "email";
+  if (isEmailOnly && communication.channelStatuses.email === "sent") return "archived";
+  return communication.status;
 }
 
 function getDefaultCommunicationChannels(format: CommunicationFormat) {

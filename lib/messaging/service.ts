@@ -393,6 +393,11 @@ export async function deliverCommunicationToPortal(
     .maybeSingle();
   if (existingError) throw new Error(`Portal delivery lookup failed: ${existingError.message}`);
   if (existing) {
+    const { error: activationError } = await supabase
+      .from("conversations")
+      .update({ status: "active", updated_at: new Date().toISOString() })
+      .eq("id", existing.id);
+    if (activationError) throw new Error(`Portal delivery could not be activated: ${activationError.message}`);
     await markSiteChannelActive(communicationId);
     return { conversationId: existing.id, created: false };
   }
@@ -431,6 +436,11 @@ export async function deliverCommunicationToPortal(
         .eq("source_communication_id", communicationId)
         .single();
       if (!data) throw new Error("Portal delivery conflict could not be resolved.");
+      const { error: activationError } = await supabase
+        .from("conversations")
+        .update({ status: "active", updated_at: new Date().toISOString() })
+        .eq("id", data.id);
+      if (activationError) throw new Error(`Portal delivery could not be activated: ${activationError.message}`);
       await markSiteChannelActive(communicationId);
       return { conversationId: data.id, created: false };
     }

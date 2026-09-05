@@ -153,3 +153,31 @@ test("draft test email carries current email presentation fields", async () => {
     assert.match(testEmail, new RegExp(`${field}:`));
   }
 });
+
+test("successful email-only sends move to the existing archive status", async () => {
+  const source = await readFile(contentStudioUrl, "utf8");
+  assert.match(source, /saved\.channels\.length === 1 && saved\.channels\[0\] === "email"/);
+  assert.match(source, /emailOnly && channelStatus === "sent" \? \{ status: "archived" \} : \{\}/);
+  assert.match(source, /emailDelivery\.accepted > 0 && emailDelivery\.failed === 0 \? "sent" : "failed"/);
+  assert.match(source, /if \(channelStatus === "failed"\)[\s\S]*formatEmailDeliverySummary\(emailDelivery\)/);
+});
+
+test("the Admin current view excludes archived records while Archive remains selectable", async () => {
+  const source = await readFile(adminDashboardUrl, "utf8");
+  assert.match(source, /status === "all"[\s\S]*listStatus !== "archived"/);
+  assert.match(source, /allLabel="Active \/ Current"/);
+  assert.match(source, /<option value="archived">Archived<\/option>/);
+  assert.match(source, /isEmailOnly && communication\.channelStatuses\.email === "sent"[\s\S]*return "archived"/);
+});
+
+test("portal delivery and member aggregation require the My Dashboard channel", async () => {
+  const [portalSource, dashboardSource, contentStudioSource] = await Promise.all([
+    readFile(portalUrl, "utf8"),
+    readFile(memberDashboardUrl, "utf8"),
+    readFile(contentStudioUrl, "utf8"),
+  ]);
+  assert.match(portalSource, /row\.channel === "my_dashboard"/);
+  assert.match(dashboardSource, /\.eq\("channel", "my_dashboard"\)/);
+  assert.match(contentStudioSource, /!input\.channels\.includes\("my_dashboard"\)[\s\S]*status: "archived"[\s\S]*source_communication_id/);
+  assert.match(portalSource, /status: "active"[\s\S]*existing\.id/);
+});
