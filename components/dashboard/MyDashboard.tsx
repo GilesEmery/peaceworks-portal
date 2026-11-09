@@ -496,6 +496,8 @@ export default function MyDashboard() {
                     media={resource.media}
                     resourceTitle={resource.title}
                     resourceType={resource.resourceType}
+                    resourceId={resource.id}
+                    displayAsFlipbook={resource.displayAsFlipbook}
                   />
                 </article>
               )}

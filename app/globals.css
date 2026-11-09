@@ -9097,3 +9097,8 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+.flipbook-admin-option { display: flex !important; gap: 14px; align-items: flex-start; padding: 15px 17px; border: 1px solid rgba(58,91,64,.22); border-radius: 14px; background: #edf4eb; }
+.flipbook-admin-option input { accent-color: #315d45; width: 19px; height: 19px; flex: none; margin-top: 3px; }
+.flipbook-admin-option span { display: grid; gap: 5px; }
+.flipbook-admin-option small, .resource-reader-hint { color: #496557; font-size: .91rem; line-height: 1.4; }

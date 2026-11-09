@@ -93,6 +93,7 @@ export type AdminResource = {
   title: string;
   description: string;
   resourceType: AdminResourceType;
+  displayAsFlipbook: boolean;
   provider: string;
   externalUrl: string;
   embedUrl: string;
@@ -272,6 +273,7 @@ export type ResourceValues = {
   title: string;
   description: string;
   resourceType: string;
+  displayAsFlipbook?: boolean;
   externalUrl: string;
   embedUrl?: string;
   storagePath: string;
@@ -361,6 +363,7 @@ type ContentResourceRow = {
   title: string | null;
   description: string | null;
   resource_type: string | null;
+  display_as_flipbook: boolean | null;
   provider?: string | null;
   external_url: string | null;
   embed_url?: string | null;
@@ -742,6 +745,8 @@ export async function createAdminResource(
       title: cleaned.title,
       description: cleaned.description || null,
       resource_type: cleaned.resourceType,
+      display_as_flipbook: cleaned.displayAsFlipbook,
+      display_as_flipbook: cleaned.displayAsFlipbook,
       provider: cleaned.provider || null,
       external_url: cleaned.externalUrl || null,
       embed_url: cleaned.embedUrl || null,
@@ -921,6 +926,7 @@ export async function duplicateAdminResource(adminUserId: string, resourceId: st
       title: `${row.title || "Resource"} Copy`,
       description: row.description,
       resource_type: row.resource_type,
+      display_as_flipbook: row.display_as_flipbook,
       provider: row.provider,
       external_url: row.external_url,
       embed_url: row.embed_url,
@@ -1485,7 +1491,7 @@ async function deleteStoragePathIfUnreferenced(storagePath: string, exceptResour
 }
 
 const resourceSelect =
-  "id,content_item_id,title,description,resource_type,provider,external_url,embed_url,storage_path,thumbnail_url,cover_image_path,body_content,source_communication_id,file_name,file_size,mime_type,category,tags,author_profile_id,author_name,status,published_at,created_at,updated_at";
+  "id,content_item_id,title,description,resource_type,display_as_flipbook,provider,external_url,embed_url,storage_path,thumbnail_url,cover_image_path,body_content,source_communication_id,file_name,file_size,mime_type,category,tags,author_profile_id,author_name,status,published_at,created_at,updated_at";
 
 const trainingSelect =
   "id,content_item_id,title,description,cover_image_url,category,estimated_duration,author_profile_id,author_name,status,published_at,created_at,updated_at";
@@ -1650,6 +1656,7 @@ async function mapResource(row: ContentResourceRow): Promise<AdminResource> {
     title: row.title || "Untitled resource",
     description: row.description || "",
     resourceType: parseResourceType(row.resource_type),
+    displayAsFlipbook: row.resource_type === "pdf" && row.display_as_flipbook === true,
     provider: row.provider || "",
     externalUrl: row.external_url || "",
     embedUrl: row.embed_url || "",
@@ -1818,6 +1825,7 @@ function cleanResource(values: ResourceValues) {
     title,
     description: trimText(values.description).slice(0, 2000),
     resourceType,
+    displayAsFlipbook: resourceType === "pdf" && values.displayAsFlipbook === true,
     provider: urlInfo.provider,
     externalUrl: urlInfo.externalUrl,
     embedUrl: urlInfo.embedUrl,

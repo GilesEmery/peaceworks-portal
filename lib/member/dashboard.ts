@@ -58,6 +58,7 @@ export type DashboardResource = {
   title: string;
   description: string;
   resourceType: string;
+  displayAsFlipbook: boolean;
   media: ResourceMedia;
   thumbnailUrl: string | null;
   coverUrl: string | null;
@@ -678,7 +679,7 @@ async function resolveDashboardContent(
         ? supabase
             .from("resources")
             .select(
-              "id,content_item_id,title,description,resource_type,external_url,storage_path,thumbnail_url,cover_image_path,tags,author_name,status"
+              "id,content_item_id,title,description,resource_type,display_as_flipbook,external_url,storage_path,thumbnail_url,cover_image_path,tags,author_name,status"
             )
             .in(
               "content_item_id",
@@ -823,6 +824,7 @@ async function resolveDashboardContent(
         title: row.title || "",
         description: row.description || "",
         resourceType: row.resource_type || "link",
+        displayAsFlipbook: row.resource_type === "pdf" && row.display_as_flipbook === true,
         media: normalizeResourceMedia(row.resource_type || "link", url),
         thumbnailUrl: row.thumbnail_url || null,
         coverUrl: row.cover_image_path
