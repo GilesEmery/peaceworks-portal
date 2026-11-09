@@ -15,6 +15,8 @@ type ViewState = "loading" | "ready" | "denied" | "missing" | "failed";
 export default function PdfFlipbookReader({ resourceId }: { resourceId: string }) {
   const router = useRouter();
   const [status, setStatus] = useState<ViewState>("loading");
+  const [title, setTitle] = useState("PeaceWorks Publication");
+  const [pageRatio, setPageRatio] = useState(612 / 792);
   const [errorMessage, setErrorMessage] = useState("");
   const [pdf, setPdf] = useState<PdfDocument | null>(null);
   const [pdfUrl, setPdfUrl] = useState("");
@@ -66,6 +68,10 @@ export default function PdfFlipbookReader({ resourceId }: { resourceId: string }
           return;
         }
         if (!response.ok) throw Error("The PDF could not be loaded.");
+        const encodedTitle = response.headers.get("X-PeaceWorks-Resource-Title");
+        if (encodedTitle) {
+          try { setTitle(decodeURIComponent(encodedTitle)); } catch { /* Keep default title. */ }
+        }
         const bytes = await response.arrayBuffer();
         if (cancelled) return;
         objectUrl = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
@@ -77,6 +83,9 @@ export default function PdfFlipbookReader({ resourceId }: { resourceId: string }
         const loading = pdfjs.getDocument({ data: new Uint8Array(bytes), disableAutoFetch: true });
         const doc = await loading.promise;
         loadingTaskToDestroy = loading;
+        const firstPage = await doc.getPage(1);
+        const firstViewport = firstPage.getViewport({ scale: 1 });
+        setPageRatio(firstViewport.width / firstViewport.height);
         if (cancelled) {
           await loading.destroy();
           return;
@@ -98,6 +107,10 @@ export default function PdfFlipbookReader({ resourceId }: { resourceId: string }
       if (loadingTaskToDestroy) void loadingTaskToDestroy.destroy();
     };
   }, [resourceId, router]);
+
+  useEffect(() => {
+    if (status === "ready") document.title = `${title} | PeaceWorks`;
+  }, [status, title]);
 
   const maxPage = pdf?.numPages || 1;
   const visiblePage = wide ? (page === 1 ? 1 : page % 2 === 0 ? page : page - 1) : page;
@@ -124,8 +137,8 @@ export default function PdfFlipbookReader({ resourceId }: { resourceId: string }
       const viewport = pdfPage.getViewport({ scale });
       canvas.width = Math.ceil(viewport.width);
       canvas.height = Math.ceil(viewport.height);
-      canvas.style.width = `${viewport.width / pixelRatio}px`;
-      canvas.style.height = `${viewport.height / pixelRatio}px`;
+      canvas.style.width = "100%";
+      canvas.style.height = "100%";
       const context = canvas.getContext("2d");
       if (!context) return;
       const task = pdfPage.render({ canvas, canvasContext: context, viewport });
@@ -200,12 +213,12 @@ export default function PdfFlipbookReader({ resourceId }: { resourceId: string }
       <header className={styles.head}>
         <div>
           <span className="eyebrow">PeaceWorks · Member Resource</span>
-          <h1>Flipbook Reader</h1>
+          <h1>{title}</h1>
           <p>Use the arrows or keyboard to turn pages. Choose Download for the original PDF.</p>
         </div>
         <Link href="/my-dashboard" className="btn btn-secondary">Back to Dashboard</Link>
       </header>
-      {status === "loading" && <div className={styles.message} role="status">Verifying your access and opening the publication…</div>}
+      {status === "loading" && <div className={styles.message} role="status">Opening publication…</div>}
       {status === "denied" && <div className={styles.message} role="alert"><h2>Access restricted</h2><p>This resource is not assigned to your account.</p></div>}
       {status === "missing" && <div className={styles.message} role="alert"><h2>Resource unavailable</h2><p>The publication could not be found.</p></div>}
       {status === "failed" && <div className={styles.message} role="alert"><h2>Unable to open</h2><p>{errorMessage}</p></div>}
@@ -223,7 +236,7 @@ export default function PdfFlipbookReader({ resourceId }: { resourceId: string }
             <button type="button" onClick={makeDownload}><Download size={19} /> <span className={styles.downloadText}>Download PDF</span></button>
           </div>
           <div className={styles.stage}>
-            <div key={motionKey} className={styles.spread} style={{ "--flipbook-zoom": zoom } as React.CSSProperties}>
+            <div key={motionKey} className={styles.spread} style={{ "--flipbook-zoom": zoom, "--pdf-page-ratio": pageRatio } as React.CSSProperties}>
               <div className={styles.sheet}>
                 <canvas ref={leftRef} aria-label={`PDF page ${visiblePage}`} role="img" />
                 <div className={styles.links}>
