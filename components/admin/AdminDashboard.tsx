@@ -141,6 +141,7 @@ type AdminResource = {
   title: string;
   description: string;
   resourceType: string;
+  displayAsFlipbook: boolean;
   provider: string;
   externalUrl: string;
   embedUrl: string;
@@ -2211,6 +2212,7 @@ function ResourceLibrary({
     title: "",
     description: "",
     resourceType: "link",
+    displayAsFlipbook: false,
     provider: "",
     externalUrl: "",
     embedUrl: "",
@@ -2401,6 +2403,7 @@ function ResourceLibrary({
           setForm({
             ...form,
             resourceType,
+            displayAsFlipbook: false,
             externalUrl: "",
             embedUrl: "",
             provider: "",
@@ -2433,6 +2436,15 @@ function ResourceLibrary({
             onChange={(event) => uploadResourceFile(event.target.files?.[0] || null)}
           />
           {form.fileName && <small>{form.fileName} · {formatFileSize(form.fileSize)}</small>}
+        </label>
+      )}
+      {form.resourceType === "pdf" && (
+        <label className="flipbook-admin-option">
+          <input type="checkbox" checked={form.displayAsFlipbook}
+            onChange={(event) => setForm({ ...form, displayAsFlipbook: event.target.checked })} />
+          <span><strong>Display as Flipbook</strong>
+            <small>Open this PDF in a page-turning reader. Access still follows the normal resource assignments.</small>
+          </span>
         </label>
       )}
       <label>
@@ -2497,6 +2509,7 @@ function ResourceLibrary({
       title: resource.title,
       description: resource.description,
       resourceType: resource.resourceType,
+      displayAsFlipbook: resource.displayAsFlipbook,
       provider: resource.provider,
       externalUrl: resource.externalUrl,
       embedUrl: resource.embedUrl,
@@ -2566,6 +2579,7 @@ function ResourceLibrary({
           status={resource.status}
           meta={[
             resource.resourceType,
+            resource.displayAsFlipbook ? "Flipbook reader" : "",
             resource.provider,
             resource.category,
             resource.fileName,

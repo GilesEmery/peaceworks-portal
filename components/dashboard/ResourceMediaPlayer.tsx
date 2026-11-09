@@ -1,16 +1,29 @@
+import Link from "next/link";
 import type { ResourceMedia } from "../../lib/resources/media";
 
 type ResourceMediaPlayerProps = {
   media: ResourceMedia;
   resourceTitle: string;
   resourceType: string;
+  resourceId?: string;
+  displayAsFlipbook?: boolean;
 };
 
 export default function ResourceMediaPlayer({
   media,
   resourceTitle,
   resourceType,
+  resourceId,
+  displayAsFlipbook = false,
 }: ResourceMediaPlayerProps) {
+  if (resourceType === "pdf" && displayAsFlipbook && resourceId) {
+    return (
+      <div className="resource-media-block">
+        <Link className="btn btn-primary" href={`/resources/flipbook/${encodeURIComponent(resourceId)}`}>Read as Flipbook</Link>
+        <span className="resource-reader-hint">An interactive page-turning view of this PDF.</span>
+      </div>
+    );
+  }
   if (media.kind === "video-embed") {
     return (
       <div className="resource-media-block">
