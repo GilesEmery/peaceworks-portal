@@ -11,10 +11,10 @@
 .toolbar button:focus-visible,.bottomNav button:focus-visible { outline: 3px solid #d9ac4f; outline-offset: 3px; }
 .counter { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .spacer { flex: 1; min-width: 0; }
-.stage { background: radial-gradient(circle at center,#416757 0%,#172f29 90%); padding: clamp(14px,3vw,38px); min-height: 420px; display: grid; place-items: center; overflow: auto; }
-.spread { display: flex; justify-content: center; align-items: center; gap: 2px; width: fit-content; max-width: none; animation: pageChange .25s ease-out; }
-.sheet { position: relative; min-width: 0; width: calc(min(43vw,550px) * var(--flipbook-zoom, 1)); box-shadow: 0 9px 25px #07171066; background: #fff; overflow: visible; }
-.sheet canvas { display: block; max-width: none; }
+.stage { background: radial-gradient(circle at center,#416757 0%,#172f29 90%); padding: clamp(14px,3vw,38px); min-height: 420px; display: flex; align-items: flex-start; justify-content: safe center; overflow: auto; }
+.spread { display: flex; justify-content: center; align-items: flex-start; gap: 2px; width: max-content; flex: 0 0 auto; animation: pageChange .25s ease-out; }
+.sheet { position: relative; flex: 0 0 auto; width: calc(min(43vw,550px) * var(--flipbook-zoom, 1)); aspect-ratio: var(--pdf-page-ratio, .772727); box-shadow: 0 9px 25px #07171066; background: #fff; overflow: hidden; }
+.sheet canvas { display: block; width: 100% !important; height: 100% !important; object-fit: contain; }
 .links { position: absolute; inset: 0; pointer-events: none; }
 .links a { display:block; position:absolute; pointer-events:auto; border-radius: 2px; }
 .links a:focus-visible { outline: 3px solid #ddaa3e; }

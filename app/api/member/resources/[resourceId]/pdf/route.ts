@@ -35,7 +35,7 @@ export async function GET(
     const supabase = createAdminSupabaseClient();
     const { data: row, error: resourceError } = await supabase
       .from("resources")
-      .select("storage_path,resource_type,display_as_flipbook,status")
+      .select("title,storage_path,resource_type,display_as_flipbook,status")
       .eq("id", resourceId)
       .maybeSingle();
 
@@ -66,6 +66,7 @@ export async function GET(
     return new Response(await file.arrayBuffer(), {
       headers: {
         "Content-Type": "application/pdf",
+        "X-PeaceWorks-Resource-Title": encodeURIComponent((row.title || "PeaceWorks Publication").slice(0, 140)),
         "Content-Disposition": "inline",
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
